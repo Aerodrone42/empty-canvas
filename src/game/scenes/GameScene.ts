@@ -17,7 +17,7 @@ const ROOM_WIDTH = 2400;
 const ROOM_HEIGHT = 900;
 /** supplicie ecorche : decor anime au centre de la cathedrale */
 // Emplacement marque par la croix rouge : juste a droite de la zone de depart.
-const CRUCIFIED_X = 370;
+const CRUCIFIED_X = 430;
 const FLOOR_Y = 880;
 /** soin par seconde en se reposant dans une flaque de sang */
 const POOL_REGEN_PER_SEC = 6;
