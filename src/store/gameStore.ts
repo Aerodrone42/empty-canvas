@@ -116,11 +116,24 @@ export const useGameStore = create<GameState>((set, get) => ({
       flesh: Math.min(s.maxFlesh, s.flesh + Math.round(amount * s.effects.fleshGainMult)),
     })),
 
+  spendFlesh: (amount) => {
+    if (get().flesh < amount) return false;
+    set((s) => ({ flesh: Math.max(0, s.flesh - amount) }));
+    return true;
+  },
+
   registerKill: () =>
     set((s) => ({
       kills: s.kills + 1,
       health: Math.min(s.maxHealth, s.health + s.effects.lifesteal),
     })),
+
+  registerParry: () => set((s) => ({ parries: s.parries + 1 })),
+
+  setDodgeCooldown: (durationMs) =>
+    set({ dodgeCooldownMs: durationMs, dodgeReadyAt: Date.now() + durationMs }),
+
+
 
   unlockMutation: (id) => {
     const state = get();
