@@ -37,7 +37,7 @@ export class Pickup extends Phaser.GameObjects.Container {
       yoyo: true,
       repeat: -1,
     });
-    scene.tweens.add({
+    this.bob = scene.tweens.add({
       targets: this,
       y: y - 10,
       duration: 900,
@@ -51,18 +51,26 @@ export class Pickup extends Phaser.GameObjects.Container {
   tick(playerX: number, playerY: number, time: number) {
     if (this.collected || !this.active) return;
 
-    const dist = Phaser.Math.Distance.Between(this.x, this.y, playerX, playerY - 60);
+    const targetY = playerY - 60;
+    const dist = Phaser.Math.Distance.Between(this.x, this.y, playerX, targetY);
     const magnetRange = this.kind === "flesh" ? 900 : 130;
     const delay = this.kind === "flesh" ? 220 : 0;
 
     if (time - this.bornAt > delay && dist < magnetRange) {
-      const speed = this.kind === "flesh" ? 0.16 : 0.12;
+      // le flottement doit cesser, sinon il annule l'attraction verticale
+      if (this.bob) {
+        this.bob.stop();
+        this.bob = undefined;
+      }
+      const speed = this.kind === "flesh" ? 0.22 : 0.18;
       this.x = Phaser.Math.Linear(this.x, playerX, speed);
-      this.y = Phaser.Math.Linear(this.y, playerY - 60, speed);
+      this.y = Phaser.Math.Linear(this.y, targetY, speed);
     }
 
-    if (dist < 34) this.collect();
+    if (dist < 48) this.collect();
   }
+
+
 
   private collect() {
     if (this.collected) return;
