@@ -19,7 +19,7 @@ import { BACKDROPS, type BackdropDef, type BackdropKey } from "@/game/assets";
  */
 
 /** vitesses de defilement, du plus lointain au plus proche */
-const SPEEDS = [0.15, 0.55] as const;
+const SPEEDS = [0.08, 0.55] as const;
 
 type Layer = {
   sprite: Phaser.GameObjects.TileSprite;
