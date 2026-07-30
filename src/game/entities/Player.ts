@@ -464,6 +464,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.moveState = "idle";
     } else if (time < this.landUntil) {
       this.moveState = "idle";
+    } else if (time < this.dodgeRecoverUntil) {
+      // relevee apres la roulade
+      this.moveState = "idle";
     } else if (left || right) {
       this.moveState = "run";
       this.play("vigile-walk-anim", true);
