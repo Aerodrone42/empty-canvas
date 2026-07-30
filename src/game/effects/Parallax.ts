@@ -74,27 +74,30 @@ export class Parallax {
     this.skyOffset = Phaser.Math.Between(0, srcW);
     this.sky.tilePositionX = this.skyOffset;
 
-    // --- dallage : ancre au monde, defile a la vitesse du heros -------
+    // --- dallage : defile exactement a la vitesse du heros ------------
+    // le calque reste large comme le viewport (pas de surcout de rendu),
+    // mais son motif est pilote par scrollX a la vitesse 1 : visuellement
+    // c'est equivalent a un sol ancre au monde.
     const groundScreenTop = skyTop + skyH;
-    const groundWorldTop = groundScreenTop + camTop;
-    const groundH = Math.max(roomHeight - groundWorldTop, (srcH - splitY) * scale);
+    const groundH = Math.max(viewH - groundScreenTop, (srcH - splitY) * scale);
 
-    const ground = scene.add
-      .tileSprite(0, groundWorldTop, roomWidth, groundH, this.def.far, "ground")
+    this.ground = scene.add
+      .tileSprite(0, groundScreenTop, viewW, groundH, this.def.far, "ground")
       .setOrigin(0, 0)
-      .setScrollFactor(1)
+      .setScrollFactor(0)
       .setDepth(-20);
-    ground.setTileScale(scale, scale);
+    this.ground.setTileScale(scale, scale);
 
     // ombre douce sur la ligne de raccord : masque la coupure entre les
     // deux calques quand ils defilent a des vitesses differentes
     const seam = scene.add
-      .rectangle(0, groundWorldTop - 6, roomWidth, 22, 0x000000)
+      .rectangle(0, groundScreenTop - 6, viewW, 22, 0x000000)
       .setOrigin(0, 0)
-      .setScrollFactor(1)
+      .setScrollFactor(0)
       .setDepth(-19)
       .setAlpha(0.35);
     seam.setBlendMode(Phaser.BlendModes.MULTIPLY);
+
 
     this.addFloorMarks(roomWidth, floorY, camTop);
     this.addAmbience(viewW, viewH, floorScreenY);
