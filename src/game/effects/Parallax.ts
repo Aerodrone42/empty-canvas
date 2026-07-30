@@ -51,31 +51,32 @@ export class Parallax {
     const floorScreenY = floorY - Math.max(0, roomHeight - viewH);
 
     // --- calque lointain : la peinture, plein cadre ------------------
-    // seul le fond profond defile lentement (ciel, flecheS lointaines)
+    // seul le fond profond defile lentement (ciel, fleches lointaines)
     this.addTiled(this.def.far, viewW, viewH * 1.12, floorScreenY, -30, SPEEDS[0]);
 
     // --- calque median : l'architecture, ancree dans le monde ---------
     // Plus de repetition en continu : quelques massifs poses a des
     // endroits precis de la salle, solidaires du sol (scrollFactor 1),
     // donc ils ne "glissent" plus quand le joueur avance.
-    this.addAnchoredMid(this.def.mid, viewH * 0.78, floorScreenY, roomWidth);
+    this.addAnchoredMid(this.def.mid, viewH * 0.78, floorY, roomWidth);
 
     // --- cadre rocheux : ancre aux deux extremites de la salle -------
     // (objets du monde : on les quitte vraiment quand on avance)
     const frameW = viewW * 0.42;
     const frameH = viewH * 1.04;
     this.frame = scene.add
-      .image(0, floorScreenY, this.def.near)
+      .image(0, floorY, this.def.near)
       .setOrigin(0, 1)
       .setDisplaySize(frameW, frameH)
       .setScrollFactor(1)
       .setDepth(-8);
     scene.add
-      .image(roomWidth, floorScreenY, this.def.near)
+      .image(roomWidth, floorY, this.def.near)
       .setOrigin(0, 1)
       .setDisplaySize(-frameW, frameH)
       .setScrollFactor(1)
       .setDepth(-8);
+
 
     this.addAmbience(viewW, viewH, floorScreenY);
   }
