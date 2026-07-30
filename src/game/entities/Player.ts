@@ -287,10 +287,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.clearTint();
         this.setScale(SCALE);
       } else {
-        if (onGround) body.setVelocityX(0);
+        // le joueur garde un peu de controle : l'avancee n'est jamais bloquee net
+        if (onGround) {
+          if (left) body.setVelocityX(-speed * 0.35);
+          else if (right) body.setVelocityX(speed * 0.35);
+          else body.setVelocityX(0);
+        }
         return;
       }
     }
+
 
     // ---------- esquive ----------
     if (this.actions.justDown("dodge") && time >= this.dodgeReadyAt) {
