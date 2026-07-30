@@ -1,13 +1,17 @@
 import Phaser from "phaser";
 
 import { PARRY, type Strike } from "../combat";
+import { BloodFX } from "../effects/Blood";
 import { Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
+import { Pickup } from "../entities/Pickup";
 import { Player } from "../entities/Player";
 import { useGameStore } from "@/store/gameStore";
 
 const ROOM_WIDTH = 2400;
 const ROOM_HEIGHT = 900;
 const FLOOR_Y = 780;
+/** distance en dessous de laquelle une creature empeche de se soigner */
+const SAFE_RADIUS = 300;
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
