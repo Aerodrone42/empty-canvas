@@ -79,6 +79,8 @@ export class GameScene extends Phaser.Scene {
   create() {
     this.enemies = [];
     this.pickups = [];
+    this.statues = [];
+    this.vein = undefined;
     this.exiting = false;
     this.roomCleared = false;
     this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
