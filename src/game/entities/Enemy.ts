@@ -99,6 +99,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   think(playerX: number, playerY: number, time: number) {
     if (this.dying || !this.body) return;
+    this.alignBody();
     const body = this.body as Phaser.Physics.Arcade.Body;
 
     const dx = playerX - this.x;
