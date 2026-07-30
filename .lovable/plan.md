@@ -1,25 +1,30 @@
 ## Objectif
 
-Les colonnes actuelles sont posées en arrière-plan (`depth -20`), répétées tout le long de la salle, et le calque lointain qui défile donne l'impression que tout bouge. On passe à un vrai effet de perspective : **4 colonnes maximum, larges, au premier plan**, derrière lesquelles le héros passe.
+Au bout de la salle (côté droit, là où se trouve la plateforme de pierre du décor), ajouter une **plateforme praticable** sur laquelle le héros peut monter. Une fois dessus, elle s'active comme un **ascenseur** qui monte — point de sortie prévu pour enchaîner plus tard sur une nouvelle map.
 
 ## Ce qui sera fait
 
-Uniquement dans `src/game/effects/Parallax.ts` :
+Dans `src/game/scenes/GameScene.ts` :
 
-1. **Colonnes en avant-plan (`addAnchoredMid` remplacé par `addForegroundPillars`)**
-   - Exactement 4 colonnes réparties sur la largeur de la salle (2400 px), avec un écart régulier et une marge aux extrémités, positions légèrement variées pour éviter la régularité mécanique.
-   - `setScrollFactor(1.12)` : elles défilent un peu plus vite que le joueur — c'est ce qui crée la perspective, sans "glissement" gênant puisqu'elles restent ancrées au sol.
-   - `setDepth(12)` : au-dessus du joueur (depth par défaut 0, effets jusqu'à 8), donc **le personnage passe derrière**.
-   - Base calée sur la ligne de sol, hauteur portée à ~1.15x la hauteur du viewport pour qu'elles sortent du cadre en haut et en bas — c'est ce qui vend l'avant-plan.
-   - Assombrissement (`setTint`) et légère désaturation : un avant-plan proche est en contre-jour, ce qui garde le héros lisible au milieu.
+1. **Plateforme physique en bout de salle**
+   - Un corps statique (`staticGroup`) posé à l'extrémité droite, calé sur la ligne de sol, largeur ~220 px, épaisseur fine.
+   - Collision uniquement par le dessus (le héros peut sauter dessus, pas se cogner en dessous) via `checkCollision.down/left/right = false`.
+   - Un visuel discret en pierre (rectangle sombre + liseré clair) aligné sur la plateforme du décor, pour que le joueur comprenne qu'elle est praticable.
 
-2. **Fond plus calme**
-   - Le calque lointain garde une parallaxe très faible (0.08 au lieu de 0.15) pour que le décor ne semble plus "bouger" tout seul.
-   - Le cadre rocheux `near` aux deux extrémités reste, mais passe aussi en avant-plan (depth 12) pour rester cohérent avec les nouvelles colonnes.
+2. **Comportement d'ascenseur**
+   - Le corps devient un `staticBody` déplacé manuellement (ou un body cinématique) : tant que le héros est posé dessus, la plateforme monte à vitesse constante (~90 px/s).
+   - Le héros est porté : sa position Y suit le déplacement de la plateforme tant qu'il reste au contact.
+   - Si le héros saute ou descend, l'ascenseur s'arrête puis redescend lentement à sa position de départ.
 
-3. **Lisibilité du HUD/héros**
-   - Aucune colonne placée à moins de ~300 px du point de spawn du joueur (x=180), pour ne pas masquer le personnage au démarrage.
+3. **Sortie vers la map suivante (préparation)**
+   - Quand l'ascenseur atteint le haut de la salle, on déclenche un événement `room-exit` avec un fondu au noir de la caméra.
+   - Pour l'instant ce fondu relance la scène sur le décor suivant (`this.scene.restart({ backdrop: ... })`) — le point d'accroche est prêt pour brancher une vraie nouvelle salle plus tard.
+
+4. **Repère visuel**
+   - Léger halo/pulsation lumineuse sur la plateforme quand elle est inactive, pour signaler qu'il y a quelque chose à faire là.
 
 ## Détails techniques
 
-Le HUD est en React au-dessus du canvas : monter les colonnes à depth 12 n'a aucun impact dessus. Les colonnes sont purement décoratives (aucun corps de collision ajouté), donc la logique de jeu, les ennemis et le sol restent inchangés. Une capture Playwright validera l'occlusion du héros et l'espacement.
+Aucune modification des ennemis, du combat ni du HUD. La plateforme est ajoutée au `staticGroup` existant `platforms` (déjà collisionné avec le joueur et les ennemis) — les ennemis pourront donc aussi s'y poser, ce qui est cohérent. Le décor `Parallax` n'est pas touché : la plateforme est positionnée pour coïncider visuellement avec le socle de pierre déjà peint à droite. Vérification par capture Playwright : montée sur la plateforme, déclenchement de la montée, fondu en haut.
+
+Question ouverte que je peux trancher par défaut : l'ascenseur monte **automatiquement** dès qu'on est dessus (choix retenu), plutôt que sur appui d'une touche « interagir ».
