@@ -14,6 +14,8 @@ const BASE_W = 150;
 const SHAFT_W = 112;
 /** le fut monte bien au dessus du viewport */
 const TOP_Y = -260;
+/** la base mord un peu dans le sol : plus de vide sous la colonne */
+const BASE_SINK = 34;
 
 export class GateColumn {
   private readonly scene: Phaser.Scene;
