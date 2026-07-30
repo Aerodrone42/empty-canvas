@@ -1,40 +1,50 @@
 ## Objectif
 
-Le Vigile n'a aujourd'hui qu'une seule action offensive (`vigile-attack-anim`, portée fixe, cooldown unique) et aucune option défensive. On ajoute un moveset complet, lisible à la manette Xbox comme PlayStation, et on l'intègre à l'arbre de mutations existant.
+Trois manques constatés en jeu : aucun sang, une mort d'ennemi fade (simple fondu + rotation), et aucun moyen clair de récupérer de la vie.
 
-## Le moveset
+## 1. Système de sang (nouveau `src/game/effects/Blood.ts`)
 
-| Action | Effet | Clavier (défaut) | Manette (défaut) |
-|---|---|---|---|
-| Frappe (combo 3 coups) | Enchaînement dans une fenêtre de 500 ms : coup 1 et 2 normaux, coup 3 plus lent, plus fort, recul | E | X / Carré |
-| Attaque lourde (chargée) | Maintien ≥ 450 ms : dégâts x2,2, portée +40, brise la garde des Pénitents | E maintenu | X / Carré maintenu |
-| Attaque aérienne piquée | En l'air + bas : plongeon vers le sol, dégâts de zone à l'impact | Attaque en l'air | idem |
-| Esquive / roulade | Déplacement rapide 220 px, invulnérabilité 220 ms, cooldown 700 ms | Maj gauche | B / Cercle |
-| Parade (contre) | Fenêtre 180 ms : annule le coup, étourdit l'ennemi 1,2 s, rend de la Chair | A | LB |
-| Rugissement de Chair (spécial) | Consomme 40 Chair : onde sanglante autour du Vigile, gros dégâts + repoussée | R | RB |
+Un module unique de VFX réutilisé partout, à base de particules Phaser + rectangles :
 
-Toutes ces actions passent par le système d'attribution déjà en place : chaque nouvelle action apparaît dans l'écran **Options** et est réattribuable au clavier et à la manette.
+- **Gerbe d'impact** : à chaque coup encaissé (joueur ou ennemi), 8–16 gouttes projetées dans la direction du coup, gravité, taille aléatoire, teintes crimson (#8e1220 → #d93b3b).
+- **Brume** : petit nuage rouge translucide au point d'impact, fondu en 200 ms.
+- **Éclaboussures au sol** : les gouttes qui touchent le sol laissent une tache persistante (max ~60 taches, les plus vieilles s'effacent) — la salle se salit au fil du combat.
+- **Traînée sur parade** : étincelles dorées au lieu de sang (déjà distinct visuellement).
+- **Vignette rouge** quand la vie du joueur passe sous 30 % (overlay CSS dans le HUD, pas de coût Phaser).
 
-## Manettes Xbox / PlayStation
+Branchements : `Enemy.takeHit` (gerbe orientée), `Player.receiveDamage` (gerbe + flash écran), coup lourd / plongeon / rugissement (gerbe amplifiée).
 
-Le mapping standard du navigateur est identique sur les deux familles de manettes ; seuls les libellés changent. On détecte la marque via l'`id` de la manette et on affiche « X / Carré », « B / Cercle », « LB / L1 », etc. en conséquence, plus les gâchettes analogiques (LT/RT en axes) pour la charge. Vibration (rumble) sur les coups reçus et sur l'impact du coup lourd, quand la manette la supporte.
+## 2. Mort d'ennemi retravaillée
 
-## Équilibrage et intégration
+Remplacement du tween actuel dans `Enemy.die()` par une séquence :
 
-- Les ennemis gagnent une phase d'anticipation (télégraphie 350 ms, teinte) pour que l'esquive et la parade aient un sens.
-- Le Pénitent-Greffé reçoit une garde : seuls le coup lourd, la parade et le spécial la brisent.
-- Trois nouvelles mutations relient le moveset à la Voie de la Chair : `ten-roulade` (esquive plus longue), `os-parade` (fenêtre de parade élargie), `san-rugissement` (coût du spécial réduit, onde plus large).
-- Le HUD affiche le cooldown de l'esquive et la jauge de spécial.
+1. Freeze-frame de 60 ms + zoom caméra léger sur les kills au coup lourd/spécial.
+2. Explosion de sang (30–40 particules) + 3–5 morceaux de chair qui rebondissent au sol.
+3. Le corps se teinte en rouge sombre, s'affaisse (rotation vers le sol + squash), puis se fond dans une flaque de sang persistante.
+4. Orbes de chair : la récompense en chair devient 2–4 orbes lumineux qui volent vers le joueur avant d'être crédités (feedback lisible du gain).
+5. Son/rumble : shake caméra court + vibration manette légère.
+
+Les morts par rugissement sont plus violentes (plus de particules, plus de gibs).
+
+## 3. Récupération de vie
+
+Actuellement seule la greffe « vol de vie » soigne. Ajout de trois sources :
+
+- **Absorption de chair** (mécanique principale) : maintenir la touche parade à vide (hors combat, aucun ennemi à moins de 300 px) pendant 900 ms consomme 25 chair et rend 20 PV. Interruptible si on est touché — un vrai choix ressource/risque, dans l'esprit Blasphemous.
+- **Orbes de sang** : chaque ennemi tué a une chance (30 %, 100 % pour le Pénitent) de lâcher une fiole de sang ramassable qui rend 12 PV.
+- **Autel de la Chair** : soin complet quand on ouvre l'autel (touche autel), une seule fois par salle, et l'autel se marque comme consommé.
+
+Le HUD affiche : la barre de vitalité avec pulsation à basse vie, le coût du soin sous la jauge de chair, et un anneau de progression pendant l'absorption.
 
 ## Détails techniques
 
-- Nouvelle machine à états dans `src/game/entities/Player.ts` (`idle | run | attack1..3 | heavy | dive | dodge | parry | special | hurt`) au lieu du booléen `attacking` actuel, avec fenêtres actives (frames de hit) par état.
-- Nouvelles actions dans `src/store/bindingsStore.ts` (`dodge`, `parry`, `special`, `heavy` en tant que maintien de `attack`), migration douce des attributions déjà stockées en localStorage.
-- `src/game/input.ts` : ajout du temps de maintien par action (pour la charge) et lecture des gâchettes analogiques.
-- Résolution des coups déplacée de `GameScene.resolvePlayerStrike` vers un descripteur par attaque (portée, dégâts, recul, brise-garde, forme de la zone).
-- `src/store/gameStore.ts` : réserve de spécial, dépense de Chair, compteur de parades réussies.
-- Sprites : on réutilise les feuilles existantes avec des variations (inclinaison, étirement, traînée, flash) pour l'esquive, la charge et le piqué ; on ne régénère de nouvelles feuilles que si le rendu n'est pas assez lisible.
+- Nouveaux fichiers : `src/game/effects/Blood.ts` (émetteurs de particules et taches), `src/game/entities/Pickup.ts` (fioles de sang et orbes de chair).
+- `src/store/gameStore.ts` : action `consumeFleshForHealth()`, compteur d'autels utilisés, drapeau `absorbing` pour l'UI.
+- `src/game/entities/Enemy.ts` : `die()` réécrit, `takeHit()` émet les VFX.
+- `src/game/entities/Player.ts` : état `absorb` dans la machine à états, VFX sur dégâts reçus.
+- `src/game/scenes/GameScene.ts` : instancie le gestionnaire de sang, groupe de pickups + overlap joueur.
+- `src/components/game/Hud.tsx` : vignette basse vie, indicateur d'absorption.
+- Textures de particules générées à la volée (`scene.textures.generate`) — aucun asset à télécharger.
+- Plafond de particules pour préserver le framerate.
 
-## Vérification
-
-Test Playwright sur la scène de jeu : déclenchement de chaque action au clavier, contrôle des dégâts appliqués, de l'invulnérabilité d'esquive et de la dépense de Chair, sans erreur console.
+Vérification finale : partie jouée via Playwright, captures d'un impact, d'une mort et d'une absorption, console sans erreur.

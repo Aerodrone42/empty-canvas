@@ -11,7 +11,7 @@ import {
   type Strike,
 } from "@/game/combat";
 import { ActionInput } from "@/game/input";
-import { useGameStore } from "@/store/gameStore";
+import { ABSORB_COST, ABSORB_DURATION, useGameStore } from "@/store/gameStore";
 
 const SPEED = 190;
 const JUMP = 520;
@@ -43,6 +43,7 @@ export type PlayerState =
   | "dive"
   | "dodge"
   | "parry"
+  | "absorb"
   | "special";
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
@@ -62,6 +63,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private facing = 1;
   private airJumpsUsed = 0;
   private diveStrikeDone = false;
+  /** aucun ennemi proche : l'absorption de chair est possible */
+  private canAbsorb = false;
+
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, "vigile-idle");
@@ -103,11 +107,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return this.moveState === "parry" && time < this.parryUntil;
   }
 
+  /** La scene indique s'il n'y a aucune creature a proximite. */
+  setSafeToAbsorb(safe: boolean) {
+    this.canAbsorb = safe;
+  }
+
   receiveDamage(amount: number, time: number) {
     if (time < this.invulnUntil) return;
     this.invulnUntil = time + INVULN_MS;
     useGameStore.getState().damage(amount);
+    this.cancelAbsorb();
     this.rumble(0.6, 180);
+    this.scene.events.emit("fx-blood", this.x, this.y - 70, -this.facing, 1.6);
+    this.scene.cameras.main.flash(110, 90, 0, 8);
+
 
     this.setTint(0xff6b6b);
     this.scene.tweens.add({
@@ -154,6 +167,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.moveState = state;
     this.stateUntil = time + duration;
   }
+
+  /** Interrompt l'absorption de chair en cours. */
+  private cancelAbsorb() {
+    if (this.moveState !== "absorb") return;
+    this.moveState = "idle";
+    this.clearTint();
+    useGameStore.getState().setAbsorb(false, 0);
+  }
+
 
   tick(time: number) {
     this.alignBody();
@@ -215,6 +237,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
+    // ---------- absorption de chair (soin) ----------
+    if (this.moveState === "absorb") {
+      const holding = this.actions.isDown("parry");
+      if (!holding || !onGround || left || right) {
+        this.cancelAbsorb();
+      } else if (time >= this.stateUntil) {
+        useGameStore.getState().consumeFleshForHealth();
+        this.moveState = "idle";
+        this.clearTint();
+        this.scene.events.emit("fx-heal", this.x, this.y - 70);
+        this.rumble(0.35, 200);
+      } else {
+        body.setVelocityX(0);
+        const progress = 1 - (this.stateUntil - time) / ABSORB_DURATION;
+        useGameStore.getState().setAbsorb(true, Phaser.Math.Clamp(progress, 0, 1));
+        this.play("vigile-idle-anim", true);
+        return;
+      }
+    }
+
+
     if (this.moveState === "attack" || this.moveState === "heavy" || this.moveState === "special") {
       if (time >= this.stateUntil) {
         this.moveState = "idle";
@@ -243,8 +286,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // ---------- parade ----------
+    // ---------- parade / absorption de chair ----------
     if (this.actions.justDown("parry") && onGround) {
+      const canHeal =
+        this.canAbsorb && store.flesh >= ABSORB_COST && store.health < store.maxHealth;
+
+      if (canHeal && !left && !right) {
+        this.beginState("absorb", time, ABSORB_DURATION);
+        body.setVelocityX(0);
+        this.setTint(0xff6b7d);
+        useGameStore.getState().setAbsorb(true, 0);
+        this.play("vigile-idle-anim", true);
+        return;
+      }
+
       this.parryUntil = time + PARRY.window + effects.parryWindowBonus;
       this.beginState("parry", time, PARRY.window + effects.parryWindowBonus + PARRY.recovery);
       body.setVelocityX(0);
@@ -252,6 +307,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.play("vigile-idle-anim", true);
       return;
     }
+
 
     // ---------- rugissement de chair ----------
     if (this.actions.justDown("special")) {

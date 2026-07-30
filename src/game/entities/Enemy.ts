@@ -100,6 +100,21 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     if (options.breakGuard) this.guardBrokenUntil = time + 1500;
 
+    const dir = options.fromX !== undefined ? Math.sign(this.x - options.fromX) || 1 : 1;
+
+    if (guarding) {
+      this.scene.events.emit("fx-sparks", this.x + dir * 20, this.y - 60);
+    } else {
+      // gerbe proportionnelle aux degats encaisses
+      this.scene.events.emit(
+        "fx-blood",
+        this.x + dir * 14,
+        this.y - this.stats.bodyHeight * 0.55,
+        dir,
+        Phaser.Math.Clamp(0.7 + dealt / 22, 0.7, 2.4),
+      );
+    }
+
     this.setTint(guarding ? 0x9aa7b5 : 0xd94b4b);
     this.scene.time.delayedCall(90, () => {
       if (this.active && !this.dying) this.clearTint();
@@ -107,14 +122,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     const knockback = (options.knockback ?? 0) * (guarding ? 0.25 : 1);
     if (knockback > 0 && this.body) {
-      const dir = options.fromX !== undefined ? Math.sign(this.x - options.fromX) || 1 : 1;
       const body = this.body as Phaser.Physics.Arcade.Body;
       body.setVelocityX(dir * knockback);
       body.setVelocityY(-Math.min(220, knockback * 0.5));
     }
 
     if (this.health <= 0) {
-      this.die();
+      this.die(Phaser.Math.Clamp(dealt / 20, 0.8, 2.2));
     }
   }
 
@@ -130,22 +144,43 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
 
-  protected die() {
+  protected die(intensity = 1) {
     this.dying = true;
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setVelocity(0, 0);
     body.enable = false;
 
     useGameStore.getState().registerKill();
-    useGameStore.getState().gainFlesh(this.stats.fleshReward);
 
+    const cx = this.x;
+    const cy = this.y - this.stats.bodyHeight * 0.5;
+
+    // giclee massive + morceaux de chair
+    this.scene.events.emit("fx-gore", cx, cy, intensity);
+    // butin : orbes de chair et, parfois, une fiole de sang
+    this.scene.events.emit("enemy-died", cx, cy, this.stats.fleshReward, this.stats.guarded);
+
+    this.scene.cameras.main.shake(140, 0.006 * intensity);
+
+    // le corps s'affaisse, se vide de son sang, puis disparait
+    this.setTint(0x6a0d18);
     this.scene.tweens.add({
       targets: this,
-      alpha: 0,
-      angle: this.direction * 25,
-      y: this.y + 8,
-      duration: 420,
-      onComplete: () => this.destroy(),
+      scaleY: this.scaleY * 0.82,
+      scaleX: this.scaleX * 1.08,
+      angle: this.direction * 82,
+      y: this.y + 10,
+      ease: "Quad.easeIn",
+      duration: 300,
+      onComplete: () => {
+        this.scene?.tweens.add({
+          targets: this,
+          alpha: 0,
+          duration: 520,
+          delay: 320,
+          onComplete: () => this.destroy(),
+        });
+      },
     });
   }
 
