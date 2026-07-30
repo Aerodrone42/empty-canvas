@@ -54,11 +54,11 @@ export class Parallax {
     // seul le fond profond defile lentement (ciel, fleches lointaines)
     this.addTiled(this.def.far, viewW, viewH * 1.12, floorScreenY, -30, SPEEDS[0]);
 
-    // --- calque median : l'architecture, ancree dans le monde ---------
-    // Plus de repetition en continu : quelques massifs poses a des
-    // endroits precis de la salle, solidaires du sol (scrollFactor 1),
-    // donc ils ne "glissent" plus quand le joueur avance.
-    this.addAnchoredMid(this.def.mid, viewH * 0.78, floorY, roomWidth);
+    // --- colonnes d'avant-plan ---------------------------------------
+    // Quatre massifs seulement, larges, devant le joueur : c'est
+    // l'occlusion + la vitesse legerement superieure qui font la
+    // perspective.
+    this.addForegroundPillars(this.def.mid, viewH * 1.15, floorY, roomWidth);
 
     // --- cadre rocheux : ancre aux deux extremites de la salle -------
     // (objets du monde : on les quitte vraiment quand on avance)
@@ -69,23 +69,24 @@ export class Parallax {
       .setOrigin(0, 1)
       .setDisplaySize(frameW, frameH)
       .setScrollFactor(1)
-      .setDepth(-8);
+      .setDepth(12);
     scene.add
       .image(roomWidth, floorY, this.def.near)
       .setOrigin(0, 1)
       .setDisplaySize(-frameW, frameH)
       .setScrollFactor(1)
-      .setDepth(-8);
+      .setDepth(12);
 
 
     this.addAmbience(viewW, viewH, floorScreenY);
   }
 
   /**
-   * Pose l'architecture median comme de vrais objets du monde, espaces,
-   * plutot qu'une colonnade repetee a l'infini.
+   * Quatre colonnes posees devant le joueur. Elles debordent en haut et
+   * en bas du cadre, defilent un peu plus vite que le monde et sont
+   * assombries : le heros passe derriere elles.
    */
-  private addAnchoredMid(
+  private addForegroundPillars(
     textureKey: string,
     drawH: number,
     worldFloorY: number,
@@ -96,18 +97,27 @@ export class Parallax {
     const srcH = source.height || 1;
     const drawW = (srcW / srcH) * drawH;
 
-    // un massif, puis un vide au moins aussi large : la salle respire
-    const step = drawW * 2.1;
+    const count = 4;
+    const margin = roomWidth * 0.12;
+    const span = roomWidth - margin * 2;
+    const step = span / (count - 1);
 
-    for (let i = 0, x = -drawW * 0.15; x < roomWidth; i++, x += step) {
-      this.scene.add
-        .image(x, worldFloorY, textureKey)
-        .setOrigin(0, 1)
+    for (let i = 0; i < count; i++) {
+      const jitter = (i % 2 === 0 ? 1 : -1) * step * 0.06;
+      const x = margin + step * i + jitter;
+      // ne jamais masquer le heros au spawn (x = 180)
+      if (Math.abs(x - 180) < 300) continue;
+
+      const pillar = this.scene.add
+        .image(x, worldFloorY + drawH * 0.06, textureKey)
+        .setOrigin(0.5, 1)
         .setDisplaySize(i % 2 === 0 ? drawW : -drawW, drawH)
-        .setScrollFactor(1)
-        .setDepth(-20);
+        .setScrollFactor(1.12, 1)
+        .setDepth(12);
+      pillar.setTint(0x5a4a46);
     }
   }
+
 
   /** Cree un calque tuile horizontalement, bas cale sur la ligne de sol. */
   private addTiled(
