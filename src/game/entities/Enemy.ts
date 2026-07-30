@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 
+import { frameMetrics } from "@/game/spriteMetrics";
 import { useGameStore } from "@/store/gameStore";
 
 export type EnemyStats = {
@@ -51,16 +52,26 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     );
   }
 
-  /** Les frames d'une meme creature n'ont pas la meme largeur : on recentre. */
+  /**
+   * Les frames d'une meme creature n'ont ni la meme largeur ni la meme ligne
+   * de pieds : on mesure la silhouette et on la cale sur le sol.
+   */
   protected alignBody() {
     const body = this.body as Phaser.Physics.Arcade.Body | null;
     if (!body) return;
-    body.setSize(this.stats.bodyWidth, this.stats.bodyHeight);
+
+    const index = Math.max((this.anims.currentFrame?.index ?? 1) - 1, 0);
+    const metrics = frameMetrics(this.scene, this.texture.key, index);
+    const footY = metrics ? metrics.footY : this.height;
+
+    this.setOrigin(0.5, footY / this.height);
+    body.setSize(this.stats.bodyWidth, this.stats.bodyHeight, false);
     body.setOffset(
       (this.width - this.stats.bodyWidth) / 2,
-      this.height - this.stats.bodyHeight,
+      footY - this.stats.bodyHeight,
     );
   }
+
 
   get isDead() {
     return this.dying;

@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 
+import { frameMetrics, referenceHeight } from "@/game/spriteMetrics";
 import { useGameStore } from "@/store/gameStore";
 
 const SPEED = 190;
@@ -9,30 +10,19 @@ const INVULN_MS = 750;
 
 /**
  * Les trois feuilles du Vigile ne dessinent pas la silhouette a la meme
- * echelle (idle 73 px de haut, marche 35 px, attaque 30 px) ni a la meme
- * hauteur dans la cellule. On normalise donc l'echelle et la position des
- * pieds par animation, sinon le personnage retrecit et flotte.
+ * echelle ni a la meme hauteur dans la cellule. On mesure donc les frames au
+ * chargement (voir spriteMetrics) et on garde une echelle unique, calee sur
+ * l'animation idle : seule la ligne de pieds varie par frame, ce qui evite que
+ * le personnage retrecisse ou flotte en marchant.
  */
-type Metrics = {
-  /** hauteur de la silhouette en pixels de texture */
-  charH: number;
-  /** largeur de la silhouette en pixels de texture */
-  charW: number;
-  /** y des pieds dans la cellule, par frame */
-  footY: number[];
-};
 
 /** hauteur affichee constante, en pixels monde */
 const TARGET_H = 130;
 
-/** largeur de hitbox constante, en pixels monde */
+/** hitbox constante, en pixels monde */
 const BODY_W = 58;
+const BODY_H = 120;
 
-const METRICS: Record<string, Metrics> = {
-  "vigile-idle": { charH: 73, charW: 33, footY: [102, 102, 102, 102] },
-  "vigile-walk": { charH: 35, charW: 29, footY: [82, 128, 82, 83, 82, 82] },
-  "vigile-attack": { charH: 30, charW: 40, footY: [83, 83, 84, 83, 83] },
-};
 
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
@@ -50,6 +40,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private airJumpsUsed = 0;
   private padJumpPrev = false;
   private padAttackPrev = false;
+  private refCharH = 0;
 
 
 
@@ -79,27 +70,31 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
-   * Normalise l'echelle et la position des pieds selon la frame courante,
-   * et garde une hitbox de taille constante dans le monde.
+   * Cale les pieds de la frame courante sur la base du sprite, avec une
+   * echelle unique (celle de l'idle) et une hitbox constante dans le monde.
    */
   private alignBody() {
     const key = this.texture.key;
-    const metrics = METRICS[key] ?? METRICS["vigile-idle"];
-    const index = Math.min(
-      Math.max((this.anims.currentFrame?.index ?? 1) - 1, 0),
-      metrics.footY.length - 1,
-    );
-    const footY = metrics.footY[index];
+    const index = Math.max((this.anims.currentFrame?.index ?? 1) - 1, 0);
+    const metrics = frameMetrics(this.scene, key, index);
+    if (!metrics) return;
 
-    const scale = TARGET_H / metrics.charH;
+    if (this.refCharH <= 0) {
+      this.refCharH = referenceHeight(this.scene, "vigile-idle");
+    }
+
+    const scale = TARGET_H / this.refCharH;
     this.setScale(scale);
-    this.setOrigin(0.5, footY / this.height);
+    this.setOrigin(0.5, metrics.footY / this.height);
 
-    const body = this.body as Phaser.Physics.Arcade.Body;
+    const body = this.body as Phaser.Physics.Arcade.Body | null;
+    if (!body) return;
     const bodyW = BODY_W / scale;
-    body.setSize(bodyW, metrics.charH, false);
-    body.setOffset((this.width - bodyW) / 2, footY - metrics.charH);
+    const bodyH = BODY_H / scale;
+    body.setSize(bodyW, bodyH, false);
+    body.setOffset((this.width - bodyW) / 2, metrics.footY - bodyH);
   }
+
 
 
 
