@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 
-import { frameMetrics, referenceHeight } from "@/game/spriteMetrics";
+import { HERO_BASELINE_Y, HERO_CHAR_H, HERO_FRAME_H } from "@/game/assets";
 import { useGameStore } from "@/store/gameStore";
 
 const SPEED = 190;
@@ -9,19 +9,23 @@ const ATTACK_COOLDOWN = 420;
 const INVULN_MS = 750;
 
 /**
- * Les trois feuilles du Vigile ne dessinent pas la silhouette a la meme
- * echelle ni a la meme hauteur dans la cellule. On mesure donc les frames au
- * chargement (voir spriteMetrics) et on garde une echelle unique, calee sur
- * l'animation idle : seule la ligne de pieds varie par frame, ce qui evite que
- * le personnage retrecisse ou flotte en marchant.
+ * Les feuilles du Vigile ont ete regenerees sur un gabarit unique : meme
+ * cellule 192x144, silhouette de 110 px et ligne de pieds a y=138 sur toutes
+ * les frames. L'echelle et l'origine sont donc constantes : plus besoin de
+ * recalibrer frame par frame.
  */
 
 /** hauteur affichee constante, en pixels monde */
 const TARGET_H = 130;
 
+const SCALE = TARGET_H / HERO_CHAR_H;
+const ORIGIN_Y = HERO_BASELINE_Y / HERO_FRAME_H;
+
 /** hitbox constante, en pixels monde */
 const BODY_W = 58;
 const BODY_H = 120;
+
+
 
 
 
@@ -40,7 +44,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private airJumpsUsed = 0;
   private padJumpPrev = false;
   private padAttackPrev = false;
-  private refCharH = 0;
+  
 
 
 
@@ -70,30 +74,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
-   * Cale les pieds de la frame courante sur la base du sprite, avec une
-   * echelle unique (celle de l'idle) et une hitbox constante dans le monde.
+   * Echelle et origine fixes (gabarit normalise), hitbox constante.
    */
   private alignBody() {
-    const key = this.texture.key;
-    const index = Math.max((this.anims.currentFrame?.index ?? 1) - 1, 0);
-    const metrics = frameMetrics(this.scene, key, index);
-    if (!metrics) return;
-
-    if (this.refCharH <= 0) {
-      this.refCharH = referenceHeight(this.scene, "vigile-idle");
-    }
-
-    const scale = TARGET_H / this.refCharH;
-    this.setScale(scale);
-    this.setOrigin(0.5, metrics.footY / this.height);
+    this.setScale(SCALE);
+    this.setOrigin(0.5, ORIGIN_Y);
 
     const body = this.body as Phaser.Physics.Arcade.Body | null;
     if (!body) return;
-    const bodyW = BODY_W / scale;
-    const bodyH = BODY_H / scale;
+    const bodyW = BODY_W / SCALE;
+    const bodyH = BODY_H / SCALE;
     body.setSize(bodyW, bodyH, false);
-    body.setOffset((this.width - bodyW) / 2, metrics.footY - bodyH);
+    body.setOffset((this.width - bodyW) / 2, HERO_BASELINE_Y - bodyH);
   }
+
 
 
 

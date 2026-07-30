@@ -12,8 +12,9 @@ export class BootScene extends Phaser.Scene {
       this.load.spritesheet(sheet.key, sheet.path, {
         frameWidth: sheet.frameWidth,
         frameHeight: sheet.frameHeight,
-        spacing: FRAME_SPACING,
+        spacing: sheet.spacing ?? FRAME_SPACING,
       });
+
     }
   }
 
