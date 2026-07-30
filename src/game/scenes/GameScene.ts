@@ -131,19 +131,11 @@ export class GameScene extends Phaser.Scene {
     this.blood.sparks(x, y);
   }
 
-  /** Halo de soin lors d'une absorption reussie. */
+  /** Soin : le sang remonte le long du corps, sans anneau. */
   private onHeal(x: number, y: number) {
-    const ring = this.add.circle(x, y, 18, 0xff6b7d, 0.25);
-    ring.setStrokeStyle(3, 0xffb3bd, 0.9);
-    ring.setDepth(8);
-    this.tweens.add({
-      targets: ring,
-      scale: 3,
-      alpha: 0,
-      duration: 420,
-      onComplete: () => ring.destroy(),
-    });
+    this.blood.siphon(x, this.player ? this.player.y : y, 120);
   }
+
 
   /** Butin : orbes de chair, et parfois une fiole de sang. */
   private onEnemyDied(x: number, y: number, fleshReward: number, elite?: boolean) {
@@ -308,10 +300,10 @@ export class GameScene extends Phaser.Scene {
     if (healed <= 0) return;
     store.heal(healed);
 
-    if (Math.random() < 0.05) {
-      this.onHeal(this.player.x, this.player.y - 40);
-    }
+    // le sang de la flaque remonte le long du corps pendant tout le drainage
+    this.blood.siphon(this.player.x, this.player.y, 120);
   }
+
 
   private resolvePlayerStrike(strike: Strike, damageScale = 1) {
     const effects = useGameStore.getState().effects;
