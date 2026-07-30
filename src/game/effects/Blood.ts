@@ -9,12 +9,17 @@ import Phaser from "phaser";
 const DROP_KEY = "fx-blood-drop";
 const MIST_KEY = "fx-blood-mist";
 const SPARK_KEY = "fx-parry-spark";
+const BLOT_KEY = "fx-blood-blot";
 
-const MAX_STAINS = 60;
+const MAX_STAINS = 40;
 /** duree de vie d'une flaque au sol (ms) */
 export const POOL_LIFE = 10000;
 /** debut du fondu de sortie */
 const POOL_FADE = 2000;
+/** hauteur de la bande de sol rendue dans la texture des flaques */
+const POOL_BAND = 90;
+/** rafraichissement de la texture des flaques (ms) */
+const POOL_REDRAW = 90;
 
 function ensureTextures(scene: Phaser.Scene) {
   if (!scene.textures.exists(DROP_KEY)) {
@@ -38,14 +43,31 @@ function ensureTextures(scene: Phaser.Scene) {
     g.generateTexture(SPARK_KEY, 6, 2);
     g.destroy();
   }
+  if (!scene.textures.exists(BLOT_KEY)) {
+    // tache elliptique unique, reutilisee comme tampon pour toutes les flaques
+    const g = scene.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xffffff, 1);
+    g.fillEllipse(32, 16, 62, 30);
+    g.generateTexture(BLOT_KEY, 64, 32);
+    g.destroy();
+  }
 }
 
 // teintes sourdes et desaturees : sang veineux, pas rouge vif
 const CRIMSON = [0x4a0c12, 0x5e1218, 0x741a1c, 0x2e070c];
 
+/** un tampon d'une flaque : decalage local, taille, teinte */
+type Blot = {
+  dx: number;
+  dy: number;
+  scaleX: number;
+  scaleY: number;
+  alpha: number;
+  tint: number;
+};
+
 type Pool = {
-  /** amas d'ellipses formant une silhouette organique */
-  parts: Phaser.GameObjects.Ellipse[];
+  blots: Blot[];
   x: number;
   bornAt: number;
   /** reserve de soin restante dans la flaque */
@@ -61,12 +83,47 @@ export class BloodFX {
   private floorY: number;
   /** anti-spam de l'effet de siphon */
   private lastSiphon = 0;
+  /** toutes les flaques sont dessinees dans une seule texture */
+  private canvas?: Phaser.GameObjects.RenderTexture;
+  /** tampon reutilise pour dessiner chaque tache */
+  private stamp?: Phaser.GameObjects.Image;
+  private lastRedraw = 0;
 
   constructor(scene: Phaser.Scene, floorY: number) {
     this.scene = scene;
     this.floorY = floorY;
     ensureTextures(scene);
+
+    const bounds = scene.physics.world.bounds;
+    this.canvas = scene.add
+      .renderTexture(bounds.x, floorY - POOL_BAND * 0.5, Math.max(1, bounds.width), POOL_BAND)
+      .setOrigin(0, 0)
+      .setDepth(1);
+    this.stamp = new Phaser.GameObjects.Image(scene, 0, 0, BLOT_KEY).setOrigin(0.5, 0.5);
   }
+
+  /** Redessine l'ensemble des flaques : un seul objet rendu, cout constant. */
+  private redraw() {
+    const rt = this.canvas;
+    const stamp = this.stamp;
+    if (!rt || !stamp) return;
+    rt.clear();
+    const now = this.scene.time.now;
+    for (const pool of this.stains) {
+      const age = now - pool.bornAt;
+      const fade = Math.max(0, Math.min(1, (POOL_LIFE - age) / POOL_FADE));
+      const left = Math.max(0.15, pool.charge / pool.maxCharge);
+      for (const b of pool.blots) {
+        stamp.setScale(b.scaleX * left, b.scaleY * left);
+        stamp.setTint(b.tint);
+        stamp.setAlpha(b.alpha * fade * left);
+        rt.draw(stamp, pool.x - rt.x + b.dx * left, this.floorY - rt.y + b.dy);
+      }
+    }
+  }
+
+
+
 
 
   /** Gerbe orientee : dirX = -1 vers la gauche, 1 vers la droite. */
@@ -116,64 +173,57 @@ export class BloodFX {
     if (!this.scene.scene.isActive()) return;
     const clamped = Phaser.Math.Clamp(intensity, 0.6, 2);
     const w = Phaser.Math.Between(20, 46) * clamped;
-    const parts: Phaser.GameObjects.Ellipse[] = [];
+    const blots: Blot[] = [];
 
     // masse centrale, plus sombre et plus opaque
-    const core = this.scene.add.ellipse(
-      x,
-      this.floorY + Phaser.Math.Between(-1, 3),
-      w,
-      w * 0.3,
-      CRIMSON[3],
-      0.7,
-    );
-    core.setDepth(1);
-    parts.push(core);
+    blots.push({
+      dx: 0,
+      dy: Phaser.Math.Between(-1, 3),
+      scaleX: w / 62,
+      scaleY: (w * 0.3) / 30,
+      alpha: 0.7,
+      tint: CRIMSON[3],
+    });
 
     // eclaboussures satellites : silhouette irreguliere
     const blobs = Phaser.Math.Between(3, 5);
     for (let i = 0; i < blobs; i++) {
       const bw = w * Phaser.Math.FloatBetween(0.28, 0.7);
-      const blob = this.scene.add.ellipse(
-        x + Phaser.Math.Between(-Math.round(w * 0.55), Math.round(w * 0.55)),
-        this.floorY + Phaser.Math.Between(-3, 5),
-        bw,
-        bw * Phaser.Math.FloatBetween(0.22, 0.34),
-        Phaser.Utils.Array.GetRandom(CRIMSON),
-        Phaser.Math.FloatBetween(0.35, 0.55),
-      );
-      blob.setDepth(1);
-      parts.push(blob);
+      blots.push({
+        dx: Phaser.Math.Between(-Math.round(w * 0.55), Math.round(w * 0.55)),
+        dy: Phaser.Math.Between(-3, 5),
+        scaleX: bw / 62,
+        scaleY: (bw * Phaser.Math.FloatBetween(0.22, 0.34)) / 30,
+        alpha: Phaser.Math.FloatBetween(0.35, 0.55),
+        tint: Phaser.Utils.Array.GetRandom(CRIMSON),
+      });
     }
 
     const charge = 6 * Phaser.Math.Clamp(intensity, 0.5, 2);
     this.stains.push({
-      parts,
+      blots,
       x,
       bornAt: this.scene.time.now,
       charge,
       maxCharge: charge,
       width: w,
     });
-    while (this.stains.length > MAX_STAINS) {
-      const old = this.stains.shift();
-      old?.parts.forEach((p) => p.destroy());
-    }
+    while (this.stains.length > MAX_STAINS) this.stains.shift();
+    this.lastRedraw = 0;
   }
 
   /** Purge temporelle : a appeler chaque frame depuis la scene. */
   tick(time: number) {
-    this.stains = this.stains.filter((pool) => {
-      const age = time - pool.bornAt;
-      if (age >= POOL_LIFE || pool.charge <= 0) {
-        pool.parts.forEach((p) => p.destroy());
-        return false;
-      }
-      const fade = Math.max(0, Math.min(1, (POOL_LIFE - age) / POOL_FADE));
-      const left = Math.max(0.15, pool.charge / pool.maxCharge);
-      pool.parts.forEach((p, i) => p.setAlpha((i === 0 ? 0.7 : 0.48) * fade * left));
-      return true;
-    });
+    const before = this.stains.length;
+    this.stains = this.stains.filter(
+      (pool) => time - pool.bornAt < POOL_LIFE && pool.charge > 0,
+    );
+    if (this.stains.length !== before) this.lastRedraw = 0;
+
+    if (time - this.lastRedraw >= POOL_REDRAW) {
+      this.lastRedraw = time;
+      this.redraw();
+    }
   }
 
   /** Flaque active la plus proche sous une abscisse donnee, s'il y en a une. */
@@ -197,10 +247,9 @@ export class BloodFX {
   drainPool(pool: Pool, amount: number) {
     const taken = Math.min(pool.charge, amount);
     pool.charge -= taken;
-    const ratio = Math.max(0.15, pool.charge / pool.maxCharge);
-    pool.parts.forEach((p) => p.setScale(ratio));
     return taken;
   }
+
 
   /**
    * Siphon : le sang quitte le sol et remonte le long du corps du heros.
