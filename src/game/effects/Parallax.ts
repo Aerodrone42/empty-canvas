@@ -30,7 +30,7 @@ const FLOOR_SPLIT = 0.85;
 
 export class Parallax {
   private sky?: Phaser.GameObjects.TileSprite;
-  private ground?: Phaser.GameObjects.TileSprite;
+  
   private skyOffset = 0;
   readonly def: BackdropDef;
 
