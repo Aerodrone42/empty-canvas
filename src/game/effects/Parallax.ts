@@ -59,9 +59,9 @@ export class Parallax {
       // le bas de l'image repose sur le plancher ; le calque proche
       // descend un peu plus bas pour accentuer la profondeur
       const overshoot = i === 2 ? 18 : 0;
-      sprite.tilePositionY = (srcH - (viewH + overshoot) / scale) * -1 * 0 + 0;
       sprite.setPosition(0, this.floorY - viewH + overshoot);
       sprite.setSize(viewW, viewH);
+
 
       this.layers.push({ sprite, speed: SPEEDS[i] });
     });
