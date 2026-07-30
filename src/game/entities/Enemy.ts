@@ -233,6 +233,7 @@ export class PenitentGreffe extends Enemy {
       bodyHeight: 128,
       fleshReward: 14,
       animPrefix: "penitent",
+      guarded: true,
     });
   }
 }

@@ -97,26 +97,39 @@ export class GameScene extends Phaser.Scene {
     this.platforms.refresh();
   }
 
-  private resolvePlayerStrike() {
+  private resolvePlayerStrike(strike: Strike, damageScale = 1) {
     const effects = useGameStore.getState().effects;
-    const reach = 96 + effects.bonusReach;
-    const originX = this.player.x + this.player.facingDirection * (reach / 2);
-    const damage = 22 * effects.damageMult;
+    const reach = strike.reach + effects.bonusReach;
+    const damage = strike.damage * effects.damageMult * damageScale;
+    const radial = strike.shape === "radial";
+    const originX = radial ? this.player.x : this.player.x + this.player.facingDirection * (reach / 2);
 
     for (const enemy of this.enemies) {
       if (!enemy.active || enemy.isDead) continue;
       const withinX = Math.abs(enemy.x - originX) < reach;
-      const withinY = Math.abs(enemy.y - this.player.y) < 130;
+      const withinY = Math.abs(enemy.y - this.player.y) < strike.vertical;
       if (withinX && withinY) {
-        enemy.takeHit(damage);
+        enemy.takeHit(damage, {
+          knockback: strike.knockback,
+          breakGuard: strike.breakGuard,
+          fromX: this.player.x,
+        });
       }
     }
 
     this.cameras.main.shake(70, 0.004);
   }
 
-
-  private resolveEnemyStrike(amount: number) {
+  private resolveEnemyStrike(amount: number, source?: Enemy) {
+    if (this.player.tryParry(this.time.now)) {
+      const store = useGameStore.getState();
+      store.registerParry();
+      store.gainFlesh(PARRY.fleshReward);
+      source?.stun(PARRY.stun);
+      this.player.rumble(0.4, 120);
+      this.cameras.main.flash(90, 240, 220, 160);
+      return;
+    }
     this.player.receiveDamage(amount, this.time.now);
   }
 
