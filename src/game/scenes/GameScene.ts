@@ -397,7 +397,10 @@ export class GameScene extends Phaser.Scene {
       );
       this.player.setSafeToAbsorb(!threatened);
       this.regenerateFromBlood(!threatened, delta);
+      // bande-son adaptative : theme epique tant qu'une creature menace
+      this.music?.setCombat(threatened);
     });
+
 
     prof.measure("ennemis", () => {
       for (const enemy of this.enemies) {
