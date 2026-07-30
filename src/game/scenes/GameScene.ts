@@ -241,9 +241,9 @@ export class GameScene extends Phaser.Scene {
     } else if (this.backdropKey === "corridor") {
       // statues de pleureuses qui saignent des yeux quand le heros approche
       this.statues = [
-        new WeepingStatue(this, 640, FLOOR_Y),
-        new WeepingStatue(this, 1480, FLOOR_Y),
-        new WeepingStatue(this, 2320, FLOOR_Y),
+        new WeepingStatue(this, 520, FLOOR_Y),
+        new WeepingStatue(this, 1360, FLOOR_Y),
+        new WeepingStatue(this, 2180, FLOOR_Y),
       ];
     }
   }
