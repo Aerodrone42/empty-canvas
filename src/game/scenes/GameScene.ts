@@ -65,6 +65,7 @@ export class GameScene extends Phaser.Scene {
     this.enemies = [];
     this.pickups = [];
     this.exiting = false;
+    this.roomCleared = false;
     this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
     this.cameras.main.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
     this.cameras.main.setBackgroundColor(0x14090b);
@@ -76,6 +77,7 @@ export class GameScene extends Phaser.Scene {
 
     this.buildBackdrop();
     this.buildGeometry();
+    this.buildGate();
 
     this.player = new Player(this, 180, FLOOR_Y);
     this.physics.add.collider(this.player, this.platforms);
