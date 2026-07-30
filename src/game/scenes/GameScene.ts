@@ -247,39 +247,49 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number) {
-    this.parallax.update();
+    const t0 = performance.now();
+    const prof = this.profiler;
+
+    prof.measure("parallax", () => this.parallax.update());
 
     const phase = useGameStore.getState().phase;
     if (phase !== "playing") {
       this.physics.world.isPaused = true;
+      prof.frame(time, delta, performance.now() - t0);
       return;
     }
     this.physics.world.isPaused = false;
 
-    this.player.tick(time);
-    this.blood.tick(time);
-
-
+    prof.measure("player", () => this.player.tick(time));
+    prof.measure("sang", () => this.blood.tick(time));
 
     this.enemies = this.enemies.filter((e) => e.active);
 
     // aucune creature vivante a proximite : le soin par absorption est permis
-    const threatened = this.enemies.some(
-      (e) =>
-        !e.isDead &&
-        Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y) < SAFE_RADIUS,
-    );
-    this.player.setSafeToAbsorb(!threatened);
-    this.regenerateFromBlood(!threatened, delta);
+    prof.measure("absorption", () => {
+      const threatened = this.enemies.some(
+        (e) =>
+          !e.isDead &&
+          Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y) < SAFE_RADIUS,
+      );
+      this.player.setSafeToAbsorb(!threatened);
+      this.regenerateFromBlood(!threatened, delta);
+    });
 
-    for (const enemy of this.enemies) {
-      enemy.think(this.player.x, this.player.y, time);
-    }
+    prof.measure("ennemis", () => {
+      for (const enemy of this.enemies) {
+        enemy.think(this.player.x, this.player.y, time);
+      }
+    });
 
-    this.pickups = this.pickups.filter((p) => p.active);
-    for (const pickup of this.pickups) {
-      pickup.tick(this.player.x, this.player.y, time);
-    }
+    prof.measure("ramassages", () => {
+      this.pickups = this.pickups.filter((p) => p.active);
+      for (const pickup of this.pickups) {
+        pickup.tick(this.player.x, this.player.y, time);
+      }
+    });
+
+    prof.frame(time, delta, performance.now() - t0);
   }
 }
 
