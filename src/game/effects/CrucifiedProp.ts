@@ -8,7 +8,7 @@ import Phaser from "phaser";
  */
 
 /** hauteur affichee de la croix (environ 2x le heros) */
-const PROP_H = 340;
+const PROP_H = 225;
 
 export class CrucifiedProp {
   private readonly scene: Phaser.Scene;
@@ -22,7 +22,7 @@ export class CrucifiedProp {
     const scale = PROP_H / tex.height;
 
     // pose derriere la balustrade : legerement au dessus de la ligne de sol
-    const baseY = floorY - 42;
+    const baseY = floorY + 4;
 
     this.sprite = scene.add
       .sprite(x, baseY, "crucifie-idle")
@@ -52,7 +52,7 @@ export class CrucifiedProp {
 
     this.ensureDripTexture();
 
-    const bellyY = baseY - PROP_H * 0.42;
+    const bellyY = baseY - PROP_H * 0.45;
     this.drips = scene.add
       .particles(x, bellyY, "fx-drip", {
         lifespan: { min: 900, max: 1800 },
