@@ -1,3 +1,4 @@
+import { toggleFullscreen } from "@/game/fullscreen";
 import { keyLabel, useBindingsStore } from "@/store/bindingsStore";
 import { useGameStore } from "@/store/gameStore";
 

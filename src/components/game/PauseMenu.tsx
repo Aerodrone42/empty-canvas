@@ -1,3 +1,4 @@
+import { toggleFullscreen } from "@/game/fullscreen";
 import { useGameStore } from "@/store/gameStore";
 
 export function PauseMenu() {
@@ -13,6 +14,7 @@ export function PauseMenu() {
       <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
         <OverlayButton onClick={resume}>Reprendre</OverlayButton>
         <OverlayButton onClick={openFleshPath}>Voie de la Chair</OverlayButton>
+        <OverlayButton onClick={() => void toggleFullscreen()}>Plein écran</OverlayButton>
         <OverlayButton onClick={openOptions}>Options</OverlayButton>
         <OverlayButton onClick={toMenu}>Retour au menu</OverlayButton>
       </div>

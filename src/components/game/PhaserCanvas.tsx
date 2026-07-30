@@ -42,7 +42,7 @@ export function PhaserCanvas() {
       const { phase, pause, resume, openFleshPath, closeFleshPath } = useGameStore.getState();
       const bindings = useBindingsStore.getState().bindings;
 
-      if (event.code === "KeyF" || event.code === "F11") {
+      if (event.code === "F11") {
         event.preventDefault();
         void toggleFullscreen();
         return;
