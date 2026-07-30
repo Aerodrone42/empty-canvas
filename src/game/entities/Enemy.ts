@@ -302,7 +302,7 @@ export class SuppliantRampant extends Enemy {
 type EcorcheState = "hanging" | "falling" | "landing" | "active";
 
 export class EcorchePendu extends Enemy {
-  private state: EcorcheState = "hanging";
+  private phase: EcorcheState = "hanging";
   private readonly floorY: number;
   private readonly triggerRange: number;
 
@@ -333,13 +333,8 @@ export class EcorchePendu extends Enemy {
     this.play("ecorche-hang-anim", true);
   }
 
-  /** suspendu : la tete en haut, on cale la cellule sur le plafond */
-  private hangY(ceilingY: number) {
-    return ceilingY + this.displayHeight;
-  }
-
   private drop() {
-    this.state = "falling";
+    this.phase = "falling";
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(true);
     body.setVelocityY(120);
@@ -349,7 +344,7 @@ export class EcorchePendu extends Enemy {
   }
 
   private land() {
-    this.state = "landing";
+    this.phase = "landing";
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setVelocityX(0);
     this.setTexture("ecorche-land");
@@ -360,7 +355,7 @@ export class EcorchePendu extends Enemy {
       Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + "ecorche-land-anim",
       () => {
         if (!this.active || this.isDead) return;
-        this.state = "active";
+        this.phase = "active";
         this.setTexture("ecorche-idle");
         this.play("ecorche-idle-anim", true);
       },
@@ -396,19 +391,19 @@ export class EcorchePendu extends Enemy {
     if (this.isDead || !this.body) return;
     const body = this.body as Phaser.Physics.Arcade.Body;
 
-    if (this.state === "hanging") {
+    if (this.phase === "hanging") {
       body.setVelocity(0, 0);
       this.setFlipX(playerX < this.x);
       if (Math.abs(playerX - this.x) < this.triggerRange) this.drop();
       return;
     }
 
-    if (this.state === "falling") {
+    if (this.phase === "falling") {
       if (body.blocked.down || this.y >= this.floorY - 1) this.land();
       return;
     }
 
-    if (this.state === "landing") {
+    if (this.phase === "landing") {
       body.setVelocityX(0);
       return;
     }
