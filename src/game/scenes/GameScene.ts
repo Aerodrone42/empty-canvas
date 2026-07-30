@@ -58,6 +58,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.fadeIn(500, 0, 0, 0);
 
 
+    this.profiler = new Profiler(this);
     this.blood = new BloodFX(this, FLOOR_Y);
 
     this.buildBackdrop();
