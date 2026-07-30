@@ -5,10 +5,10 @@ import { ENEMY_BASELINE_Y, ENEMY_FRAME_H } from "@/game/assets";
 /** duree de la saisie : le heros reste bloque 3 secondes */
 const GRAB_MS = 3000;
 /** temps minimum / maximum avant qu'un piege se rearme ailleurs */
-const COOLDOWN_MIN_MS = 7000;
-const COOLDOWN_MAX_MS = 14000;
+const COOLDOWN_MIN_MS = 4000;
+const COOLDOWN_MAX_MS = 8000;
 /** probabilite qu'un piege arme se declenche vraiment au passage */
-const TRIGGER_CHANCE = 0.5;
+const TRIGGER_CHANCE = 0.8;
 /** annonce : le sol tremble 1 seconde avant que les mains jaillissent */
 const TELL_MS = 1000;
 /** cooldown court quand le heros s'echappe pendant l'annonce */
