@@ -233,9 +233,13 @@ export class GameScene extends Phaser.Scene {
   private buildBackdrop() {
     this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, ROOM_WIDTH);
 
-    // supplicie ecorche : decor anime propre a la cathedrale
+    // supplicies ecorches : decor anime, plusieurs le long du corridor
     if (this.backdropKey === "cathedrale") {
       this.crucified = new CrucifiedProp(this, CRUCIFIED_X, FLOOR_Y);
+    } else if (this.backdropKey === "corridor") {
+      this.crucified = new CrucifiedProp(this, 520, FLOOR_Y);
+      new CrucifiedProp(this, 1320, FLOOR_Y);
+      new CrucifiedProp(this, 2120, FLOOR_Y);
     }
   }
 
