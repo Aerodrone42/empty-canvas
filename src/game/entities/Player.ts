@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 
+import { frameMetrics, referenceHeight } from "@/game/spriteMetrics";
 import { useGameStore } from "@/store/gameStore";
 
 const SPEED = 190;
@@ -9,30 +10,19 @@ const INVULN_MS = 750;
 
 /**
  * Les trois feuilles du Vigile ne dessinent pas la silhouette a la meme
- * echelle (idle 73 px de haut, marche 35 px, attaque 30 px) ni a la meme
- * hauteur dans la cellule. On normalise donc l'echelle et la position des
- * pieds par animation, sinon le personnage retrecit et flotte.
+ * echelle ni a la meme hauteur dans la cellule. On mesure donc les frames au
+ * chargement (voir spriteMetrics) et on garde une echelle unique, calee sur
+ * l'animation idle : seule la ligne de pieds varie par frame, ce qui evite que
+ * le personnage retrecisse ou flotte en marchant.
  */
-type Metrics = {
-  /** hauteur de la silhouette en pixels de texture */
-  charH: number;
-  /** largeur de la silhouette en pixels de texture */
-  charW: number;
-  /** y des pieds dans la cellule, par frame */
-  footY: number[];
-};
 
 /** hauteur affichee constante, en pixels monde */
 const TARGET_H = 130;
 
-/** largeur de hitbox constante, en pixels monde */
+/** hitbox constante, en pixels monde */
 const BODY_W = 58;
+const BODY_H = 120;
 
-const METRICS: Record<string, Metrics> = {
-  "vigile-idle": { charH: 73, charW: 33, footY: [102, 102, 102, 102] },
-  "vigile-walk": { charH: 35, charW: 29, footY: [82, 128, 82, 83, 82, 82] },
-  "vigile-attack": { charH: 30, charW: 40, footY: [83, 83, 84, 83, 83] },
-};
 
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
