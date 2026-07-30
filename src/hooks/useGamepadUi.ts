@@ -39,29 +39,38 @@ export function useGamepadUi() {
       const pad = Array.from(navigator.getGamepads?.() ?? []).find(Boolean);
       if (!pad) return;
 
-      const { phase, pause, resume, openFleshPath, closeFleshPath } =
+      const { phase, pause, resume, openFleshPath, closeFleshPath, closeOptions } =
         useGameStore.getState();
+      const bindings = useBindingsStore.getState().bindings;
+      const btn = (index: number) => (index >= 0 ? !!pad.buttons[index]?.pressed : false);
 
-      const start = !!pad.buttons[9]?.pressed;
+      const start = btn(bindings.pause.pad);
       if (start && !prevStart) {
         if (phase === "playing") pause();
         else if (phase === "paused") resume();
         else if (phase === "flesh") closeFleshPath();
+        else if (phase === "options") closeOptions();
       }
       prevStart = start;
 
-      const select = !!pad.buttons[8]?.pressed || !!pad.buttons[3]?.pressed;
+      const select = btn(bindings.flesh.pad);
       if (select && !prevSelect) {
         if (phase === "playing") openFleshPath();
         else if (phase === "flesh") closeFleshPath();
       }
       prevSelect = select;
 
+      if (phase === "options") {
+        // en attribution : on laisse l'ecran d'options lire la manette
+        prevUp = prevDown = prevA = prevB = false;
+        return;
+      }
 
       if (phase === "playing") {
         prevUp = prevDown = prevA = prevB = false;
         return;
       }
+
 
       const axisY = pad.axes[1] ?? 0;
       const up = !!pad.buttons[12]?.pressed || axisY < -0.6;

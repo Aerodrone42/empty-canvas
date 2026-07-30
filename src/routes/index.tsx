@@ -56,13 +56,15 @@ function Index() {
     );
   }
 
-  if (phase === "menu") {
+  if (phase === "menu" || (phase === "options" && optionsReturnPhase === "menu")) {
     return (
-      <main>
+      <main className="relative min-h-screen">
         <MainMenu />
+        {phase === "options" && <Options />}
       </main>
     );
   }
+
 
   return (
     <main className="vignette relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
