@@ -1,72 +1,40 @@
-## Nouveaux assets détectés dans le dépôt
+## Problème
 
-Le dossier `public/assets/sprites/enemies/` est apparu, avec un README d'intégration Phaser très précis :
+Quand le personnage avance, il apparaît en l'air au lieu de rester au sol.
 
-**Pénitent-Greffé** — lourd, lent, résistant, masse-chaîne fusionnée au bras
-- idle : 4 frames, cellule 102×128 (+4 px de marge → 106×128)
-- marche : 6 frames, cellule 126×128 (→ 130×128)
-- attaque : 5 frames, cellule 172×128 (→ 176×128)
+Ce que montre l'analyse des feuilles de sprites (mesure alpha réelle, frame par frame) :
 
-**Suppliant Rampant** — rapide, faible, quadrupède, morsure au sol
-- idle : 4 frames, cellule 240×128 (→ 244×128)
-- déplacement : 4 frames, cellule 275×128 (→ 279×128)
-- attaque : 4 frames, cellule 322×128 (→ 326×128)
+```text
+idle   (4 frames) : silhouette haute de 72 px, pieds à y=102 sur toutes les frames
+walk   (6 frames) : silhouette de 33-34 px, pieds à y = 81, 127, 82, 83, 81, 82
+attack (5 frames) : silhouette de 27-40 px, pieds à y = 82, 82, 83, 82, 82
+```
 
-Plus le héros déjà présent : **Vigile Muet** (idle 4f 57×128, walk 6f 47×128, attack 5f 43×128).
+Deux constats :
+- Les dessins de marche sont incohérents entre eux : la frame 2 est dessinée 45 px plus bas que les autres dans sa cellule.
+- La table `METRICS` codée en dur dans `src/game/entities/Player.ts` ne correspond pas exactement aux mesures (`charH: 35` au lieu de 33/34, `footY` décalés d'un pixel), et la normalisation qui en découle décale le personnage verticalement en marche.
 
-Toutes les feuilles ont un fond transparent, une hauteur normalisée à 128 px et une palette limitée à ~32 couleurs. Le README impose `pixelArt: true` dans la config Phaser.
+## Correctif
 
-Aucun code de jeu n'existe encore : `src/routes/index.tsx` est toujours la page placeholder.
+1. **Mesurer les métriques automatiquement au chargement** (nouveau module `src/game/spriteMetrics.ts`)
+   - Au boot, pour chaque feuille chargée, lire les pixels de la texture Phaser et calculer, par frame : haut, bas (pieds), gauche, droite de la silhouette.
+   - Stocker le résultat dans une table accessible par clé de texture + index de frame.
+   - Plus aucune valeur codée en dur : si un sprite est remplacé sur GitHub, l'alignement suit automatiquement.
 
-## Ce que je vais construire
+2. **Aligner le héros sur ces mesures** (`src/game/entities/Player.ts`)
+   - Supprimer la constante `METRICS`.
+   - `alignBody()` utilise l'échelle de référence de l'animation idle (silhouette de 72 px → 130 px monde) pour **toutes** les animations, au lieu de re-normaliser chaque animation : le personnage garde la même stature et la marche cesse de « grandir » artificiellement.
+   - L'origine verticale est fixée sur la ligne de pieds mesurée de la frame courante, donc les pieds restent collés au sol même sur la frame décalée.
+   - Hitbox physique constante (largeur/hauteur en pixels monde), indépendante de la frame, pour éviter tout rebond ou décalage Arcade.
 
-### 1. Dépendances
-`phaser` (moteur 2D) et `zustand` (état partagé entre React et Phaser).
+3. **Même traitement pour les ennemis** (`src/game/entities/Enemy.ts`)
+   - Appliquer l'alignement mesuré aux Pénitents et Suppliants pour supprimer les mêmes flottements/enfoncements sur leurs animations.
 
-### 2. Écrans React
-- **Avertissement 18+** : fond noir, texte sobre, « Entrer » / « Quitter », mémorisé pour ne pas réapparaître.
-- **Menu principal** : titre SANGUINE VIGILE, Nouvelle partie / Continuer / Options.
-- **Menu pause** (Échap) : reprendre, options, retour au menu.
-- **HUD** : barre de vie et jauge de Chair.
-
-### 3. Direction artistique
-Tokens dédiés au gothique sanglant : noirs profonds, crimson sang désaturé, os/ivoire, ocre rouillé — exactement la palette des sprites. Typographie à empattements condamnés. Aucune couleur en dur dans les composants.
-
-### 4. Moteur Phaser
-- Composant React qui monte et démonte proprement le canvas, monté uniquement côté client.
-- Configuration avec `pixelArt: true` et physique Arcade.
-- **BootScene** : chargement des 9 spritesheets (héros + 2 ennemis) avec les dimensions de cellule exactes du README, et création de toutes les animations aux cadences recommandées (Pénitent lent, Suppliant véloce).
-
-### 5. Salle de départ jouable
-- Sol et plateformes en géométrie simple.
-- **Héros** : gauche/droite, saut, attaque, avec transitions d'animation correctes.
-- **Ennemis** : les deux types posés dans la salle avec une IA de base — patrouille, détection du joueur, poursuite, attaque au contact. Le Pénitent encaisse et frappe lourd ; le Suppliant fonce vite et mord.
-- Combat : la frappe du héros inflige des dégâts, les ennemis meurent, le contact ennemi blesse le héros avec invulnérabilité brève.
-- Caméra qui suit le héros.
-
-### 6. Page d'accueil
-`src/routes/index.tsx` devient l'enchaînement Avertissement → Menu → Jeu, avec des métadonnées propres au projet.
+4. **Vérification**
+   - Test Playwright : lancer le jeu, marcher vers la droite, capturer plusieurs frames et comparer la position du bas du personnage par rapport au sol, en idle, en marche et en attaque.
 
 ## Détails techniques
 
-```text
-src/
-  game/
-    config.ts                 config Phaser (pixelArt, Arcade)
-    assets.ts                 tables de cellules/frames issues du README
-    scenes/BootScene.ts       chargement + création des animations
-    scenes/GameScene.ts       salle 1, physique, caméra, spawns
-    entities/Player.ts        contrôles, états d'animation, hitbox d'attaque
-    entities/Enemy.ts         base commune : vie, dégâts, mort
-    entities/PenitentGreffe.ts
-    entities/SuppliantRampant.ts
-  components/game/
-    PhaserCanvas.tsx  AgeGate.tsx  MainMenu.tsx  PauseMenu.tsx  Hud.tsx
-  store/gameStore.ts          zustand : vie, chair, état de partie
-```
-
-Phaser est strictement client : le canvas est monté après hydratation pour éviter tout accès au DOM côté serveur. Les chemins d'assets pointent vers `/assets/sprites/...` déjà servis par `public/`.
-
-## Hors périmètre pour cette phase
-
-Les salles supplémentaires, la Voie de la Chair complète, le boss Chirurgien-Saint et la sauvegarde persistante viennent ensuite. L'objectif ici : un jeu qui démarre, un héros qui court, saute et frappe, et deux ennemis vivants qui se comportent différemment.
+- Lecture des pixels via `scene.textures.getPixelAlpha(x, y, key, frameIndex)` (coûteux uniquement au boot, exécuté une seule fois par feuille, avec échantillonnage par colonnes/lignes pour rester rapide).
+- Échelle héros : `scale = 130 / charH(idle)`, constante ; ainsi seule l'origine varie par frame.
+- Hitbox : `body.setSize(w/scale, h/scale, false)` puis offset calculé depuis la ligne de pieds mesurée.
