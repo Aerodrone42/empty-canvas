@@ -57,6 +57,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private comboExpiresAt = 0;
   private lastAttackAt = -Infinity;
   private dodgeReadyAt = 0;
+  /** debut de l'esquive en cours, pour enchainer plongee -> roulade */
+  private dodgeStartedAt = 0;
+  /** fenetre de relevee apres la roulade */
+  private dodgeRecoverUntil = 0;
   private invulnUntil = 0;
   private parryUntil = 0;
   private charging = false;
