@@ -117,9 +117,9 @@ export class Parallax {
       .setTileScale(scale, scale);
 
     // fondu du haut du dallage vers l'obscurite du fond
-    const blend = scene.add.graphics().setScrollFactor(0).setDepth(-9);
+    const blend = scene.add.graphics().setScrollFactor(0, 1).setDepth(-9);
     blend.fillGradientStyle(0x0a0506, 0x0a0506, 0x0a0506, 0x0a0506, 0.9, 0.9, 0, 0);
-    blend.fillRect(0, top - scene.cameras.main.scrollY - 10, scene.cameras.main.width, 70);
+    blend.fillRect(0, top - 10, scene.cameras.main.width, 70);
   }
 
 
