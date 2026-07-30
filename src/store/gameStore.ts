@@ -132,7 +132,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     set((s) => {
       const reduced = Math.max(1, Math.round(amount * (1 - s.effects.damageReduction)));
       const health = Math.max(0, s.health - reduced);
-      return health === 0 ? { health, phase: "dead" as Phase } : { health };
+      const base = { health, absorbing: false, absorbProgress: 0 };
+      return health === 0 ? { ...base, phase: "dead" as Phase } : base;
     }),
 
   heal: (amount) => set((s) => ({ health: Math.min(s.maxHealth, s.health + amount) })),
