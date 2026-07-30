@@ -425,6 +425,7 @@ export class GameScene extends Phaser.Scene {
       }
     });
     prof.measure("sang", () => this.blood.tick(time));
+    for (const statue of this.statues) statue.update(this.player.x);
 
     this.enemies = this.enemies.filter((e) => e.active);
 
