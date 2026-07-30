@@ -55,7 +55,18 @@ export function Hud() {
         </div>
       )}
 
+      {/* voile sombre pour garder le HUD lisible par-dessus le decor */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 z-10 h-56"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(8,4,5,0.85) 0%, rgba(8,4,5,0.55) 45%, transparent 100%)",
+        }}
+      />
+
       <div className="pointer-events-none absolute top-0 left-0 z-10 flex flex-col gap-2 p-5">
+
         <Gauge
           label="Vitalité"
           value={health}
