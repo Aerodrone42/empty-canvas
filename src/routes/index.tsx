@@ -33,6 +33,7 @@ function Index() {
   const phase = useGameStore((s) => s.phase);
   const [hydrated, setHydrated] = useState(false);
 
+  useGamepadUi();
   useEffect(() => setHydrated(true), []);
 
   if (!hydrated) {
