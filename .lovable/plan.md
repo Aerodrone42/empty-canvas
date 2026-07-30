@@ -1,25 +1,30 @@
-## Objectif
+## Problème
 
-Ajouter dans le corridor un élément de décor animé : une grosse veine charnue qui court sur toute la longueur du couloir, qui gonfle et se rétracte par pulsations, et qui passe **derrière** les statues pleureuses.
+La veine actuelle est ratée pour trois raisons :
 
-## Ce qui sera fait
+1. **Elle apparaît deux fois** — `CorridorVein` crée deux bandes (une principale + une secondaire) à deux hauteurs différentes, ce qui donne l'impression d'un double tuyau qui traverse tout l'écran.
+2. **Elle est énorme** — 190 px de haut pour la principale, 110 px pour la secondaire, soit une masse de chair qui écrase le décor gothique.
+3. **Elle est flashy** — teinte `0xc0242f` à alpha 0.95 en rendu normal : un rouge saturé posé par-dessus un décor presque noir, sans intégration. En plus, la tuile se répète visiblement (coutures verticales tous les ~2 motifs).
 
-**1. Nouvel asset**
-- `public/assets/sprites/props/corridor_vein.png` : une veine horizontale tuilable (bords gauche/droit alignés) en chair sombre, rouge sang veiné, avec ramifications qui plongent dans la pierre. Fond transparent.
+## Correctifs
 
-**2. Nouveau fichier `src/game/effects/CorridorVein.ts`**
-- `tileSprite` de la largeur de la salle (2400 px), posé à hauteur de mur (environ un tiers au-dessus de la ligne de sol), origine gauche.
-- Animation de battement : tween en boucle yoyo sur `tileScaleY` / `scaleY` (gonflement ~1.0 → 1.18) plus légère variation d'alpha et de teinte, période irrégulière (~1,6 s) pour un rythme organique de cœur.
-- Deuxième passe décalée en phase (petite veine secondaire plus fine, plus lente et plus sombre) pour éviter l'effet mécanique.
-- Optionnel léger décalage `tilePositionX` très lent pour un flux interne.
+**1. Une seule veine (`src/game/effects/CorridorVein.ts`)**
+- Supprimer la bande secondaire : une seule veine court le long du corridor.
+- La placer plus haut, à la jonction mur/voûte, pour qu'elle longe l'architecture au lieu de barrer le champ de vision.
 
-**3. Profondeur (l'important)**
-- Fond du corridor : depth `-30`. Statues : depth `-20`.
-- La veine sera placée à depth `-25` : donc **devant le mur peint, derrière les statues** et derrière le héros.
+**2. Beaucoup plus fine et discrète**
+- Hauteur affichée réduite à ~45–55 px (au lieu de 190).
+- Alpha autour de 0.55, teinte sombre désaturée (bordeaux presque brun, type `0x5a1218`) pour qu'elle se fonde dans la pierre au lieu de flasher.
+- Retour à un léger mode de fusion sombre partiel : la veine doit paraître collée au mur, humide, éclairée uniquement par les lanternes.
 
-**4. Branchements**
-- `BootScene.ts` : chargement de `corridor-vein`.
-- `GameScene.ts` : instanciation uniquement quand `backdropKey === "corridor"`, à côté des statues, et appel de la mise à jour dans la boucle si nécessaire (sinon tout est géré par tweens, coût nul par frame).
+**3. Asset régénéré (`public/assets/sprites/props/corridor_vein.png`)**
+- Nouvelle génération d'une veine **fine et réaliste** : un vaisseau unique et sinueux, quelques capillaires très courts, texture humide sombre, sur fond transparent.
+- Motif long et raccordable gauche/droite pour supprimer les coutures visibles du tuilage actuel.
+- Pas de rouge vif : gammes bordeaux/violacé sombre, reflets ponctuels seulement.
 
-## Notes techniques
-Pas de particules supplémentaires ni de logique de jeu : purement décoratif, aucun impact sur les collisions, le combat ou les performances (un seul tileSprite + tweens).
+**4. Battement plus subtil**
+- Amplitude de pulsation réduite (gonflement ~4 % au lieu de 22 %), cycle plus lent, pour un frémissement à peine perceptible plutôt qu'une respiration spectaculaire.
+
+## Résultat attendu
+
+Un unique vaisseau fin, sombre et humide qui serpente en haut du mur du corridor, presque intégré à la pierre, battant lentement — plus de double bande, plus de rouge criard, plus de couture répétée.
