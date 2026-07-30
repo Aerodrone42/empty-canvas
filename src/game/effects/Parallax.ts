@@ -177,10 +177,15 @@ export class Parallax {
     g.destroy();
   }
 
-  /** A appeler dans update() : seul le fond lointain a besoin d'etre pilote. */
+  /** A appeler dans update() : lie le defilement des calques a la camera. */
   update() {
-    if (!this.sky) return;
     const scrollX = this.scene.cameras.main.scrollX;
-    this.sky.tilePositionX = this.skyOffset + (scrollX * SKY_SPEED) / this.sky.tileScaleX;
+    if (this.sky) {
+      this.sky.tilePositionX = this.skyOffset + (scrollX * SKY_SPEED) / this.sky.tileScaleX;
+    }
+    if (this.ground) {
+      // vitesse 1 : le dallage defile exactement comme le monde
+      this.ground.tilePositionX = scrollX / this.ground.tileScaleX;
+    }
   }
 }
