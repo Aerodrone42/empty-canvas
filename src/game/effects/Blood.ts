@@ -40,7 +40,8 @@ function ensureTextures(scene: Phaser.Scene) {
   }
 }
 
-const CRIMSON = [0x59randomPLACE];
+// teintes sourdes et desaturees : sang veineux, pas rouge vif
+const CRIMSON = [0x4a0c12, 0x5e1218, 0x741a1c, 0x2e070c];
 
 type Pool = {
   /** amas d'ellipses formant une silhouette organique */
