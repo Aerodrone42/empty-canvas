@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 
+import { toggleFullscreen } from "@/game/fullscreen";
 import { installKeyboardTracking } from "@/game/input";
 import { useBindingsStore } from "@/store/bindingsStore";
 import { useGameStore } from "@/store/gameStore";
+
 
 export function PhaserCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -40,6 +42,12 @@ export function PhaserCanvas() {
       const { phase, pause, resume, openFleshPath, closeFleshPath } = useGameStore.getState();
       const bindings = useBindingsStore.getState().bindings;
 
+      if (event.code === "F11") {
+        event.preventDefault();
+        void toggleFullscreen();
+        return;
+      }
+
       if (event.code === bindings.pause.key || event.code === "Escape") {
         if (phase === "playing") pause();
         else if (phase === "paused") resume();
@@ -60,12 +68,10 @@ export function PhaserCanvas() {
     };
   }, []);
 
-
-
   return (
     <div
       ref={containerRef}
-      className="h-full w-full [&>canvas]:h-full [&>canvas]:w-full [&>canvas]:object-contain"
+      className="h-full w-full [&>canvas]:!h-full [&>canvas]:!w-full"
     />
   );
 }

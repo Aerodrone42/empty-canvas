@@ -1,3 +1,4 @@
+import { toggleFullscreen } from "@/game/fullscreen";
 import { keyLabel, useBindingsStore } from "@/store/bindingsStore";
 import { useGameStore } from "@/store/gameStore";
 
@@ -25,7 +26,9 @@ export function MainMenu() {
         <MenuButton onClick={continueRun} disabled={!hasSave}>
           Continuer
         </MenuButton>
+        <MenuButton onClick={() => void toggleFullscreen()}>Plein écran</MenuButton>
         <MenuButton onClick={openOptions}>Options</MenuButton>
+
       </div>
 
       <p className="mt-12 max-w-md text-sm text-muted-foreground">

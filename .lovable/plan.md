@@ -1,22 +1,28 @@
-## Ce qui s'est passé
+## Pourquoi ce n'est pas plein écran aujourd'hui
 
-Le magnifique sol en pierre existe toujours : il est peint dans l'image du décor (`corridor_bg_far.png`, 1672×941). Vérifié : le dallage occupe environ les **30 % du bas** de la peinture.
+Deux causes vérifiées dans le code :
 
-Le bug vient de ma découpe dans `src/game/effects/Parallax.ts` : la constante `FLOOR_SPLIT = 0.85` ne coupe que le tout dernier bandeau sombre sous le dallage. Résultat : le vrai sol en pierre est resté collé au calque « ciel », et la bande rouge plate (le simple bord sombre de l'image) a été étirée puis répétée sur toute la largeur de la salle → l'aplat marronnasse que tu vois.
+1. `src/routes/index.tsx` enferme le jeu dans `<div className="relative aspect-video w-full max-w-[1280px]">`. Le canvas ne peut donc jamais dépasser 1280 px de large et garde un ratio 16:9 centré → bandes noires en haut/bas et sur les côtés, exactement ce qu'on voit sur ta capture.
+2. `src/game/config.ts` utilise `width: 960, height: 540` avec `Phaser.Scale.FIT`, et aucun appel à l'API Fullscreen du navigateur n'existe dans le projet (aucune occurrence de `fullscreen`).
 
-## Correction
+## Ce que je vais faire
 
-1. Supprimer complètement la découpe `sky` / `ground` dans `Parallax.ts` : plus de `FLOOR_SPLIT`, plus de RenderTexture de sol cuite, plus de `seam`.
-2. Réafficher **la peinture entière** (ciel + colonnes + dallage en perspective), exactement comme sur ta capture de référence — un seul calque, l'image intégrale, à sa bonne échelle, alignée sur la ligne de sol.
-3. Ce calque est répété horizontalement sur la largeur de la salle et ancré au monde (`scrollFactor 1`), donc le dallage défile à la vitesse de tes pas — on garde à la fois le style d'origine et la lisibilité de la marche.
-4. Aucune géométrie dessinée en code par dessus le sol : plus de joints, plus de taches, plus de rectangles.
+### 1. Le jeu occupe 100 % de la fenêtre
+- Retirer `max-w-[1280px]` et `aspect-video` dans `src/routes/index.tsx` : le conteneur du jeu passe en `fixed inset-0` (largeur et hauteur totales de la fenêtre), le HUD et les menus restant superposés par-dessus.
+- Le canvas Phaser suit alors la taille réelle de la fenêtre.
 
-## Détail technique
+### 2. Mise à l'échelle propre
+- Dans `src/game/config.ts`, garder la résolution logique 960x540 mais passer le scale en mode qui remplit l'écran sans bandes : `Phaser.Scale.ENVELOP` (le décor déborde légèrement au lieu de laisser du noir), avec `autoCenter` conservé.
+- Écouter le redimensionnement de la fenêtre pour rafraîchir l'échelle (`scale.refresh()` sur `resize`).
 
-Fichier touché : `src/game/effects/Parallax.ts` uniquement.
-- retrait des frames `sky` / `ground` ajoutées à la texture, du `TileSprite` de ciel et de la RenderTexture de dallage ;
-- un seul `TileSprite` plein cadre, `scrollFactor 1`, `tileScale` calculé pour que la ligne de sol de la peinture tombe pile sur `floorY` ;
-- `update()` n'a plus rien à piloter (le décor est fixe dans le monde) ;
-- `addAmbience()` (voile de teinte + poussières) est conservé tel quel.
+### 3. Vrai plein écran (sortie de l'iframe de prévisualisation)
+- Ajouter une bascule plein écran via l'API navigateur : touche **F** (et **F11** interceptée quand c'est possible), plus une entrée « Plein écran » dans le menu Pause et le menu principal.
+- Implémentée avec `game.scale.startFullscreen() / stopFullscreen()`, déclenchée par un geste utilisateur (obligatoire pour les navigateurs).
+- L'attribut `allowfullscreen` est déjà accordé aux prévisualisations Lovable ; si le navigateur le refuse dans l'aperçu intégré, le jeu reste en « plein cadre » et le vrai plein écran fonctionnera sur l'onglet ouvert séparément / le site publié.
 
-Si tu préfères l'ancien comportement où le décor lointain glisse doucement plutôt que de rester fixe, c'est un seul paramètre à changer ensuite.
+### 4. Vérification
+- Contrôle visuel via un script de navigation automatisé : capture d'écran à 1920x1080 et à 1280x720 pour confirmer l'absence de bandes noires et la lisibilité du HUD.
+
+## Détails techniques
+- Fichiers touchés : `src/routes/index.tsx`, `src/game/config.ts`, `src/components/game/PhaserCanvas.tsx`, `src/components/game/PauseMenu.tsx`, `src/components/game/MainMenu.tsx`.
+- Aucune logique de gameplay, de combat ou de décor n'est modifiée : uniquement l'affichage et la mise à l'échelle.

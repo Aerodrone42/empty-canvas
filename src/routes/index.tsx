@@ -72,9 +72,10 @@ function Index() {
 
 
   return (
-    <main className="vignette relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
+    <main className="vignette fixed inset-0 overflow-hidden bg-background">
       <h1 className="sr-only">Sanguine Vigile — Chapitre I</h1>
-      <div className="relative aspect-video w-full max-w-[1280px]">
+      <div className="relative h-full w-full">
+
         <PhaserCanvas />
         <Hud />
         {phase === "paused" && <PauseMenu />}
