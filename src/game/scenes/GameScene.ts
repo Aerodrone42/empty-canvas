@@ -175,6 +175,71 @@ export class GameScene extends Phaser.Scene {
     this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, ROOM_WIDTH);
   }
 
+  /**
+   * Colonne de fin de salle : elle sort du cadre par le haut, ses visceres
+   * respirent, et un seuil obstrue le passage tant qu'il reste des monstres.
+   */
+  private buildGate() {
+    this.gateColumn = new GateColumn(this, GATE_X, FLOOR_Y);
+
+    // seuil sombre derriere la colonne
+    this.gateVeil = this.add
+      .rectangle(GATE_X + 120, FLOOR_Y - 220, 210, 440, 0x120507, 0.92)
+      .setDepth(4)
+      .setScrollFactor(1);
+
+    // verrou physique : le heros bute sur la colonne
+    const wall = this.add.rectangle(GATE_X + 40, FLOOR_Y - 220, 40, 460);
+    wall.setVisible(false);
+    this.physics.add.existing(wall, true);
+    this.platforms.add(wall);
+    this.gateWall = wall;
+  }
+
+  /** Dernier monstre tue : le passage s'ouvre. */
+  private openGate() {
+    if (this.roomCleared) return;
+    this.roomCleared = true;
+    this.gateColumn?.open();
+
+    if (this.gateWall) {
+      this.platforms.remove(this.gateWall, true, true);
+      this.gateWall = undefined;
+    }
+
+    if (this.gateVeil) {
+      const veil = this.gateVeil;
+      this.gateVeil = undefined;
+      this.tweens.add({
+        targets: veil,
+        alpha: 0,
+        duration: 900,
+        onComplete: () => veil.destroy(),
+      });
+    }
+
+    const cam = this.cameras.main;
+    const label = this.add
+      .text(cam.width / 2, 120, "Le passage s'ouvre", {
+        fontFamily: "Georgia, serif",
+        fontSize: "26px",
+        color: "#c2727a",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(60)
+      .setAlpha(0);
+    this.tweens.add({
+      targets: label,
+      alpha: 1,
+      duration: 500,
+      yoyo: true,
+      hold: 1400,
+      onComplete: () => label.destroy(),
+    });
+  }
+
+
   /** Fondu au noir puis passage a la salle suivante. */
   private exitRoom() {
     if (this.exiting) return;
