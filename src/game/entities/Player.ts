@@ -238,6 +238,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
+    // ---------- absorption de chair (soin) ----------
+    if (this.moveState === "absorb") {
+      const holding = this.actions.isDown("parry");
+      if (!holding || !onGround || left || right) {
+        this.cancelAbsorb();
+      } else if (time >= this.stateUntil) {
+        useGameStore.getState().consumeFleshForHealth();
+        this.moveState = "idle";
+        this.clearTint();
+        this.scene.events.emit("fx-heal", this.x, this.y - 70);
+        this.rumble(0.35, 200);
+      } else {
+        body.setVelocityX(0);
+        const progress = 1 - (this.stateUntil - time) / ABSORB_DURATION;
+        useGameStore.getState().setAbsorb(true, Phaser.Math.Clamp(progress, 0, 1));
+        this.play("vigile-idle-anim", true);
+        return;
+      }
+    }
+
+
     if (this.moveState === "attack" || this.moveState === "heavy" || this.moveState === "special") {
       if (time >= this.stateUntil) {
         this.moveState = "idle";
