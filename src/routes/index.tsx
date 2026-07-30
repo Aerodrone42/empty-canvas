@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { AgeGate } from "@/components/game/AgeGate";
+import { FleshPath } from "@/components/game/FleshPath";
 import { Hud } from "@/components/game/Hud";
+
 import { MainMenu } from "@/components/game/MainMenu";
 import { DeathScreen, PauseMenu } from "@/components/game/PauseMenu";
 import { PhaserCanvas } from "@/components/game/PhaserCanvas";
@@ -66,8 +68,10 @@ function Index() {
         <PhaserCanvas />
         <Hud />
         {phase === "paused" && <PauseMenu />}
+        {phase === "flesh" && <FleshPath />}
         {phase === "dead" && <DeathScreen />}
       </div>
     </main>
   );
 }
+

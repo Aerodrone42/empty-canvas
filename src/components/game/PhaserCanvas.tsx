@@ -29,14 +29,25 @@ export function PhaserCanvas() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      const { phase, pause, resume } = useGameStore.getState();
-      if (phase === "playing") pause();
-      else if (phase === "paused") resume();
+      const { phase, pause, resume, openFleshPath, closeFleshPath } = useGameStore.getState();
+
+      if (event.key === "Escape") {
+        if (phase === "playing") pause();
+        else if (phase === "paused") resume();
+        else if (phase === "flesh") closeFleshPath();
+        return;
+      }
+
+      if (event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        if (phase === "playing") openFleshPath();
+        else if (phase === "flesh") closeFleshPath();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
 
   return (
     <div

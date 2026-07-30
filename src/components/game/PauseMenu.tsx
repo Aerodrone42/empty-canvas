@@ -3,6 +3,7 @@ import { useGameStore } from "@/store/gameStore";
 export function PauseMenu() {
   const resume = useGameStore((s) => s.resume);
   const toMenu = useGameStore((s) => s.toMenu);
+  const openFleshPath = useGameStore((s) => s.openFleshPath);
 
   return (
     <Overlay>
@@ -10,12 +11,14 @@ export function PauseMenu() {
       <p className="mt-3 text-sm text-muted-foreground">La chair attend.</p>
       <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
         <OverlayButton onClick={resume}>Reprendre</OverlayButton>
+        <OverlayButton onClick={openFleshPath}>Voie de la Chair</OverlayButton>
         <OverlayButton disabled>Options</OverlayButton>
         <OverlayButton onClick={toMenu}>Retour au menu</OverlayButton>
       </div>
     </Overlay>
   );
 }
+
 
 export function DeathScreen() {
   const startNewRun = useGameStore((s) => s.startNewRun);

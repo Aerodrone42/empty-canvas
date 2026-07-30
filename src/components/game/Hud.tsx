@@ -6,6 +6,7 @@ export function Hud() {
   const flesh = useGameStore((s) => s.flesh);
   const maxFlesh = useGameStore((s) => s.maxFlesh);
   const kills = useGameStore((s) => s.kills);
+  const mutations = useGameStore((s) => s.mutations);
 
   return (
     <div className="pointer-events-none absolute top-0 left-0 z-10 flex flex-col gap-2 p-5">
@@ -18,11 +19,15 @@ export function Hud() {
       />
       <Gauge label="Chair" value={flesh} max={maxFlesh} barClass="bg-accent" width="w-40" />
       <p className="mt-1 font-display text-[0.6rem] tracking-[0.35em] text-muted-foreground uppercase">
-        Absous · {kills}
+        Absous · {kills} — Greffes · {mutations.length}
+      </p>
+      <p className="font-display text-[0.55rem] tracking-[0.3em] text-muted-foreground/60 uppercase">
+        F · Voie de la Chair
       </p>
     </div>
   );
 }
+
 
 function Gauge({
   label,

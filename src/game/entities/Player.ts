@@ -27,6 +27,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private lastAttackAt = -Infinity;
   private invulnUntil = 0;
   private facing = 1;
+  private airJumpsUsed = 0;
+
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, "vigile-idle");
@@ -97,8 +99,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   tick(time: number) {
     this.alignBody();
+    const effects = useGameStore.getState().effects;
     const body = this.body as Phaser.Physics.Arcade.Body;
     const onGround = body.blocked.down || body.touching.down;
+
+    if (onGround) this.airJumpsUsed = 0;
+
+    const speed = SPEED * effects.speedMult;
+    const jumpPower = JUMP * effects.jumpMult;
+    const cooldown = ATTACK_COOLDOWN * effects.attackCooldownMult;
 
     const left = this.keys.left.isDown || this.cursors.left?.isDown;
     const right = this.keys.right.isDown || this.cursors.right?.isDown;
@@ -107,7 +116,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       (this.cursors.up ? Phaser.Input.Keyboard.JustDown(this.cursors.up) : false);
     const attack = Phaser.Input.Keyboard.JustDown(this.keys.attack);
 
-    if (attack && !this.attacking && time - this.lastAttackAt >= ATTACK_COOLDOWN) {
+    if (attack && !this.attacking && time - this.lastAttackAt >= cooldown) {
       this.attacking = true;
       this.lastAttackAt = time;
       body.setVelocityX(0);
@@ -122,19 +131,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (left) {
-      body.setVelocityX(-SPEED);
+      body.setVelocityX(-speed);
       this.facing = -1;
       this.setFlipX(true);
     } else if (right) {
-      body.setVelocityX(SPEED);
+      body.setVelocityX(speed);
       this.facing = 1;
       this.setFlipX(false);
     } else {
       body.setVelocityX(0);
     }
 
-    if (jump && onGround) {
-      body.setVelocityY(-JUMP);
+    if (jump) {
+      if (onGround) {
+        body.setVelocityY(-jumpPower);
+      } else if (effects.doubleJump && this.airJumpsUsed < 1) {
+        this.airJumpsUsed += 1;
+        body.setVelocityY(-jumpPower * 0.9);
+      }
     }
 
     if (!onGround) {
@@ -146,3 +160,4 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 }
+
