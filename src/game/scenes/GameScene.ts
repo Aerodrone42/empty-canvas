@@ -370,6 +370,14 @@ export class GameScene extends Phaser.Scene {
 
     this.enemies = this.enemies.filter((e) => e.active);
 
+    // salle nettoyee : le passage derriere la colonne s'ouvre
+    if (!this.roomCleared && this.enemies.every((e) => e.isDead)) {
+      this.openGate();
+    }
+    if (this.roomCleared && !this.exiting && this.player.x > GATE_EXIT_X) {
+      this.exitRoom();
+    }
+
     // aucune creature vivante a proximite : le soin par absorption est permis
     prof.measure("absorption", () => {
       const threatened = this.enemies.some(
