@@ -1,30 +1,25 @@
 ## Objectif
 
-Les ennemis (Pénitent-Greffé, Suppliant Rampant) viennent d'un ancien lot : cadres irréguliers (102/126/172 px de large, hauteur 128, marge de 4 px), lignes de pieds instables et rendu moins soigné que le héros. Le Vigile Muet, lui, a été régénéré sur un gabarit propre : 192x144 par frame, silhouette ~110 px, ligne de pieds fixe à y=138, aucune marge.
-
-On applique exactement le même pipeline aux ennemis.
+Les colonnes actuelles sont posées en arrière-plan (`depth -20`), répétées tout le long de la salle, et le calque lointain qui défile donne l'impression que tout bouge. On passe à un vrai effet de perspective : **4 colonnes maximum, larges, au premier plan**, derrière lesquelles le héros passe.
 
 ## Ce qui sera fait
 
-1. **Régénération des feuilles de sprites** (pixel art, palette du jeu : crimson sang, os, charbon, ocre, accents rouillés) :
-   - Pénitent-Greffé : idle (4), marche (6), attaque (5)
-   - Suppliant Rampant : idle (4), déplacement (4), attaque (4)
-   Silhouettes cohérentes d'une frame à l'autre, lisibilité de la pose d'attaque (anticipation nette, déjà utilisée par le télégraphe de 350 ms).
+Uniquement dans `src/game/effects/Parallax.ts` :
 
-2. **Normalisation** (script Python, même traitement que le héros) :
-   - cadre unifié 192x144, aucune marge entre cellules
-   - fond transparent, recadrage par la silhouette réelle
-   - ligne de pieds calée à y=138 sur toutes les frames
-   - hauteur de silhouette : ~118 px pour le Pénitent (plus imposant que le héros), ~62 px pour le Suppliant (rampant, bas et large)
-   - quantification de palette partagée par créature pour une cohérence totale
+1. **Colonnes en avant-plan (`addAnchoredMid` remplacé par `addForegroundPillars`)**
+   - Exactement 4 colonnes réparties sur la largeur de la salle (2400 px), avec un écart régulier et une marge aux extrémités, positions légèrement variées pour éviter la régularité mécanique.
+   - `setScrollFactor(1.12)` : elles défilent un peu plus vite que le joueur — c'est ce qui crée la perspective, sans "glissement" gênant puisqu'elles restent ancrées au sol.
+   - `setDepth(12)` : au-dessus du joueur (depth par défaut 0, effets jusqu'à 8), donc **le personnage passe derrière**.
+   - Base calée sur la ligne de sol, hauteur portée à ~1.15x la hauteur du viewport pour qu'elles sortent du cadre en haut et en bas — c'est ce qui vend l'avant-plan.
+   - Assombrissement (`setTint`) et légère désaturation : un avant-plan proche est en contre-jour, ce qui garde le héros lisible au milieu.
 
-3. **Mise à jour du code** :
-   - `src/game/assets.ts` : `frameWidth: 192`, `frameHeight: 144`, `spacing: 0` pour les 6 entrées ennemies
-   - `src/game/entities/Enemy.ts` : ajuster `scale`, `bodyWidth`, `bodyHeight` des deux classes au nouveau gabarit (les hitbox actuelles, ex. 150x128 pour le Suppliant, correspondent aux anciennes cellules)
-   - `public/assets/sprites/enemies/*_atlas.json` et le README : réécrits selon le nouveau gabarit
+2. **Fond plus calme**
+   - Le calque lointain garde une parallaxe très faible (0.08 au lieu de 0.15) pour que le décor ne semble plus "bouger" tout seul.
+   - Le cadre rocheux `near` aux deux extrémités reste, mais passe aussi en avant-plan (depth 12) pour rester cohérent avec les nouvelles colonnes.
 
-4. **Vérification en jeu** : capture Playwright de la scène pour confirmer que les deux ennemis restent posés au sol, à la bonne échelle relative au héros, sans rétrécissement entre animations.
+3. **Lisibilité du HUD/héros**
+   - Aucune colonne placée à moins de ~300 px du point de spawn du joueur (x=180), pour ne pas masquer le personnage au démarrage.
 
 ## Détails techniques
 
-Le calcul de `footY` par `src/game/spriteMetrics.ts` reste en place et fonctionnera mieux avec des lignes de pieds déjà normalisées. Aucune modification de la logique de combat, d'IA ou des dégâts : seuls les assets, leurs métadonnées et les dimensions de collision changent.
+Le HUD est en React au-dessus du canvas : monter les colonnes à depth 12 n'a aucun impact dessus. Les colonnes sont purement décoratives (aucun corps de collision ajouté), donc la logique de jeu, les ennemis et le sol restent inchangés. Une capture Playwright validera l'occlusion du héros et l'espacement.
