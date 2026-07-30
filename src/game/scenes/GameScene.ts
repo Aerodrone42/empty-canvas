@@ -19,13 +19,6 @@ const POOL_REGEN_PER_SEC = 6;
 /** distance en dessous de laquelle une creature empeche de se soigner */
 const SAFE_RADIUS = 300;
 
-/** plateforme-ascenseur en bout de salle */
-const LIFT_W = 220;
-const LIFT_H = 40;
-const LIFT_X = ROOM_WIDTH - 190;
-const LIFT_TRAVEL = 300;
-const LIFT_SPEED = 90;
-const LIFT_RETURN_SPEED = 60;
 
 /** enchainement des salles : l'ascenseur mene a la suivante */
 const ROOM_ORDER: BackdropKey[] = ["cathedrale", "corridor", "throne", "exterieur"];
@@ -42,16 +35,8 @@ export class GameScene extends Phaser.Scene {
   /** salle courante : determine le decor et la palette */
   private backdropKey: BackdropKey = "cathedrale";
 
-  /** plateforme-ascenseur de fin de salle */
-  private lift!: Phaser.GameObjects.Rectangle;
-  private liftEdge!: Phaser.GameObjects.Rectangle;
-  private liftGlow!: Phaser.GameObjects.Rectangle;
-  private liftBaseY = FLOOR_Y - 40;
-  private liftTopY = FLOOR_Y - 40 - LIFT_TRAVEL;
   private exiting = false;
   /** le heros touche le plateau (mis a jour par le collider) */
-  private liftContact = false;
-  private liftContactAt = -9999;
 
 
   constructor() {
@@ -76,14 +61,9 @@ export class GameScene extends Phaser.Scene {
 
     this.buildBackdrop();
     this.buildGeometry();
-    this.buildLift();
 
     this.player = new Player(this, 180, FLOOR_Y);
     this.physics.add.collider(this.player, this.platforms);
-    this.physics.add.collider(this.player, this.lift, () => {
-      const pb = this.player.body as Phaser.Physics.Arcade.Body | null;
-      if (pb && pb.touching.down) this.liftContact = true;
-    });
 
 
     this.spawn(new SuppliantRampant(this, 760, FLOOR_Y));
@@ -164,89 +144,6 @@ export class GameScene extends Phaser.Scene {
     this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, ROOM_WIDTH);
     this.lighting = new Lighting(this, ROOM_WIDTH, FLOOR_Y);
   }
-
-  /**
-   * Plateforme de pierre en bout de salle : le heros monte dessus et elle
-   * s'eleve comme un ascenseur vers la salle suivante.
-   */
-  private buildLift() {
-    const def = this.parallax.def;
-    this.liftBaseY = FLOOR_Y - 4;
-    this.liftTopY = this.liftBaseY - LIFT_TRAVEL;
-
-    // halo discret : signale que la plateforme est interactive
-    this.liftGlow = this.add
-      .rectangle(LIFT_X, this.liftBaseY, LIFT_W * 1.1, LIFT_H * 2.4, def.dust, 0.09)
-      .setDepth(-1);
-    this.tweens.add({
-      targets: this.liftGlow,
-      alpha: { from: 0.05, to: 0.18 },
-      duration: 1400,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.InOut",
-    });
-
-    this.lift = this.add.rectangle(LIFT_X, this.liftBaseY, LIFT_W, LIFT_H, def.ground, 1);
-    this.lift.setStrokeStyle(2, def.ledge, 1);
-    this.lift.setDepth(2);
-
-    this.liftEdge = this.add
-      .rectangle(LIFT_X, this.liftBaseY - LIFT_H / 2, LIFT_W, 3, def.ledge, 0.75)
-      .setDepth(3);
-
-    this.physics.add.existing(this.lift, false);
-    const body = this.lift.body as Phaser.Physics.Arcade.Body;
-    body.setAllowGravity(false);
-    body.setImmovable(true);
-    body.setFriction(1, 1);
-    // on ne bute pas dedans par en dessous ni sur les cotes
-    body.checkCollision.down = false;
-    body.checkCollision.left = false;
-    body.checkCollision.right = false;
-  }
-
-  /** Montee automatique tant que le heros est pose dessus. */
-  private updateLift(delta: number) {
-    if (!this.lift || this.exiting) return;
-    const body = this.lift.body as Phaser.Physics.Arcade.Body;
-
-    if (this.liftContact) this.liftContactAt = this.time.now;
-    this.liftContact = false;
-    // petite tolerance : un rebond d'un frame ne doit pas faire redescendre
-    const near =
-      Math.abs(this.player.x - this.lift.x) < LIFT_W / 2 + 20 &&
-      Math.abs(this.player.y - (this.lift.y - LIFT_H / 2)) < 60;
-    const riding = near && this.time.now - this.liftContactAt < 250;
-
-    const step = (delta / 1000) * LIFT_SPEED;
-    let dy = 0;
-    if (riding && this.lift.y > this.liftTopY) {
-      dy = -Math.min(step, this.lift.y - this.liftTopY);
-    } else if (!riding && this.lift.y < this.liftBaseY) {
-      dy = Math.min((delta / 1000) * LIFT_RETURN_SPEED, this.liftBaseY - this.lift.y);
-    }
-
-    if (dy !== 0) {
-      this.lift.y += dy;
-      body.updateFromGameObject();
-      // le heros est porte : on le colle sur le plateau pendant la montee
-      if (riding && dy < 0) {
-        this.player.y = this.lift.y - LIFT_H / 2;
-        const pb = this.player.body as Phaser.Physics.Arcade.Body | null;
-        if (pb) {
-          pb.updateFromGameObject();
-          if (pb.velocity.y > 0) pb.setVelocityY(0);
-        }
-      }
-    }
-
-    this.liftEdge.y = this.lift.y - LIFT_H / 2;
-    this.liftGlow.y = this.lift.y;
-
-    if (riding && this.lift.y <= this.liftTopY + 0.5) this.exitRoom();
-  }
-
 
   /** Fondu au noir puis passage a la salle suivante. */
   private exitRoom() {
@@ -355,7 +252,6 @@ export class GameScene extends Phaser.Scene {
 
     this.player.tick(time);
     this.blood.tick(time);
-    this.updateLift(delta);
 
 
 
