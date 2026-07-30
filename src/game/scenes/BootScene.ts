@@ -38,6 +38,36 @@ export class BootScene extends Phaser.Scene {
       });
     }
 
-    this.scene.start("game");
-  }
+    // Saut du Vigile : la feuille est decoupee en trois phases.
+    this.anims.create({
+      key: "vigile-crouch",
+      frames: this.anims.generateFrameNumbers("vigile-jump", { start: 0, end: 1 }),
+      frameRate: 22,
+      repeat: 0,
+    });
+    this.anims.create({
+      key: "vigile-rise",
+      frames: this.anims.generateFrameNumbers("vigile-jump", { start: 2, end: 2 }),
+      frameRate: 1,
+      repeat: 0,
+    });
+    this.anims.create({
+      key: "vigile-apex",
+      frames: this.anims.generateFrameNumbers("vigile-jump", { start: 3, end: 3 }),
+      frameRate: 1,
+      repeat: 0,
+    });
+    this.anims.create({
+      key: "vigile-fall",
+      frames: this.anims.generateFrameNumbers("vigile-jump", { start: 4, end: 4 }),
+      frameRate: 1,
+      repeat: 0,
+    });
+    this.anims.create({
+      key: "vigile-land",
+      frames: this.anims.generateFrameNumbers("vigile-jump", { start: 5, end: 5 }),
+      frameRate: 1,
+      repeat: 0,
+    });
+
 }
