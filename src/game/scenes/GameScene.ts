@@ -281,7 +281,7 @@ export class GameScene extends Phaser.Scene {
     prof.measure("mains", () => {
       for (const hand of this.hands) {
         if (hand.update(this.player.x, this.player.y, FLOOR_Y, time)) {
-          this.player.snare(0.22, 220);
+          this.player.snare(3000);
         }
       }
     });

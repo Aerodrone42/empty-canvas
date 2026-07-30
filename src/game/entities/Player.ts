@@ -79,14 +79,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private jumpBufferedAt = -Infinity;
   /** fin de l'animation de reception */
   private landUntil = 0;
-  /** entrave (mains du sol) : ralentit la course et brise le saut */
+  /** saisie (mains du sol) : le heros est cloue sur place */
   private snareUntil = 0;
-  private snareMult = 1;
+  private nextSnareFxAt = 0;
 
-  /** Agrippe le heros : sa vitesse est reduite tant que l'entrave dure. */
-  snare(mult: number, durationMs: number) {
-    this.snareUntil = this.scene.time.now + durationMs;
-    this.snareMult = mult;
+  /**
+   * Les mains du sol agrippent le heros : plus d'esquive, plus de saut et
+   * quasiment plus de deplacement pendant toute la duree de la saisie.
+   */
+  snare(durationMs: number) {
+    const now = this.scene.time.now;
+    if (now < this.snareUntil) return;
+    this.snareUntil = now + durationMs;
+    this.nextSnareFxAt = 0;
+    this.setTint(0x8a2230);
+    this.scene.cameras.main.shake(160, 0.005);
   }
 
 
@@ -218,7 +225,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (onGround) this.airJumpsUsed = 0;
 
     const snared = time < this.snareUntil;
-    const speed = SPEED * effects.speedMult * (snared ? this.snareMult : 1);
+    if (snared) {
+      // le heros se debat : teinte sanglante et gerbes regulieres
+      if (time >= this.nextSnareFxAt) {
+        this.nextSnareFxAt = time + 320;
+        this.scene.events.emit("fx-blood", this.x, this.y - 14, this.facing, 0.45);
+      }
+    } else if (this.snareUntil > 0) {
+      this.snareUntil = 0;
+      this.clearTint();
+    }
+    const speed = SPEED * effects.speedMult * (snared ? 0.1 : 1);
     const jumpPower = JUMP * effects.jumpMult;
     const cooldown = ATTACK_COOLDOWN * effects.attackCooldownMult;
 
@@ -452,12 +469,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const BUFFER_MS = 130;
 
     if (onGround) this.lastGroundedAt = time;
-    if (jump) this.jumpBufferedAt = time;
+    // agrippe : impossible de decoller
+    if (jump && !snared) this.jumpBufferedAt = time;
+    if (snared) this.pendingJump = 0;
 
     const wantsJump = time - this.jumpBufferedAt <= BUFFER_MS;
     const coyoteOk = time - this.lastGroundedAt <= COYOTE_MS;
 
-    if (wantsJump && this.pendingJump <= 0) {
+    if (wantsJump && !snared && this.pendingJump <= 0) {
       if (coyoteOk) {
         // le heros plie les jambes avant de decoller
         this.jumpBufferedAt = -Infinity;
