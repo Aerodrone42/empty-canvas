@@ -55,6 +55,8 @@ export class Parallax {
         .setScrollFactor(1)
         .setDepth(-30)
         .setDisplaySize(roomWidth, drawH);
+
+      this.addCorridorMidground(roomWidth, floorY, drawH);
     } else {
       // rendu d'origine des autres salles : peinture repetee a l'echelle
       const source = scene.textures.get(this.def.far).getSourceImage();
@@ -71,8 +73,36 @@ export class Parallax {
 
 
 
-    this.addAmbience(viewW, viewH, floorScreenY);
+    this.addAmbience(viewW, viewH, floorScreenY, key === "corridor");
   }
+
+  /**
+   * Couche intermediaire du corridor : arches de pierre placees devant le
+   * fond, legerement plus lentes que le monde -> vraie sensation de
+   * traversee au lieu d'un mur plat.
+   */
+  private addCorridorMidground(roomWidth: number, floorY: number, drawH: number) {
+    const scene = this.scene;
+    if (!scene.textures.exists("corridor-arch")) return;
+
+    const src = scene.textures.get("corridor-arch").getSourceImage();
+    const archH = drawH * 0.82;
+    const scale = archH / (src.height || 1);
+    const step = 600;
+
+    for (let x = 260; x < roomWidth - 120; x += step) {
+      const jitter = ((x / step) % 2 === 0 ? 1 : -1) * 24;
+      scene.add
+        .image(x + jitter, floorY + 8, "corridor-arch")
+        .setOrigin(0.5, 1)
+        .setScale(scale)
+        .setScrollFactor(0.85, 1)
+        .setDepth(-20)
+        .setAlpha(0.9)
+        .setTint(0x8d8a92);
+    }
+  }
+
 
 
 
