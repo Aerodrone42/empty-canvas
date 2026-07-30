@@ -85,6 +85,8 @@ export class BloodFX {
   private lastSiphon = 0;
   /** toutes les flaques sont dessinees dans une seule texture */
   private canvas?: Phaser.GameObjects.RenderTexture;
+  /** tampon reutilise pour dessiner chaque tache */
+  private stamp?: Phaser.GameObjects.Image;
   private lastRedraw = 0;
 
   constructor(scene: Phaser.Scene, floorY: number) {
@@ -97,12 +99,14 @@ export class BloodFX {
       .renderTexture(bounds.x, floorY - POOL_BAND * 0.5, Math.max(1, bounds.width), POOL_BAND)
       .setOrigin(0, 0)
       .setDepth(1);
+    this.stamp = scene.make.image({ key: BLOT_KEY, add: false }).setOrigin(0.5, 0.5);
   }
 
   /** Redessine l'ensemble des flaques : un seul objet rendu, cout constant. */
   private redraw() {
     const rt = this.canvas;
-    if (!rt) return;
+    const stamp = this.stamp;
+    if (!rt || !stamp) return;
     rt.clear();
     const now = this.scene.time.now;
     for (const pool of this.stains) {
@@ -110,16 +114,14 @@ export class BloodFX {
       const fade = Math.max(0, Math.min(1, (POOL_LIFE - age) / POOL_FADE));
       const left = Math.max(0.15, pool.charge / pool.maxCharge);
       for (const b of pool.blots) {
-        rt.draw(
-          BLOT_KEY,
-          pool.x - rt.x + b.dx * left,
-          this.floorY - rt.y + b.dy,
-          b.alpha * fade * left,
-          b.tint,
-        );
+        stamp.setScale(b.scaleX * left, b.scaleY * left);
+        stamp.setTint(b.tint);
+        stamp.setAlpha(b.alpha * fade * left);
+        rt.draw(stamp, pool.x - rt.x + b.dx * left, this.floorY - rt.y + b.dy);
       }
     }
   }
+
 
 
 
