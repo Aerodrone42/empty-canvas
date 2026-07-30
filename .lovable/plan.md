@@ -1,23 +1,20 @@
-## Le problème
+## Problème
 
-Le dallage est aujourd'hui un `TileSprite` collé à la caméra dont le motif est décalé manuellement (`tilePositionX = scrollX`). Mathématiquement il défile à la bonne vitesse, mais visuellement c'est **le même motif qui se répète toutes les ~1670 px** : l'œil voit une texture qui glisse en boucle sous les pieds au lieu d'un sol réel. En plus, la bande basse d'une peinture en perspective est étirée horizontalement quand on la tuile, ce qui renforce l'effet « tapis roulant ».
+Le sol « briques Minecraft » ne vient pas du décor : c'est une couche de géométrie que j'ai dessinée par-dessus (`addFloorMarks` dans `src/game/effects/Parallax.ts`), qui trace des rangées de joints noirs + arêtes éclairées et des taches en ellipse. C'est ce quadrillage régulier qui casse le style de la peinture.
 
-## Ce que je propose
+La bande de sol issue de la peinture d'origine, elle, est toujours là et intacte (la RenderTexture ancrée au monde, `depth -20`).
 
-1. **Sol vraiment ancré au monde.** Remplacer le `TileSprite` collé caméra par une image de sol posée une seule fois sur toute la largeur de la salle (`scrollFactor 1`, largeur `ROOM_WIDTH`), cuite dans une texture unique au chargement de la salle — un seul objet, un seul appel de rendu.
+## Correction
 
-2. **Supprimer la répétition visible.** Cette texture de sol est composée de plusieurs copies de la bande basse, une sur deux **retournée horizontalement**, avec un léger décalage vertical et un fondu aux jonctions : plus de motif identique qui revient en boucle.
+1. Supprimer entièrement l'appel `this.addFloorMarks(...)` et la méthode `addFloorMarks` de `Parallax.ts` — plus aucun joint, arête ni tache dessinés à la main.
+2. Garder le sol tel qu'il était : la bande basse de la peinture, cuite une fois sur toute la largeur de la salle, ancrée au monde (`scrollFactor 1`) — donc il défile exactement à la vitesse des pas, sans effet tapis roulant, et il garde le style exact du décor.
+3. Adoucir le raccord : conserver le voile `seam` mais le passer plus discret, pour qu'on ne voie pas de ligne de coupe entre le fond et le sol.
 
-3. **Géométrie fixe par-dessus.** Renforcer les repères déjà présents (`addFloorMarks`) en vraies **dalles en perspective** : lignes de joints qui convergent vers le point de fuite, espacées irrégulièrement, plus quelques fissures/débris. Ce sont ces éléments fixes qui donnent la sensation de marcher sur un sol solide.
+Aucun changement de gameplay, de physique ni de caméra : uniquement la suppression du calque graphique fautif.
 
-4. **Ligne d'horizon stable.** Garder ciel/ville à défilement lent (0,12) mais rendre le raccord net : une bande d'ombre au sol sous le mur du fond, pour que la transition ne bouge plus visiblement.
+## Détail technique
 
-5. **Vérification** : capture pendant la marche + F3, contrôler qu'on reste à 60 im/s et que le nombre d'objets en scène ne bouge quasiment pas.
-
-## Détails techniques
-
-- `src/game/effects/Parallax.ts` :
-  - frame `ground` rendue N fois (N = `ceil(ROOM_WIDTH / bandW)`) dans un `Phaser.GameObjects.RenderTexture` de `ROOM_WIDTH × groundH`, `flipX` une fois sur deux, puis affichée par un seul `image` à `scrollFactor 1`, `depth -20` ;
-  - `update()` ne pilote plus que `sky.tilePositionX` — le sol n'a plus aucun calcul par frame ;
-  - `addFloorMarks` : dessiner en plus des joints de dallage (lignes obliques convergentes) dans la même texture cuite, aucun objet supplémentaire.
-- Aucun changement de physique : `FLOOR_Y = 880`, collisions et caméra inchangées.
+Fichier touché : `src/game/effects/Parallax.ts` uniquement.
+- retrait de la méthode `addFloorMarks` (~70 lignes) et de son appel ;
+- la texture `floor-marks-*` n'est plus générée (un objet et une texture en moins → un peu de perf gagnée) ;
+- ajustement de l'alpha du rectangle `seam` (0.35 → ~0.2).
