@@ -229,6 +229,18 @@ export const SHEETS: SheetDef[] = [
     spacing: 0,
   },
 
+  // --- Supplicie ecorche (decor anime, premiere salle) ---
+  {
+    key: "crucifie-idle",
+    path: `${SPRITES}/props/crucifie_ecorche_spritesheet.png`,
+    frameWidth: 229,
+    frameHeight: 856,
+    frameCount: 8,
+    frameRate: 5,
+    repeat: -1,
+    spacing: 0,
+  },
+
   // --- Mains du sol (piege : agrippent et ralentissent le heros) ---
   {
     key: "mains-sol",
