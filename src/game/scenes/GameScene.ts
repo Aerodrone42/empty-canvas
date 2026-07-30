@@ -300,10 +300,10 @@ export class GameScene extends Phaser.Scene {
     if (healed <= 0) return;
     store.heal(healed);
 
-    if (Math.random() < 0.05) {
-      this.onHeal(this.player.x, this.player.y - 40);
-    }
+    // le sang de la flaque remonte le long du corps pendant tout le drainage
+    this.blood.siphon(this.player.x, this.player.y, 120);
   }
+
 
   private resolvePlayerStrike(strike: Strike, damageScale = 1) {
     const effects = useGameStore.getState().effects;
