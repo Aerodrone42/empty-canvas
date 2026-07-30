@@ -1,6 +1,10 @@
 import Phaser from "phaser";
 
 import { BACKDROPS, FRAME_SPACING, SHEETS } from "../assets";
+import { MUSIC_AMBIENT, MUSIC_COMBAT } from "../audio/Music";
+import ambientTrack from "@/assets/music_obscura_piano.mp3.asset.json";
+import combatTrack from "@/assets/music_sinister_power.mp3.asset.json";
+
 
 export class BootScene extends Phaser.Scene {
   constructor() {
