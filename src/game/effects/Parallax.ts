@@ -24,6 +24,8 @@ const SPEEDS = [0.15, 0.55] as const;
 type Layer = {
   sprite: Phaser.GameObjects.TileSprite;
   speed: number;
+  /** decalage initial : casse la symetrie des repetitions */
+  offset: number;
 };
 
 export class Parallax {
@@ -94,7 +96,9 @@ export class Parallax {
       .setDepth(depth);
 
     sprite.setTileScale(scale, scale);
-    this.layers.push({ sprite, speed });
+    const offset = Phaser.Math.Between(0, source.width || 0);
+    sprite.tilePositionX = offset;
+    this.layers.push({ sprite, speed, offset });
   }
 
   /** Voile colore, poussieres et vacillement de cierges. */
@@ -157,7 +161,8 @@ export class Parallax {
   update() {
     const scrollX = this.scene.cameras.main.scrollX;
     for (const layer of this.layers) {
-      layer.sprite.tilePositionX = (scrollX * layer.speed) / layer.sprite.tileScaleX;
+      layer.sprite.tilePositionX =
+        layer.offset + (scrollX * layer.speed) / layer.sprite.tileScaleX;
     }
   }
 }
