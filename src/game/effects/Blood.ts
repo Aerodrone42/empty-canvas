@@ -90,8 +90,8 @@ export class BloodFX {
 
     // brume au point d'impact
     const mist = this.scene.add.image(x, y, MIST_KEY);
-    mist.setTint(0xb01f2b);
-    mist.setAlpha(0.55);
+    mist.setTint(0x5e1218);
+    mist.setAlpha(0.3);
     mist.setScale(0.6 * intensity);
     mist.setDepth(6);
     this.scene.tweens.add({
@@ -125,7 +125,7 @@ export class BloodFX {
       w,
       w * 0.3,
       CRIMSON[3],
-      0.82,
+      0.7,
     );
     core.setDepth(1);
     parts.push(core);
@@ -140,7 +140,7 @@ export class BloodFX {
         bw,
         bw * Phaser.Math.FloatBetween(0.22, 0.34),
         Phaser.Utils.Array.GetRandom(CRIMSON),
-        Phaser.Math.FloatBetween(0.45, 0.7),
+        Phaser.Math.FloatBetween(0.35, 0.55),
       );
       blob.setDepth(1);
       parts.push(blob);
@@ -171,7 +171,7 @@ export class BloodFX {
       }
       const fade = Math.max(0, Math.min(1, (POOL_LIFE - age) / POOL_FADE));
       const left = Math.max(0.15, pool.charge / pool.maxCharge);
-      pool.parts.forEach((p, i) => p.setAlpha((i === 0 ? 0.82 : 0.6) * fade * left));
+      pool.parts.forEach((p, i) => p.setAlpha((i === 0 ? 0.7 : 0.48) * fade * left));
       return true;
     });
   }
@@ -218,7 +218,7 @@ export class BloodFX {
       speedX: { min: -18, max: 18 },
       gravityY: -140,
       scale: { start: 0.75, end: 0.1 },
-      alpha: { start: 0.95, end: 0 },
+      alpha: { start: 0.7, end: 0 },
       tint: CRIMSON,
       quantity: 5,
       emitting: false,
@@ -254,8 +254,8 @@ export class BloodFX {
 
     // lueur diffuse derriere le heros, jamais de contour net devant lui
     const glow = this.scene.add.image(x, footY - bodyHeight * 0.5, MIST_KEY);
-    glow.setTint(0x8e1220);
-    glow.setAlpha(0.22);
+    glow.setTint(0x3d0a10);
+    glow.setAlpha(0.12);
     glow.setScale(1.6, 2.6);
     glow.setDepth(3);
     this.scene.tweens.add({
