@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { HERO_BASELINE_Y, HERO_CHAR_H, HERO_FRAME_H } from "@/game/assets";
+import { isKeyDown, isKeyJustDown, padFor } from "@/game/input";
 import { useGameStore } from "@/store/gameStore";
 
 const SPEED = 190;
@@ -30,12 +31,6 @@ const BODY_H = 120;
 
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
-  private keys!: {
-    left: Phaser.Input.Keyboard.Key;
-    right: Phaser.Input.Keyboard.Key;
-    jump: Phaser.Input.Keyboard.Key;
-    attack: Phaser.Input.Keyboard.Key;
-  };
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private attacking = false;
   private lastAttackAt = -Infinity;
@@ -44,9 +39,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private airJumpsUsed = 0;
   private padJumpPrev = false;
   private padAttackPrev = false;
-  
-
-
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, "vigile-idle");
@@ -58,14 +50,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
     this.alignBody();
 
-    const keyboard = scene.input.keyboard!;
-    this.cursors = keyboard.createCursorKeys();
-    this.keys = {
-      left: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q),
-      right: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-      jump: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
-      attack: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E),
-    };
+    this.cursors = scene.input.keyboard!.createCursorKeys();
 
     this.play("vigile-idle-anim");
     this.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + "vigile-attack-anim", () => {
@@ -136,28 +121,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     const pad = this.scene.input.gamepad?.getPad(0);
     const padAxis = pad?.axes[0]?.getValue() ?? 0;
-    const padLeft = !!pad?.left || padAxis < -0.3;
-    const padRight = !!pad?.right || padAxis > 0.3;
-    // A / croix pour sauter, X ou gachette pour frapper
-    const padJumpDown = !!(pad?.A || pad?.buttons[0]?.pressed);
-    const padAttackDown = !!(
-      pad?.X ||
-      pad?.buttons[2]?.pressed ||
-      pad?.buttons[5]?.pressed ||
-      pad?.buttons[7]?.pressed
-    );
+    const btn = (index: number) => (index >= 0 ? !!pad?.buttons[index]?.pressed : false);
+    const padLeft = btn(padFor("left")) || padAxis < -0.3;
+    const padRight = btn(padFor("right")) || padAxis > 0.3;
+    const padJumpDown = btn(padFor("jump"));
+    const padAttackDown = btn(padFor("attack"));
     const padJump = padJumpDown && !this.padJumpPrev;
     const padAttack = padAttackDown && !this.padAttackPrev;
     this.padJumpPrev = padJumpDown;
     this.padAttackPrev = padAttackDown;
 
-    const left = this.keys.left.isDown || this.cursors.left?.isDown || padLeft;
-    const right = this.keys.right.isDown || this.cursors.right?.isDown || padRight;
+    const left = isKeyDown("left") || this.cursors.left?.isDown || padLeft;
+    const right = isKeyDown("right") || this.cursors.right?.isDown || padRight;
     const jump =
-      Phaser.Input.Keyboard.JustDown(this.keys.jump) ||
+      isKeyJustDown("jump") ||
       (this.cursors.up ? Phaser.Input.Keyboard.JustDown(this.cursors.up) : false) ||
       padJump;
-    const attack = Phaser.Input.Keyboard.JustDown(this.keys.attack) || padAttack;
+    const attack = isKeyJustDown("attack") || padAttack;
 
 
     if (attack && !this.attacking && time - this.lastAttackAt >= cooldown) {

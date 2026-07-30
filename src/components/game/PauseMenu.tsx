@@ -4,6 +4,7 @@ export function PauseMenu() {
   const resume = useGameStore((s) => s.resume);
   const toMenu = useGameStore((s) => s.toMenu);
   const openFleshPath = useGameStore((s) => s.openFleshPath);
+  const openOptions = useGameStore((s) => s.openOptions);
 
   return (
     <Overlay>
@@ -12,7 +13,7 @@ export function PauseMenu() {
       <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
         <OverlayButton onClick={resume}>Reprendre</OverlayButton>
         <OverlayButton onClick={openFleshPath}>Voie de la Chair</OverlayButton>
-        <OverlayButton disabled>Options</OverlayButton>
+        <OverlayButton onClick={openOptions}>Options</OverlayButton>
         <OverlayButton onClick={toMenu}>Retour au menu</OverlayButton>
       </div>
     </Overlay>

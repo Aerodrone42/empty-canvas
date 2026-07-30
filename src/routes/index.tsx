@@ -6,9 +6,11 @@ import { FleshPath } from "@/components/game/FleshPath";
 import { Hud } from "@/components/game/Hud";
 
 import { MainMenu } from "@/components/game/MainMenu";
+import { Options } from "@/components/game/Options";
 import { DeathScreen, PauseMenu } from "@/components/game/PauseMenu";
 import { PhaserCanvas } from "@/components/game/PhaserCanvas";
 import { useGamepadUi } from "@/hooks/useGamepadUi";
+import { useBindingsStore } from "@/store/bindingsStore";
 import { useGameStore } from "@/store/gameStore";
 
 const TITLE = "Sanguine Vigile — Metroidvania d'horreur gothique";
@@ -31,10 +33,14 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const phase = useGameStore((s) => s.phase);
+  const optionsReturnPhase = useGameStore((s) => s.optionsReturnPhase);
   const [hydrated, setHydrated] = useState(false);
 
   useGamepadUi();
-  useEffect(() => setHydrated(true), []);
+  useEffect(() => {
+    setHydrated(true);
+    useBindingsStore.getState().hydrate();
+  }, []);
 
   if (!hydrated) {
     return (
@@ -55,13 +61,15 @@ function Index() {
     );
   }
 
-  if (phase === "menu") {
+  if (phase === "menu" || (phase === "options" && optionsReturnPhase === "menu")) {
     return (
-      <main>
+      <main className="relative min-h-screen">
         <MainMenu />
+        {phase === "options" && <Options />}
       </main>
     );
   }
+
 
   return (
     <main className="vignette relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
@@ -72,6 +80,7 @@ function Index() {
         {phase === "paused" && <PauseMenu />}
         {phase === "flesh" && <FleshPath />}
         {phase === "dead" && <DeathScreen />}
+        {phase === "options" && <Options />}
       </div>
     </main>
   );

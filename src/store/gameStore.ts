@@ -8,7 +8,14 @@ import {
   type MutationEffects,
 } from "@/game/mutations";
 
-export type Phase = "warning" | "menu" | "playing" | "paused" | "flesh" | "dead";
+export type Phase =
+  | "warning"
+  | "menu"
+  | "playing"
+  | "paused"
+  | "flesh"
+  | "options"
+  | "dead";
 
 export type GameState = {
   phase: Phase;
@@ -20,6 +27,7 @@ export type GameState = {
   hasSave: boolean;
   mutations: string[];
   effects: MutationEffects;
+  optionsReturnPhase: Phase;
 
   enter: () => void;
   startNewRun: () => void;
@@ -28,6 +36,8 @@ export type GameState = {
   resume: () => void;
   openFleshPath: () => void;
   closeFleshPath: () => void;
+  openOptions: () => void;
+  closeOptions: () => void;
   toMenu: () => void;
 
   damage: (amount: number) => void;
@@ -50,6 +60,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   hasSave: false,
   mutations: [],
   effects: BASE_EFFECTS,
+  optionsReturnPhase: "menu",
 
   enter: () => set({ phase: "menu" }),
 
@@ -73,6 +84,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   openFleshPath: () =>
     set((s) => (s.phase === "playing" || s.phase === "paused" ? { phase: "flesh" } : s)),
   closeFleshPath: () => set((s) => (s.phase === "flesh" ? { phase: "playing" } : s)),
+  openOptions: () =>
+    set((s) =>
+      s.phase === "options" ? s : { phase: "options" as Phase, optionsReturnPhase: s.phase },
+    ),
+  closeOptions: () =>
+    set((s) => (s.phase === "options" ? { phase: s.optionsReturnPhase } : s)),
   toMenu: () => set({ phase: "menu" }),
 
   damage: (amount) =>
