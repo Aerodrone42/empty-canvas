@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 
-import { frameMetrics, referenceHeight } from "@/game/spriteMetrics";
+import { HERO_BASELINE_Y, HERO_CHAR_H, HERO_FRAME_H } from "@/game/assets";
 import { useGameStore } from "@/store/gameStore";
 
 const SPEED = 190;
@@ -9,19 +9,23 @@ const ATTACK_COOLDOWN = 420;
 const INVULN_MS = 750;
 
 /**
- * Les trois feuilles du Vigile ne dessinent pas la silhouette a la meme
- * echelle ni a la meme hauteur dans la cellule. On mesure donc les frames au
- * chargement (voir spriteMetrics) et on garde une echelle unique, calee sur
- * l'animation idle : seule la ligne de pieds varie par frame, ce qui evite que
- * le personnage retrecisse ou flotte en marchant.
+ * Les feuilles du Vigile ont ete regenerees sur un gabarit unique : meme
+ * cellule 192x144, silhouette de 110 px et ligne de pieds a y=138 sur toutes
+ * les frames. L'echelle et l'origine sont donc constantes : plus besoin de
+ * recalibrer frame par frame.
  */
 
 /** hauteur affichee constante, en pixels monde */
 const TARGET_H = 130;
 
+const SCALE = TARGET_H / HERO_CHAR_H;
+const ORIGIN_Y = HERO_BASELINE_Y / HERO_FRAME_H;
+
 /** hitbox constante, en pixels monde */
 const BODY_W = 58;
 const BODY_H = 120;
+
+
 
 
 
