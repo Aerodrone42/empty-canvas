@@ -217,18 +217,13 @@ export class GameScene extends Phaser.Scene {
   private buildGate() {
     this.gateColumn = new GateColumn(this, GATE_X, FLOOR_Y);
 
-    // seuil sombre derriere la colonne
-    this.gateVeil = this.add
-      .rectangle(GATE_X + 120, FLOOR_Y - 220, 210, 440, 0x120507, 0.92)
-      .setDepth(4)
-      .setScrollFactor(1);
-
-    // verrou physique : le heros bute sur la colonne
+    // verrou physique invisible : le heros bute sur la colonne
     const wall = this.add.rectangle(GATE_X + 40, FLOOR_Y - 220, 40, 460);
     wall.setVisible(false);
     this.physics.add.existing(wall, true);
     this.platforms.add(wall);
     this.gateWall = wall;
+
   }
 
   /** Dernier monstre tue : le passage s'ouvre. */
