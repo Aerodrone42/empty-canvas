@@ -6,8 +6,8 @@ import { ENEMY_BASELINE_Y, ENEMY_FRAME_H } from "@/game/assets";
 const GRAB_MS = 3000;
 /** temps avant qu'un meme piege puisse reattraper */
 const COOLDOWN_MS = 2500;
-/** annonce : le sol tremble avant que les mains jaillissent */
-const TELL_MS = 350;
+/** annonce : le sol tremble 1 seconde avant que les mains jaillissent */
+const TELL_MS = 1000;
 /** cooldown court quand le heros s'echappe pendant l'annonce */
 const ABORT_COOLDOWN_MS = 900;
 
@@ -33,6 +33,8 @@ export class GraspingHands {
   private grabUntil = 0;
   private readyAt = 0;
   private tellUntil = 0;
+  /** minuterie de l'annonce : gerbes de terre de plus en plus fortes */
+  private tellEvent?: Phaser.Time.TimerEvent;
 
   constructor(scene: Phaser.Scene, x: number, floorY: number, radius = 90) {
     this.scene = scene;
@@ -77,21 +79,40 @@ export class GraspingHands {
     g.destroy();
   }
 
-  /** phase d'annonce : monticule qui vibre + gerbe de terre */
+  /** phase d'annonce : monticule qui vibre + gerbe de terre montante */
   private startTell(time: number) {
     this.tellUntil = time + TELL_MS;
-    this.soil.explode(14, this.x, this.floorY - 2);
+    this.soil.explode(4, this.x, this.floorY - 2);
+
+    // la terre bouge de plus en plus fort pendant la seconde d'annonce
+    let step = 0;
+    this.tellEvent?.remove();
+    this.tellEvent = this.scene.time.addEvent({
+      delay: 110,
+      repeat: Math.floor(TELL_MS / 110) - 1,
+      callback: () => {
+        step += 1;
+        const ratio = Math.min(1, (step * 110) / TELL_MS);
+        const spread = 30 + ratio * 30;
+        this.soil.explode(
+          2 + Math.round(ratio * 8),
+          this.x + Phaser.Math.Between(-spread, spread),
+          this.floorY - 2,
+        );
+      },
+    });
 
     for (const [i, sprite] of this.sprites.entries()) {
       const base = this.x + CLUSTER[i].dx;
-      sprite.setFrame(0).setAlpha(0.35).setPosition(base, this.floorY + 4);
+      sprite.setFrame(0).setAlpha(0.3).setPosition(base, this.floorY + 4);
       this.scene.tweens.add({
         targets: sprite,
-        x: { from: base - 2, to: base + 2 },
-        y: { from: this.floorY + 5, to: this.floorY + 3 },
-        duration: 60,
+        x: { from: base - 3, to: base + 3 },
+        y: { from: this.floorY + 6, to: this.floorY + 2 },
+        alpha: { from: 0.3, to: 0.7 },
+        duration: 90,
         yoyo: true,
-        repeat: Math.ceil(TELL_MS / 120),
+        repeat: Math.ceil(TELL_MS / 180),
         onComplete: () => sprite.setPosition(base, this.floorY + 4),
       });
     }
@@ -99,6 +120,8 @@ export class GraspingHands {
 
   private cancelTell() {
     this.tellUntil = 0;
+    this.tellEvent?.remove();
+    this.tellEvent = undefined;
     this.readyAt = this.scene.time.now + ABORT_COOLDOWN_MS;
     this.scene.tweens.killTweensOf(this.sprites);
     for (const [i, sprite] of this.sprites.entries()) {
@@ -109,6 +132,8 @@ export class GraspingHands {
   /** sortie effective des mains */
   private burst(time: number) {
     this.tellUntil = 0;
+    this.tellEvent?.remove();
+    this.tellEvent = undefined;
     this.grabUntil = time + GRAB_MS;
     this.soil.explode(22, this.x, this.floorY - 4);
     this.scene.tweens.killTweensOf(this.sprites);
@@ -161,6 +186,7 @@ export class GraspingHands {
   }
 
   destroy() {
+    this.tellEvent?.remove();
     this.scene.tweens.killTweensOf(this.sprites);
     for (const sprite of this.sprites) sprite.destroy();
     this.soil.destroy();
