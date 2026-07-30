@@ -20,10 +20,17 @@ export class GameScene extends Phaser.Scene {
   private enemies: Enemy[] = [];
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
   private blood!: BloodFX;
+  private parallax!: Parallax;
   private pickups: Pickup[] = [];
+  /** salle courante : determine le decor et la palette */
+  private backdropKey: BackdropKey = "cathedrale";
 
   constructor() {
     super("game");
+  }
+
+  init(data?: { backdrop?: BackdropKey }) {
+    this.backdropKey = data?.backdrop ?? "cathedrale";
   }
 
   create() {
@@ -32,6 +39,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
     this.cameras.main.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
     this.cameras.main.setBackgroundColor(0x14090b);
+
 
     this.blood = new BloodFX(this, FLOOR_Y);
 
