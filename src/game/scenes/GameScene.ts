@@ -125,10 +125,53 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+
+  /**
+   * Peuplement propre a chaque salle : la cathedrale sert d'introduction,
+   * le corridor est un couloir d'embuscade beaucoup plus dense (creatures
+   * rapprochees, pendus multiples, pieges au sol), les salles suivantes
+   * montent encore d'un cran.
+   */
+  private populateRoom() {
+    if (this.backdropKey === "corridor") {
+      this.spawn(new SuppliantRampant(this, 620, FLOOR_Y));
+      this.spawn(new SuppliantRampant(this, 900, FLOOR_Y));
+      this.spawn(new PenitentGreffe(this, 1150, FLOOR_Y));
+      this.spawn(new SuppliantRampant(this, 1450, FLOOR_Y));
+      this.spawn(new PenitentGreffe(this, 1720, FLOOR_Y));
+      this.spawn(new PenitentGreffe(this, 2050, FLOOR_Y));
+      this.spawnPendu(new EcorchePendu(this, 1000, FLOOR_Y, 60));
+      this.spawnPendu(new EcorchePendu(this, 1600, FLOOR_Y, 60));
+      this.spawnPendu(new EcorchePendu(this, 2200, FLOOR_Y, 60));
+
+      this.hands = [
+        new GraspingHands(this, 420, 900, FLOOR_Y),
+        new GraspingHands(this, 950, 1500, FLOOR_Y),
+        new GraspingHands(this, 1550, 2000, FLOOR_Y),
+        new GraspingHands(this, 2050, 2400, FLOOR_Y),
+      ];
+      return;
+    }
+
+    this.spawn(new SuppliantRampant(this, 760, FLOOR_Y));
+    this.spawn(new PenitentGreffe(this, 1180, FLOOR_Y));
+    this.spawn(new SuppliantRampant(this, 1600, FLOOR_Y));
+    this.spawn(new PenitentGreffe(this, 2060, FLOOR_Y));
+    this.spawnPendu(new EcorchePendu(this, 1400, FLOOR_Y, 60));
+    this.spawnPendu(new EcorchePendu(this, 1900, FLOOR_Y, 60));
+
+    this.hands = [
+      new GraspingHands(this, 520, 1150, FLOOR_Y),
+      new GraspingHands(this, 1200, 1800, FLOOR_Y),
+      new GraspingHands(this, 1850, 2400, FLOOR_Y),
+    ];
+  }
+
   private spawn(enemy: Enemy) {
     this.physics.add.collider(enemy, this.platforms);
     this.enemies.push(enemy);
   }
+
 
   /** un pendu ne se decroche que si aucune autre creature n'est active pres du heros */
   private spawnPendu(enemy: EcorchePendu) {
