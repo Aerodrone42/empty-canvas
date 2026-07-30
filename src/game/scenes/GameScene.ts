@@ -62,18 +62,23 @@ export class GameScene extends Phaser.Scene {
   create() {
     this.enemies = [];
     this.pickups = [];
+    this.exiting = false;
     this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
     this.cameras.main.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
     this.cameras.main.setBackgroundColor(0x14090b);
+    this.cameras.main.fadeIn(500, 0, 0, 0);
 
 
     this.blood = new BloodFX(this, FLOOR_Y);
 
     this.buildBackdrop();
     this.buildGeometry();
+    this.buildLift();
 
     this.player = new Player(this, 180, FLOOR_Y);
     this.physics.add.collider(this.player, this.platforms);
+    this.physics.add.collider(this.player, this.lift);
+
 
     this.spawn(new SuppliantRampant(this, 760, FLOOR_Y));
     this.spawn(new PenitentGreffe(this, 1180, FLOOR_Y));
