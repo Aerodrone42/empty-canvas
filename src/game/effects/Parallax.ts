@@ -142,39 +142,46 @@ export class Parallax {
       for (let r = 1; r <= rows; r++) {
         const t = r / rows;
         const y = Math.round(bandH * t * t); // resserre en haut
-        const depth = 0.1 + 0.22 * t; // les joints proches sont plus lisibles
+        const depth = 0.25 + 0.5 * t; // les joints proches sont plus lisibles
 
-        g.fillStyle(0x000000, depth * 0.7);
-        g.fillRect(0, y, roomWidth, Math.max(1, Math.round(1 + 2 * t)));
-        g.fillStyle(this.def.ledge, depth * 0.35);
+        // creux du joint puis arete eclairee juste au-dessus
+        g.fillStyle(0x000000, depth * 0.8);
+        g.fillRect(0, y, roomWidth, Math.max(1, Math.round(1 + 2.5 * t)));
+        g.fillStyle(this.def.ledge, depth * 0.5);
         g.fillRect(0, y - Math.max(1, Math.round(2 * t)), roomWidth, Math.max(1, Math.round(1.5 * t)));
 
         // joints transversaux de la rangee courante
         const slabW = 90 + 150 * t;
         const offset = (r % 2 === 0 ? slabW / 2 : 0) + rng.between(-14, 14);
         for (let x = offset; x < roomWidth; x += slabW) {
-          g.fillStyle(0x000000, depth * 0.55);
-          g.fillRect(Math.round(x), prevY, Math.max(1, Math.round(1 + 1.5 * t)), y - prevY);
+          const jx = Math.round(x);
+          const jw = Math.max(1, Math.round(1 + 2 * t));
+          g.fillStyle(0x000000, depth * 0.7);
+          g.fillRect(jx, prevY, jw, y - prevY);
+          g.fillStyle(this.def.ledge, depth * 0.25);
+          g.fillRect(jx + jw, prevY, Math.max(1, Math.round(t)), y - prevY);
         }
         prevY = y;
       }
 
       // --- traces, fissures et debris poses sur les dalles
-      const count = Math.round(roomWidth / 150);
+      const count = Math.round(roomWidth / 110);
       for (let i = 0; i < count; i++) {
         const x = 60 + (i + rng.frac() * 0.6) * (roomWidth / count);
-        const y = bandH - rng.between(2, Math.min(40, bandH - 4));
-        const w = rng.between(40, 130);
-        const h = Math.max(4, w * rng.realInRange(0.09, 0.16));
+        const y = bandH - rng.between(2, Math.max(6, Math.min(bandH - 6, bandH * 0.7)));
+        const near = y / bandH; // plus bas = plus proche = plus contraste
+        const w = rng.between(40, 130) * (0.5 + near);
+        const h = Math.max(3, w * rng.realInRange(0.09, 0.16));
 
-        g.fillStyle(0x000000, rng.realInRange(0.16, 0.3));
+        g.fillStyle(0x000000, rng.realInRange(0.22, 0.42) * (0.5 + near));
         g.fillEllipse(x, y, w, h);
 
-        if (rng.frac() > 0.55) {
-          g.fillStyle(this.def.ledge, 0.45);
+        if (rng.frac() > 0.5) {
+          g.fillStyle(this.def.ledge, 0.5 * (0.5 + near));
           g.fillEllipse(x + rng.between(-40, 40), y - rng.between(4, 14), w * 0.3, h * 0.55);
         }
       }
+
 
       g.generateTexture(key, roomWidth, bandH);
       g.destroy();
