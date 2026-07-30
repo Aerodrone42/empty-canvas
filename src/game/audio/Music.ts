@@ -8,21 +8,33 @@ export const MUSIC_COMBAT = "music-combat";
 const MAIN_TRACK = MUSIC_COMBAT;
 const MAIN_VOLUME = 0.4;
 
-/** Bande-son : une seule piste en boucle, independante des ennemis. */
+/**
+ * Bande-son : une seule piste en boucle, persistante d'une salle a l'autre.
+ * Le son est attache au jeu (pas a la scene) pour ne jamais se couper lors
+ * d'un changement de salle ou d'un restart de scene.
+ */
 export class MusicDirector {
   private track?: Phaser.Sound.BaseSound;
 
   constructor(scene: Phaser.Scene) {
-    this.track = scene.sound.add(MAIN_TRACK, { loop: true, volume: MAIN_VOLUME });
+    const manager = scene.sound;
+    // reprend la piste deja en cours si elle existe
+    const existing = manager.get(MAIN_TRACK);
+    this.track = existing ?? manager.add(MAIN_TRACK, { loop: true, volume: MAIN_VOLUME });
 
-    const start = () => this.track?.play();
-    if (scene.sound.locked) {
-      scene.sound.once(Phaser.Sound.Events.UNLOCKED, start);
+    const start = () => {
+      if (!this.track) return;
+      if (!this.track.isPlaying) this.track.play({ loop: true, volume: MAIN_VOLUME });
+    };
+
+    if (manager.locked) {
+      manager.once(Phaser.Sound.Events.UNLOCKED, start);
     } else {
       start();
     }
 
-    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
+    // relance automatique si la piste se termine (fin de buffer, perte de boucle)
+    this.track.on(Phaser.Sound.Events.COMPLETE, start);
   }
 
   /** conserve pour compatibilite : la musique ne change pas selon le combat */
@@ -30,9 +42,11 @@ export class MusicDirector {
     // volontairement sans effet
   }
 
+  /** arret explicite : uniquement si l'on veut vraiment couper la bande-son */
   destroy() {
     this.track?.stop();
     this.track?.destroy();
     this.track = undefined;
   }
 }
+
