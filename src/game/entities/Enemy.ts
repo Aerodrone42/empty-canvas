@@ -294,3 +294,134 @@ export class SuppliantRampant extends Enemy {
   }
 }
 
+/**
+ * Ecorche-Pendu : suspendu au plafond par ses veines, il se decroche quand le
+ * heros passe dessous, s'ecrase au sol puis attaque avec une onde de sang.
+ * A la mort, il explose en gerbe.
+ */
+type EcorcheState = "hanging" | "falling" | "landing" | "active";
+
+export class EcorchePendu extends Enemy {
+  private phase: EcorcheState = "hanging";
+  private readonly floorY: number;
+  private readonly triggerRange: number;
+
+  constructor(scene: Phaser.Scene, x: number, floorY: number, ceilingY = 40) {
+    super(scene, x, ceilingY, {
+      health: 46,
+      speed: 34,
+      chaseSpeed: 118,
+      damage: 14,
+      detectRange: 420,
+      attackRange: 120,
+      attackCooldown: 1900,
+      scale: 1.2,
+      bodyWidth: 52,
+      bodyHeight: 126,
+      fleshReward: 12,
+      animPrefix: "ecorche",
+    });
+
+    this.floorY = floorY;
+    this.triggerRange = 200;
+
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setAllowGravity(false);
+    body.setVelocity(0, 0);
+
+    this.setTexture("ecorche-hang");
+    this.play("ecorche-hang-anim", true);
+  }
+
+  private drop() {
+    this.phase = "falling";
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setAllowGravity(true);
+    body.setVelocityY(120);
+    this.setTexture("ecorche-fall");
+    this.play("ecorche-fall-anim", true);
+    this.scene.events.emit("fx-blood", this.x, this.y - 40, 1, 0.9);
+  }
+
+  private land() {
+    this.phase = "landing";
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setVelocityX(0);
+    this.setTexture("ecorche-land");
+    this.play("ecorche-land-anim", true);
+    this.scene.cameras.main.shake(180, 0.008);
+    this.scene.events.emit("fx-gore", this.x, this.y - 20, 1.3);
+    this.once(
+      Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + "ecorche-land-anim",
+      () => {
+        if (!this.active || this.isDead) return;
+        this.phase = "active";
+        this.setTexture("ecorche-idle");
+        this.play("ecorche-idle-anim", true);
+      },
+    );
+  }
+
+  /** onde de sang circulaire projetee au sol */
+  private bloodWave() {
+    const wave = this.scene.add.circle(this.x, this.floorY - 8, 20, 0x7a1220, 0.42);
+    wave.setStrokeStyle(6, 0xa81e2c, 0.85);
+    wave.setDepth(6);
+    this.scene.tweens.add({
+      targets: wave,
+      radius: 150,
+      alpha: 0,
+      duration: 420,
+      ease: "Quad.easeOut",
+      onComplete: () => wave.destroy(),
+    });
+    for (let i = 0; i < 5; i += 1) {
+      const dir = i % 2 === 0 ? 1 : -1;
+      this.scene.events.emit(
+        "fx-blood",
+        this.x + dir * (20 + i * 22),
+        this.floorY - 20,
+        dir,
+        1.1,
+      );
+    }
+  }
+
+  think(playerX: number, playerY: number, time: number) {
+    if (this.isDead || !this.body) return;
+    const body = this.body as Phaser.Physics.Arcade.Body;
+
+    if (this.phase === "hanging") {
+      body.setVelocity(0, 0);
+      this.setFlipX(playerX < this.x);
+      if (Math.abs(playerX - this.x) < this.triggerRange) this.drop();
+      return;
+    }
+
+    if (this.phase === "falling") {
+      if (body.blocked.down || this.y >= this.floorY - 1) this.land();
+      return;
+    }
+
+    if (this.phase === "landing") {
+      body.setVelocityX(0);
+      return;
+    }
+
+    const wasAttacking = this.anims.currentAnim?.key === "ecorche-attack-anim";
+    super.think(playerX, playerY, time);
+    const nowAttacking = this.anims.currentAnim?.key === "ecorche-attack-anim";
+    if (nowAttacking && !wasAttacking) this.bloodWave();
+  }
+
+  protected die(intensity = 1) {
+    const body = this.body as Phaser.Physics.Arcade.Body | null;
+    if (body) body.setVelocity(0, 0);
+    this.setTexture("ecorche-burst");
+    this.play("ecorche-burst-anim", true);
+    this.scene.cameras.main.shake(220, 0.012);
+    super.die(Math.max(intensity, 1.8));
+  }
+}
+
+

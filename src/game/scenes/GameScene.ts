@@ -4,7 +4,7 @@ import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat"
 import { Profiler } from "../debug/Profiler";
 import { BloodFX } from "../effects/Blood";
 import { Parallax } from "../effects/Parallax";
-import { Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
+import { EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
 import { Pickup } from "../entities/Pickup";
 import { Player } from "../entities/Player";
 import type { BackdropKey } from "@/game/assets";
@@ -69,8 +69,10 @@ export class GameScene extends Phaser.Scene {
 
 
     this.spawn(new SuppliantRampant(this, 760, FLOOR_Y));
+    this.spawn(new EcorchePendu(this, 980, FLOOR_Y, 60));
     this.spawn(new PenitentGreffe(this, 1180, FLOOR_Y));
     this.spawn(new SuppliantRampant(this, 1600, FLOOR_Y));
+    this.spawn(new EcorchePendu(this, 1820, FLOOR_Y, 60));
     this.spawn(new PenitentGreffe(this, 2060, FLOOR_Y));
 
     // suivi horizontal uniquement : au saut, l'image ne doit pas bouger
