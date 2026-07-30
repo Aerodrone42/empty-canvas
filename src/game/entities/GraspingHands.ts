@@ -132,6 +132,8 @@ export class GraspingHands {
   /** sortie effective des mains */
   private burst(time: number) {
     this.tellUntil = 0;
+    this.tellEvent?.remove();
+    this.tellEvent = undefined;
     this.grabUntil = time + GRAB_MS;
     this.soil.explode(22, this.x, this.floorY - 4);
     this.scene.tweens.killTweensOf(this.sprites);
