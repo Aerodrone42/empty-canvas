@@ -1,37 +1,29 @@
-## Nouvel ennemi : le Pendu-Écorché (tombe du plafond)
+## Objectif
 
-Un troisième type d'ennemi basé sur tes trois planches : il attend suspendu au plafond par ses veines, se décroche quand le joueur passe dessous, s'écrase au sol dans une gerbe de sang, se redresse, puis chasse et attaque.
+Les mains du sol sont beaucoup trop grandes (elles recouvrent tout le héros) et leur effet est trop faible. Elles doivent monter au genou et immobiliser le héros pendant 3 secondes quand elles l'attrapent.
 
-### 1. Préparation des sprites
-- Découpage automatique des trois PNG (script Python/PIL) : détection des silhouettes par colonnes de pixels non transparents, puis recadrage de chaque pose.
-- Recomposition en feuilles normalisées au gabarit ennemi existant (cellule 224x176, pieds à y=168, sans marge), pour rester cohérent avec `Penitent` et `Suppliant` :
-  - `ecorche_hang` (suspendu, boucle) — 3 poses de la planche 1
-  - `ecorche_fall` (chute) — pose de chute de la planche 1
-  - `ecorche_land` (impact au sol + relevé) — poses impact/accroupi/redressé de la planche 1
-  - `ecorche_idle` / `ecorche_walk` (planche 2, cycle de marche)
-  - `ecorche_attack` (planche 2 : élan + frappe avec l'onde rouge)
-  - `ecorche_burst` (planche 3, poses 5 et 6 : explosion de sang) → utilisée à la mort
-- Les feuilles générées seront placées dans `public/assets/sprites/enemies/`, comme les autres.
+## Taille
 
-### 2. Déclaration des animations
-- Ajout des entrées correspondantes dans `src/game/assets.ts` (mêmes conventions : `frameWidth 224`, `frameHeight 176`, `spacing 0`), pour qu'elles soient chargées et animées par `BootScene`.
+Le héros mesure 130 px à l'écran. Le genou se situe donc vers 38-42 px au-dessus du sol. La main la plus haute de la planche fait ~160 px dans sa cellule et est actuellement affichée à l'échelle 1.35 (soit ~216 px, plus grande que le héros).
 
-### 3. Comportement (nouvelle classe `EcorchePendu` dans `Enemy.ts`)
-Machine à états ajoutée par-dessus l'IA existante :
-- **hanging** : accroché au plafond (gravité désactivée), animation de balancement, aucune collision avec le joueur.
-- **falling** : déclenché quand le joueur entre dans un rayon horizontal (~180 px) — gravité activée, filet de sang qui se rompt, tremblement de caméra léger.
-- **landing** : à l'atterrissage, éclaboussure de sang (`fx-gore` court), petite onde de choc, ~450 ms d'immobilité pour laisser le joueur réagir (esquive/parade).
-- **active** : reprend l'IA standard (`think`) — patrouille, poursuite, attaque télégraphée avec l'anticipation existante.
-- **Attaque spéciale** : griffade rapide à deux temps (dégâts moyens, portée courte) + une variante à distance courte qui projette l'onde de sang visible sur ta planche 2, avec le même signal d'anticipation que les autres ennemis (pour rester parable/esquivable).
-- **Mort** : utilise les frames d'éclatement (planche 3) au lieu de la simple chute, avec la gerbe et les orbes de chair existantes.
+- `src/game/entities/GraspingHands.ts` : passer l'échelle de `1.35` à `0.25`, ce qui donne une main d'environ 40 px — exactement au genou.
+- Passer la profondeur d'affichage devant le héros restreinte au bas du corps (garder `depth 7`), pour que les mains agrippent visiblement les jambes sans masquer le torse.
 
-### 4. Placement dans la scène
-- Dans `GameScene.ts`, ajout de 2 pendus accrochés au plafond de la Nef (positions choisies entre les ennemis existants), avec un `ceilingY` en haut de l'écran, ainsi que leur intégration dans les boucles `think()` et de collision actuelles.
-- Stats : santé 40, dégâts 14, rapide mais pas blindé, récompense de chair 10.
+## Agrippement de 3 secondes
 
-### 5. Vérification
-- Contrôle visuel automatisé (script navigateur) : capture après déclenchement de la chute pour valider l'alignement au sol, l'échelle et l'absence d'erreurs console.
+Aujourd'hui l'effet est un simple ralentissement renouvelé tant que le héros reste dans la zone. On le remplace par une vraie saisie :
 
-### Détails techniques
-- Fichiers touchés : `src/game/assets.ts`, `src/game/entities/Enemy.ts`, `src/game/scenes/GameScene.ts`, + nouvelles feuilles PNG dans `public/assets/sprites/enemies/`.
-- Aucune modification du héros, du HUD ou du décor.
+- `GraspingHands` : quand le héros entre dans la zone et que le piège est prêt, déclencher une saisie unique — mains qui jaillissent, gerbe de sang, et signal `grab` au joueur pour 3000 ms. Ensuite les mains replongent et le piège se remet en cooldown (~2,5 s) pour qu'il ne réattrape pas immédiatement.
+- `src/game/entities/Player.ts` : la méthode `snare` devient une vraie immobilisation :
+  - vitesse horizontale bloquée à 0 (léger dégagement possible à ~10 % pour que le joueur sente qu'il lutte),
+  - esquive impossible (comportement déjà en place, conservé),
+  - saut impossible pendant la saisie,
+  - teinte rougeâtre et petites gerbes de sang régulières pour signaler l'état,
+  - fin automatique après 3 secondes.
+- `src/game/scenes/GameScene.ts` : la boucle n'applique plus le ralentissement image par image ; elle relaie uniquement l'événement de saisie envoyé par les mains.
+
+## Détails techniques
+
+- Rayon de déclenchement conservé (90 px) et vérification que le héros est au sol (`|playerY - floorY| < 90`), pour qu'un saut par-dessus évite le piège.
+- L'animation `mains-sol-anim` (5 frames) est jouée à l'endroit pour la sortie, puis en `playReverse` pour le retrait après les 3 secondes.
+- Aucune modification des assets : la planche `mains_sol_spritesheet.png` reste identique, seul le facteur d'échelle change.
