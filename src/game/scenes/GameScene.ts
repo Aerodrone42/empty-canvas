@@ -117,36 +117,21 @@ export class GameScene extends Phaser.Scene {
   }
 
 
+  /** Decor en trois calques de parallaxe, selon la salle courante. */
   private buildBackdrop() {
-    const g = this.add.graphics();
-    g.fillStyle(0x1b0f12, 1);
-    g.fillRect(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
-
-    // Arches gothiques en arriere-plan
-    g.fillStyle(0x241417, 1);
-    for (let x = 60; x < ROOM_WIDTH; x += 320) {
-      g.fillRect(x, 240, 150, FLOOR_Y - 240);
-      g.fillEllipse(x + 75, 240, 150, 190);
-    }
-
-    g.fillStyle(0x0e070a, 1);
-    for (let x = 90; x < ROOM_WIDTH; x += 320) {
-      g.fillRect(x, 290, 90, FLOOR_Y - 290);
-      g.fillEllipse(x + 45, 290, 90, 130);
-    }
-    g.setScrollFactor(0.35);
-    g.setDepth(-10);
+    this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y);
   }
 
   private buildGeometry() {
     this.platforms = this.physics.add.staticGroup();
+    const palette = this.parallax.def;
 
     const ground = this.add.rectangle(
       ROOM_WIDTH / 2,
       FLOOR_Y + 40,
       ROOM_WIDTH,
       80,
-      0x2a181b,
+      palette.ground,
     );
     this.platforms.add(ground);
 
@@ -158,9 +143,10 @@ export class GameScene extends Phaser.Scene {
     ];
 
     for (const [x, y, w] of ledges) {
-      const ledge = this.add.rectangle(x, y, w, 24, 0x3a2226);
+      const ledge = this.add.rectangle(x, y, w, 24, palette.ledge);
       this.platforms.add(ledge);
     }
+
 
     this.platforms.refresh();
   }
