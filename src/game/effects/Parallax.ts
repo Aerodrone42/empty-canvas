@@ -49,6 +49,9 @@ export class Parallax {
     if (key === "corridor") {
       // fond panoramique : UNE seule image etiree sur toute la salle,
       // aucune repetition, aucune couture visible.
+      // filtrage lineaire : le jeu est en pixelArt (NEAREST) ce qui rendait
+      // cette peinture etiree tres crenelee -> on lisse cette texture seule.
+      scene.textures.get(this.def.far).setFilter(Phaser.Textures.FilterMode.LINEAR);
       scene.add
         .image(0, topWorldY, this.def.far)
         .setOrigin(0, 0)
