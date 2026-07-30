@@ -6,6 +6,7 @@ import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat"
 import { Profiler } from "../debug/Profiler";
 import { BloodFX } from "../effects/Blood";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
+import { CorridorVein } from "../effects/CorridorVein";
 import { WeepingStatue } from "../effects/WeepingStatue";
 import { GateColumn } from "../effects/GateColumn";
 import { Parallax } from "../effects/Parallax";
@@ -52,6 +53,8 @@ export class GameScene extends Phaser.Scene {
   private gateColumn?: GateColumn;
   /** supplicie ecorche du fond de la cathedrale */
   private crucified?: CrucifiedProp;
+  /** veine geante animee du corridor */
+  private vein?: CorridorVein;
   private statues: WeepingStatue[] = [];
   private gateWall?: Phaser.GameObjects.Rectangle;
   
@@ -239,6 +242,9 @@ export class GameScene extends Phaser.Scene {
     if (this.backdropKey === "cathedrale") {
       this.crucified = new CrucifiedProp(this, CRUCIFIED_X, FLOOR_Y);
     } else if (this.backdropKey === "corridor") {
+      // grosse veine qui bat le long du couloir, derriere les statues
+      this.vein = new CorridorVein(this, FLOOR_Y, ROOM_WIDTH);
+
       // statues de pleureuses qui saignent des yeux quand le heros approche
       this.statues = [
         // reculees dans le decor : posees contre le mur du fond, plus
