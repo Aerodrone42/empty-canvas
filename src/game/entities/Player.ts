@@ -221,7 +221,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.moveState = "idle";
         this.clearTint();
         this.setAlpha(1);
+        this.dodgeRecoverUntil = time + 170;
+        this.play("vigile-dodge-recover", true);
       } else {
+        // plongee puis roulade au sol
+        const elapsed = time - this.dodgeStartedAt;
+        if (elapsed > DODGE.duration * 0.45) this.play("vigile-dodge-roll", true);
         return;
       }
     }
