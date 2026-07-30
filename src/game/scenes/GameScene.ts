@@ -167,6 +167,93 @@ export class GameScene extends Phaser.Scene {
     this.lighting = new Lighting(this, ROOM_WIDTH, FLOOR_Y);
   }
 
+  /**
+   * Plateforme de pierre en bout de salle : le heros monte dessus et elle
+   * s'eleve comme un ascenseur vers la salle suivante.
+   */
+  private buildLift() {
+    const def = this.parallax.def;
+    this.liftBaseY = FLOOR_Y - 34;
+    this.liftTopY = this.liftBaseY - LIFT_TRAVEL;
+
+    // halo discret : signale que la plateforme est interactive
+    this.liftGlow = this.add
+      .rectangle(LIFT_X, this.liftBaseY, LIFT_W * 1.1, LIFT_H * 2.4, def.dust, 0.09)
+      .setDepth(-1);
+    this.tweens.add({
+      targets: this.liftGlow,
+      alpha: { from: 0.05, to: 0.18 },
+      duration: 1400,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.InOut",
+    });
+
+    this.lift = this.add.rectangle(LIFT_X, this.liftBaseY, LIFT_W, LIFT_H, def.ground, 1);
+    this.lift.setStrokeStyle(2, def.ledge, 1);
+    this.lift.setDepth(2);
+
+    this.liftEdge = this.add
+      .rectangle(LIFT_X, this.liftBaseY - LIFT_H / 2, LIFT_W, 3, def.ledge, 0.75)
+      .setDepth(3);
+
+    this.physics.add.existing(this.lift, false);
+    const body = this.lift.body as Phaser.Physics.Arcade.Body;
+    body.setAllowGravity(false);
+    body.setImmovable(true);
+    body.setFriction(1, 1);
+    // on ne bute pas dedans par en dessous ni sur les cotes
+    body.checkCollision.down = false;
+    body.checkCollision.left = false;
+    body.checkCollision.right = false;
+  }
+
+  /** Montee automatique tant que le heros est pose dessus. */
+  private updateLift(delta: number) {
+    if (!this.lift || this.exiting) return;
+    const body = this.lift.body as Phaser.Physics.Arcade.Body;
+    const step = (delta / 1000) * LIFT_SPEED;
+
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body | null;
+    const riding =
+      !!playerBody &&
+      playerBody.touching.down &&
+      Math.abs(this.player.x - this.lift.x) < LIFT_W / 2 + 12 &&
+      Math.abs(this.player.y - (this.lift.y - LIFT_H / 2)) < 40;
+
+    let dy = 0;
+    if (riding && this.lift.y > this.liftTopY) {
+      dy = -Math.min(step, this.lift.y - this.liftTopY);
+    } else if (!riding && this.lift.y < this.liftBaseY) {
+      dy = Math.min((delta / 1000) * LIFT_RETURN_SPEED, this.liftBaseY - this.lift.y);
+    }
+
+    if (dy !== 0) {
+      this.lift.y += dy;
+      this.liftEdge.y = this.lift.y - LIFT_H / 2;
+      this.liftGlow.y = this.lift.y;
+      body.updateFromGameObject();
+      // le heros est porte par la plateforme
+      if (riding && dy < 0) this.player.y += dy;
+    }
+
+    if (riding && this.lift.y <= this.liftTopY + 0.5) this.exitRoom();
+  }
+
+  /** Fondu au noir puis passage a la salle suivante. */
+  private exitRoom() {
+    if (this.exiting) return;
+    this.exiting = true;
+    const cam = this.cameras.main;
+    cam.fadeOut(650, 0, 0, 0);
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      const i = ROOM_ORDER.indexOf(this.backdropKey);
+      const next = ROOM_ORDER[(i + 1) % ROOM_ORDER.length];
+      this.scene.restart({ backdrop: next });
+    });
+  }
+
+
   private buildGeometry() {
     this.platforms = this.physics.add.staticGroup();
 
