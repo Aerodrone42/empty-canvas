@@ -17,6 +17,7 @@ export function useGamepadUi() {
     let prevA = false;
     let prevB = false;
     let prevStart = false;
+    let prevSelect = false;
 
     const focusables = () =>
       Array.from(
