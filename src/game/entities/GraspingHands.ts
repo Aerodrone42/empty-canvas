@@ -33,6 +33,8 @@ export class GraspingHands {
   private grabUntil = 0;
   private readyAt = 0;
   private tellUntil = 0;
+  /** minuterie de l'annonce : gerbes de terre de plus en plus fortes */
+  private tellEvent?: Phaser.Time.TimerEvent;
 
   constructor(scene: Phaser.Scene, x: number, floorY: number, radius = 90) {
     this.scene = scene;
