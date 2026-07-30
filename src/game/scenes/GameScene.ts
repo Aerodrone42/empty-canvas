@@ -42,6 +42,15 @@ export class GameScene extends Phaser.Scene {
   /** salle courante : determine le decor et la palette */
   private backdropKey: BackdropKey = "cathedrale";
 
+  /** plateforme-ascenseur de fin de salle */
+  private lift!: Phaser.GameObjects.Rectangle;
+  private liftEdge!: Phaser.GameObjects.Rectangle;
+  private liftGlow!: Phaser.GameObjects.Rectangle;
+  private liftBaseY = FLOOR_Y - 40;
+  private liftTopY = FLOOR_Y - 40 - LIFT_TRAVEL;
+  private exiting = false;
+
+
   constructor() {
     super("game");
   }
