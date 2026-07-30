@@ -108,8 +108,13 @@ export class Parallax {
 
 
 
-  /** Voile colore et poussieres flottantes. */
-  private addAmbience(viewW: number, viewH: number, floorScreenY: number) {
+  /** Voile colore, poussieres flottantes, braises et vignettage. */
+  private addAmbience(
+    viewW: number,
+    viewH: number,
+    floorScreenY: number,
+    dense = false,
+  ) {
     const scene = this.scene;
 
     scene.add
@@ -131,14 +136,50 @@ export class Parallax {
         alpha: { start: 0, end: 0 },
         tint: this.def.dust,
         quantity: 1,
-        frequency: 240,
+        frequency: dense ? 110 : 240,
         blendMode: Phaser.BlendModes.ADD,
       })
       .setScrollFactor(0.35)
       .setDepth(-6);
 
     dust.setParticleAlpha({ start: 0.5, end: 0 });
+
+    if (!dense) return;
+
+    // braises rouges qui montent du sol
+    const embers = scene.add
+      .particles(0, 0, "fx-dust", {
+        x: { min: 0, max: viewW },
+        y: { min: floorScreenY - 40, max: floorScreenY + 10 },
+        lifespan: { min: 2200, max: 4200 },
+        speedY: { min: -46, max: -18 },
+        speedX: { min: -10, max: 10 },
+        scale: { min: 0.3, max: 0.8 },
+        alpha: { start: 0, end: 0 },
+        tint: 0xff5a3c,
+        quantity: 1,
+        frequency: 260,
+        blendMode: Phaser.BlendModes.ADD,
+      })
+      .setScrollFactor(0.5)
+      .setDepth(-6);
+
+    embers.setParticleAlpha({ start: 0.7, end: 0 });
+
+    // vignettage lateral : les extremites du couloir se perdent dans le noir
+    const vw = Math.round(viewW * 0.22);
+    for (const left of [true, false]) {
+      const g = scene.add.graphics().setScrollFactor(0).setDepth(-4);
+      g.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.85, 0, 0.85, 0);
+      g.fillRect(left ? 0 : viewW - vw, 0, vw, viewH);
+      if (!left) {
+        g.clear();
+        g.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0, 0.85, 0, 0.85);
+        g.fillRect(viewW - vw, 0, vw, viewH);
+      }
+    }
   }
+
 
   /** Petite texture ronde pour les poussieres, generee une seule fois. */
   private ensureDustTexture() {
