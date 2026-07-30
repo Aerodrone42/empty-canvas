@@ -76,6 +76,10 @@ export class GameScene extends Phaser.Scene {
     // suivi horizontal uniquement : au saut, l'image ne doit pas bouger
     const cam = this.cameras.main;
     cam.startFollow(this.player, true, 0.2, 0, 0, 0);
+    // zone morte etroite : la camera repart des que le heros s'ecarte un peu
+    // du centre, sinon on marche longtemps sans que l'image bouge
+    cam.setDeadzone(180, ROOM_HEIGHT);
+
     cam.setScroll(cam.scrollX, ROOM_HEIGHT - cam.height);
 
     this.events.on("player-strike", this.resolvePlayerStrike, this);
