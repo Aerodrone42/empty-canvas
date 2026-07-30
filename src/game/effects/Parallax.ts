@@ -92,8 +92,10 @@ export class Parallax {
       .setScrollFactor(1)
       .setDepth(-20);
 
-    const stamp = scene.make.image({ key: this.def.far, frame: "ground" }, false);
+    const stamp = scene.make.image({ x: 0, y: 0 }, false);
+    stamp.setTexture(this.def.far, "ground");
     stamp.setOrigin(0, 0).setScale(scale);
+
     const tiles = Math.ceil(roomWidth / bandW) + 1;
     for (let i = 0; i < tiles; i++) {
       stamp.setFlipX(i % 2 === 1);
