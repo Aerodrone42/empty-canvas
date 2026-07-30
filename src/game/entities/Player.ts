@@ -40,6 +40,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private airJumpsUsed = 0;
   private padJumpPrev = false;
   private padAttackPrev = false;
+  private refCharH = 0;
 
 
 
