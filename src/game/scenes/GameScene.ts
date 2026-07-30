@@ -15,7 +15,8 @@ import { useGameStore } from "@/store/gameStore";
 
 const ROOM_WIDTH = 2400;
 const ROOM_HEIGHT = 900;
-/** la ligne de sol est calee tout en bas du viewport : plus de bande vide */
+/** supplicie ecorche : decor anime au centre de la cathedrale */
+const CRUCIFIED_X = 1150;
 const FLOOR_Y = 880;
 /** soin par seconde en se reposant dans une flaque de sang */
 const POOL_REGEN_PER_SEC = 6;
