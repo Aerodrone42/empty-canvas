@@ -72,18 +72,11 @@ export class Parallax {
         .setDepth(-20)
         .setTileScale(midScale, midScale);
 
-      // 3) piliers de premier plan : le heros passe derriere eux.
-      const nearSrc = scene.textures.get(this.def.near).getSourceImage();
-      const nearScale = (drawH * 1.15) / (nearSrc.height || 1);
-      const nearH = drawH * 1.15;
-      scene.add
-        .tileSprite(0, floorY + 24 - nearH, roomWidth * 1.7, nearH, this.def.near)
-        .setOrigin(0, 0)
-        .setScrollFactor(1.25)
-        .setDepth(30)
-        .setTileScale(nearScale, nearScale)
-        .setAlpha(0.95);
+      // 3) dallage reel : ancre au monde, il defile exactement a la vitesse
+      //    des pas et rattrape le vide sous les pieds du heros.
+      this.addFloor(floorY, roomHeight, roomWidth);
     } else {
+
       // rendu d'origine des autres salles : peinture repetee a l'echelle
       const source = scene.textures.get(this.def.far).getSourceImage();
       const srcH = source.height || 1;
