@@ -99,7 +99,7 @@ export class BloodFX {
       .renderTexture(bounds.x, floorY - POOL_BAND * 0.5, Math.max(1, bounds.width), POOL_BAND)
       .setOrigin(0, 0)
       .setDepth(1);
-    this.stamp = scene.make.image({ key: BLOT_KEY, add: false }).setOrigin(0.5, 0.5);
+    this.stamp = new Phaser.GameObjects.Image(scene, 0, 0, BLOT_KEY).setOrigin(0.5, 0.5);
   }
 
   /** Redessine l'ensemble des flaques : un seul objet rendu, cout constant. */
