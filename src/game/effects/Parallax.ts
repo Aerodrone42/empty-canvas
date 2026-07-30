@@ -51,29 +51,62 @@ export class Parallax {
     const floorScreenY = floorY - Math.max(0, roomHeight - viewH);
 
     // --- calque lointain : la peinture, plein cadre ------------------
+    // seul le fond profond defile lentement (ciel, fleches lointaines)
     this.addTiled(this.def.far, viewW, viewH * 1.12, floorScreenY, -30, SPEEDS[0]);
 
-    // --- calque median : les piliers poses sur le sol ----------------
-    this.addTiled(this.def.mid, viewW, viewH * 0.78, floorScreenY, -20, SPEEDS[1]);
+    // --- calque median : l'architecture, ancree dans le monde ---------
+    // Plus de repetition en continu : quelques massifs poses a des
+    // endroits precis de la salle, solidaires du sol (scrollFactor 1),
+    // donc ils ne "glissent" plus quand le joueur avance.
+    this.addAnchoredMid(this.def.mid, viewH * 0.78, floorY, roomWidth);
 
     // --- cadre rocheux : ancre aux deux extremites de la salle -------
     // (objets du monde : on les quitte vraiment quand on avance)
     const frameW = viewW * 0.42;
     const frameH = viewH * 1.04;
     this.frame = scene.add
-      .image(0, floorScreenY, this.def.near)
+      .image(0, floorY, this.def.near)
       .setOrigin(0, 1)
       .setDisplaySize(frameW, frameH)
       .setScrollFactor(1)
       .setDepth(-8);
     scene.add
-      .image(roomWidth, floorScreenY, this.def.near)
+      .image(roomWidth, floorY, this.def.near)
       .setOrigin(0, 1)
       .setDisplaySize(-frameW, frameH)
       .setScrollFactor(1)
       .setDepth(-8);
 
+
     this.addAmbience(viewW, viewH, floorScreenY);
+  }
+
+  /**
+   * Pose l'architecture median comme de vrais objets du monde, espaces,
+   * plutot qu'une colonnade repetee a l'infini.
+   */
+  private addAnchoredMid(
+    textureKey: string,
+    drawH: number,
+    worldFloorY: number,
+    roomWidth: number,
+  ) {
+    const source = this.scene.textures.get(textureKey).getSourceImage();
+    const srcW = source.width || 1;
+    const srcH = source.height || 1;
+    const drawW = (srcW / srcH) * drawH;
+
+    // un massif, puis un vide au moins aussi large : la salle respire
+    const step = drawW * 2.1;
+
+    for (let i = 0, x = -drawW * 0.15; x < roomWidth; i++, x += step) {
+      this.scene.add
+        .image(x, worldFloorY, textureKey)
+        .setOrigin(0, 1)
+        .setDisplaySize(i % 2 === 0 ? drawW : -drawW, drawH)
+        .setScrollFactor(1)
+        .setDepth(-20);
+    }
   }
 
   /** Cree un calque tuile horizontalement, bas cale sur la ligne de sol. */
@@ -100,6 +133,7 @@ export class Parallax {
     sprite.tilePositionX = offset;
     this.layers.push({ sprite, speed, offset });
   }
+
 
   /** Voile colore, poussieres et vacillement de cierges. */
   private addAmbience(viewW: number, viewH: number, floorScreenY: number) {
