@@ -98,20 +98,23 @@ export class GameScene extends Phaser.Scene {
   }
 
   private resolvePlayerStrike() {
-    const reach = 96;
+    const effects = useGameStore.getState().effects;
+    const reach = 96 + effects.bonusReach;
     const originX = this.player.x + this.player.facingDirection * (reach / 2);
+    const damage = 22 * effects.damageMult;
 
     for (const enemy of this.enemies) {
       if (!enemy.active || enemy.isDead) continue;
       const withinX = Math.abs(enemy.x - originX) < reach;
       const withinY = Math.abs(enemy.y - this.player.y) < 130;
       if (withinX && withinY) {
-        enemy.takeHit(22);
+        enemy.takeHit(damage);
       }
     }
 
     this.cameras.main.shake(70, 0.004);
   }
+
 
   private resolveEnemyStrike(amount: number) {
     this.player.receiveDamage(amount, this.time.now);
