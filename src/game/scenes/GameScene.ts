@@ -237,16 +237,6 @@ export class GameScene extends Phaser.Scene {
       this.gateWall = undefined;
     }
 
-    if (this.gateVeil) {
-      const veil = this.gateVeil;
-      this.gateVeil = undefined;
-      this.tweens.add({
-        targets: veil,
-        alpha: 0,
-        duration: 900,
-        onComplete: () => veil.destroy(),
-      });
-    }
 
     const cam = this.cameras.main;
     const label = this.add
