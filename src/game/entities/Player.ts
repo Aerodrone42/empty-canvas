@@ -217,7 +217,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (onGround) this.airJumpsUsed = 0;
 
-    const speed = SPEED * effects.speedMult;
+    const snared = time < this.snareUntil;
+    const speed = SPEED * effects.speedMult * (snared ? this.snareMult : 1);
     const jumpPower = JUMP * effects.jumpMult;
     const cooldown = ATTACK_COOLDOWN * effects.attackCooldownMult;
 
