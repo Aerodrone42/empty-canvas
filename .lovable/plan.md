@@ -1,41 +1,40 @@
-## Constat (mesuré sur les fichiers actuels)
+## Objectif
 
-Cadres de 128 px de haut pour les trois feuilles, mais la silhouette dessinée mesure :
+Le Vigile n'a aujourd'hui qu'une seule action offensive (`vigile-attack-anim`, portée fixe, cooldown unique) et aucune option défensive. On ajoute un moveset complet, lisible à la manette Xbox comme PlayStation, et on l'intègre à l'arbre de mutations existant.
 
-```text
-idle    : 73, 72, 73, 72 px   (pieds à y=102)
-walk    : 35, 35, 35, 35, 35, 34 px   (frame 2 décalée en bas du cadre)
-attack  : 28, 41, 29, 30, 30 px
-```
+## Le moveset
 
-Le héros est donc littéralement dessiné 2x plus petit en marche et en attaque. Le code actuel compense en agrandissant, ce qui donne un rendu flou et instable. La vraie correction est de refaire les feuilles.
+| Action | Effet | Clavier (défaut) | Manette (défaut) |
+|---|---|---|---|
+| Frappe (combo 3 coups) | Enchaînement dans une fenêtre de 500 ms : coup 1 et 2 normaux, coup 3 plus lent, plus fort, recul | E | X / Carré |
+| Attaque lourde (chargée) | Maintien ≥ 450 ms : dégâts x2,2, portée +40, brise la garde des Pénitents | E maintenu | X / Carré maintenu |
+| Attaque aérienne piquée | En l'air + bas : plongeon vers le sol, dégâts de zone à l'impact | Attaque en l'air | idem |
+| Esquive / roulade | Déplacement rapide 220 px, invulnérabilité 220 ms, cooldown 700 ms | Maj gauche | B / Cercle |
+| Parade (contre) | Fenêtre 180 ms : annule le coup, étourdit l'ennemi 1,2 s, rend de la Chair | A | LB |
+| Rugissement de Chair (spécial) | Consomme 40 Chair : onde sanglante autour du Vigile, gros dégâts + repoussée | R | RB |
 
-## Plan
+Toutes ces actions passent par le système d'attribution déjà en place : chaque nouvelle action apparaît dans l'écran **Options** et est réattribuable au clavier et à la manette.
 
-**1. Régénérer les sprites du Vigile Muet**
-- Générer trois nouvelles feuilles cohérentes, même gabarit pour toutes les animations : cadre 96x128, silhouette ~110 px de haut, pieds toujours sur la même ligne (y=124), personnage centré horizontalement.
-- Style conservé : Vigile Muet gothique, capuche, silhouette sombre, palette crimson/os du jeu.
-- Animations : idle (4 frames), walk (6 frames), attack (5 frames).
+## Manettes Xbox / PlayStation
 
-**2. Vérification automatique avant intégration**
-- Script de mesure (bounding box alpha par frame) qui valide que la hauteur de silhouette varie de moins de 3 px entre toutes les frames des trois animations et que la ligne de pieds est identique. Si l'écart dépasse le seuil, régénération/recadrage jusqu'à conformité.
+Le mapping standard du navigateur est identique sur les deux familles de manettes ; seuls les libellés changent. On détecte la marque via l'`id` de la manette et on affiche « X / Carré », « B / Cercle », « LB / L1 », etc. en conséquence, plus les gâchettes analogiques (LT/RT en axes) pour la charge. Vibration (rumble) sur les coups reçus et sur l'impact du coup lourd, quand la manette la supporte.
 
-**3. Intégration**
-- Mise à jour de `public/assets/sprites/vigile_muet_atlas.json` avec les nouvelles dimensions de frame.
-- Mise à jour de `src/game/assets.ts` (frameWidth/frameHeight/frameCount).
+## Équilibrage et intégration
 
-**4. Simplification du code d'alignement**
-- Dans `src/game/entities/Player.ts` : suppression de la normalisation par frame devenue inutile (échelle unique fixe, origine (0.5, 1) constante), hitbox stable.
-- `src/game/spriteMetrics.ts` reste utilisé comme garde-fou pour les ennemis, ou est réduit à un simple contrôle de cohérence.
-
-**5. Validation en jeu**
-- Test Playwright : capture idle / marche / attaque, vérification que la hauteur affichée et le bas du corps restent constants, plus captures visuelles pour contrôler que le rendu n'est plus flou.
+- Les ennemis gagnent une phase d'anticipation (télégraphie 350 ms, teinte) pour que l'esquive et la parade aient un sens.
+- Le Pénitent-Greffé reçoit une garde : seuls le coup lourd, la parade et le spécial la brisent.
+- Trois nouvelles mutations relient le moveset à la Voie de la Chair : `ten-roulade` (esquive plus longue), `os-parade` (fenêtre de parade élargie), `san-rugissement` (coût du spécial réduit, onde plus large).
+- Le HUD affiche le cooldown de l'esquive et la jauge de spécial.
 
 ## Détails techniques
 
-- Recadrage post-génération automatisé en Python/PIL : détection de la bounding box, mise à l'échelle uniforme vers 110 px de silhouette, collage centré et aligné sur la ligne de pieds dans le cadre 96x128. Cela garantit la cohérence même si le générateur d'images varie légèrement.
-- Rien n'est modifié côté gameplay, mutations, ennemis ou UI.
+- Nouvelle machine à états dans `src/game/entities/Player.ts` (`idle | run | attack1..3 | heavy | dive | dodge | parry | special | hurt`) au lieu du booléen `attacking` actuel, avec fenêtres actives (frames de hit) par état.
+- Nouvelles actions dans `src/store/bindingsStore.ts` (`dodge`, `parry`, `special`, `heavy` en tant que maintien de `attack`), migration douce des attributions déjà stockées en localStorage.
+- `src/game/input.ts` : ajout du temps de maintien par action (pour la charge) et lecture des gâchettes analogiques.
+- Résolution des coups déplacée de `GameScene.resolvePlayerStrike` vers un descripteur par attaque (portée, dégâts, recul, brise-garde, forme de la zone).
+- `src/store/gameStore.ts` : réserve de spécial, dépense de Chair, compteur de parades réussies.
+- Sprites : on réutilise les feuilles existantes avec des variations (inclinaison, étirement, traînée, flash) pour l'esquive, la charge et le piqué ; on ne régénère de nouvelles feuilles que si le rendu n'est pas assez lisible.
 
-## Alternative si tu préfères garder les assets actuels
+## Vérification
 
-Recadrer/upscaler les feuilles existantes par script (sans régénération artistique) : la taille devient cohérente immédiatement, mais la marche et l'attaque resteront moins détaillées que l'idle puisque l'information de pixels manque à la source.
+Test Playwright sur la scène de jeu : déclenchement de chaque action au clavier, contrôle des dégâts appliqués, de l'invulnérabilité d'esquive et de la dépense de Chair, sans erreur console.
