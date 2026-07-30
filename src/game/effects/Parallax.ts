@@ -32,12 +32,18 @@ export class Parallax {
   constructor(
     private scene: Phaser.Scene,
     key: BackdropKey,
+    floorY: number,
+    roomHeight: number,
   ) {
     this.def = BACKDROPS[key];
 
     const cam = scene.cameras.main;
     const viewW = cam.width;
     const viewH = cam.height;
+
+    // ligne de sol exprimee en coordonnees ecran (la camera est bloquee
+    // en bas de la salle la plupart du temps)
+    const floorScreenY = floorY - Math.max(0, roomHeight - viewH);
 
     const keys = [this.def.far, this.def.mid, this.def.near];
 
@@ -48,21 +54,21 @@ export class Parallax {
       // chaque calque est normalise sur la hauteur du viewport : les
       // feuilles n'ont pas toutes la meme taille native. Le calque proche
       // est legerement agrandi pour renforcer la profondeur.
-      const zoom = i === 2 ? 1.08 : i === 1 ? 1.03 : 1;
-      const scale = (viewH / srcH) * zoom;
+      const zoom = i === 2 ? 1.12 : i === 1 ? 1.05 : 1;
+      const drawH = viewH * zoom;
+      const scale = drawH / srcH;
 
       const sprite = scene.add
-        .tileSprite(0, 0, viewW, viewH, textureKey)
+        .tileSprite(0, floorScreenY - drawH, viewW, drawH, textureKey)
         .setOrigin(0, 0)
         .setScrollFactor(0)
         .setDepth(-30 + i * 10);
 
       sprite.setTileScale(scale, scale);
-      // ancrage bas : le pied de l'image reste sur la ligne d'horizon du sol
-      sprite.tilePositionY = (srcH * zoom - srcH) / zoom;
 
       this.layers.push({ sprite, speed: SPEEDS[i] });
     });
+
 
 
     this.near = this.layers[2]?.sprite;
