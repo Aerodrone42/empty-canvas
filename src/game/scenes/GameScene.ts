@@ -212,15 +212,11 @@ export class GameScene extends Phaser.Scene {
   private updateLift(delta: number) {
     if (!this.lift || this.exiting) return;
     const body = this.lift.body as Phaser.Physics.Arcade.Body;
+
+    const riding = this.liftContact;
+    this.liftContact = false;
+
     const step = (delta / 1000) * LIFT_SPEED;
-
-    const playerBody = this.player.body as Phaser.Physics.Arcade.Body | null;
-    const riding =
-      !!playerBody &&
-      playerBody.touching.down &&
-      Math.abs(this.player.x - this.lift.x) < LIFT_W / 2 + 12 &&
-      Math.abs(this.player.y - (this.lift.y - LIFT_H / 2)) < 40;
-
     let dy = 0;
     if (riding && this.lift.y > this.liftTopY) {
       dy = -Math.min(step, this.lift.y - this.liftTopY);
@@ -230,15 +226,24 @@ export class GameScene extends Phaser.Scene {
 
     if (dy !== 0) {
       this.lift.y += dy;
-      this.liftEdge.y = this.lift.y - LIFT_H / 2;
-      this.liftGlow.y = this.lift.y;
       body.updateFromGameObject();
-      // le heros est porte par la plateforme
-      if (riding && dy < 0) this.player.y += dy;
+      // le heros est porte : on le colle sur le plateau pendant la montee
+      if (riding && dy < 0) {
+        this.player.y = this.lift.y - LIFT_H / 2;
+        const pb = this.player.body as Phaser.Physics.Arcade.Body | null;
+        if (pb) {
+          pb.updateFromGameObject();
+          if (pb.velocity.y > 0) pb.setVelocityY(0);
+        }
+      }
     }
+
+    this.liftEdge.y = this.lift.y - LIFT_H / 2;
+    this.liftGlow.y = this.lift.y;
 
     if (riding && this.lift.y <= this.liftTopY + 0.5) this.exitRoom();
   }
+
 
   /** Fondu au noir puis passage a la salle suivante. */
   private exitRoom() {
