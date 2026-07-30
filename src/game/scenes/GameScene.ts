@@ -21,7 +21,7 @@ const SAFE_RADIUS = 300;
 
 /** plateforme-ascenseur en bout de salle */
 const LIFT_W = 220;
-const LIFT_H = 26;
+const LIFT_H = 40;
 const LIFT_X = ROOM_WIDTH - 190;
 const LIFT_TRAVEL = 300;
 const LIFT_SPEED = 90;
@@ -178,7 +178,7 @@ export class GameScene extends Phaser.Scene {
    */
   private buildLift() {
     const def = this.parallax.def;
-    this.liftBaseY = FLOOR_Y - 34;
+    this.liftBaseY = FLOOR_Y - 4;
     this.liftTopY = this.liftBaseY - LIFT_TRAVEL;
 
     // halo discret : signale que la plateforme est interactive
