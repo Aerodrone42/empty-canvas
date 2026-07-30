@@ -76,6 +76,7 @@ function Index() {
         {phase === "paused" && <PauseMenu />}
         {phase === "flesh" && <FleshPath />}
         {phase === "dead" && <DeathScreen />}
+        {phase === "options" && <Options />}
       </div>
     </main>
   );
