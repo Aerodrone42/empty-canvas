@@ -80,8 +80,9 @@ export class GameScene extends Phaser.Scene {
     // pieges : deux mains seulement, placees au hasard dans leur moitie de
     // salle et redeployees ailleurs apres chaque tentative
     this.hands = [
-      new GraspingHands(this, 520, 1300, FLOOR_Y),
-      new GraspingHands(this, 1400, 2280, FLOOR_Y),
+      new GraspingHands(this, 520, 1150, FLOOR_Y),
+      new GraspingHands(this, 1200, 1800, FLOOR_Y),
+      new GraspingHands(this, 1850, 2400, FLOOR_Y),
     ];
 
     // suivi horizontal uniquement : au saut, l'image ne doit pas bouger
