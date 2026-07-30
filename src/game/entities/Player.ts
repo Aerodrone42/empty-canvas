@@ -31,12 +31,6 @@ const BODY_H = 120;
 
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
-  private keys!: {
-    left: Phaser.Input.Keyboard.Key;
-    right: Phaser.Input.Keyboard.Key;
-    jump: Phaser.Input.Keyboard.Key;
-    attack: Phaser.Input.Keyboard.Key;
-  };
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private attacking = false;
   private lastAttackAt = -Infinity;
@@ -45,9 +39,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private airJumpsUsed = 0;
   private padJumpPrev = false;
   private padAttackPrev = false;
-  
-
-
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, "vigile-idle");
@@ -59,14 +50,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
     this.alignBody();
 
-    const keyboard = scene.input.keyboard!;
-    this.cursors = keyboard.createCursorKeys();
-    this.keys = {
-      left: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q),
-      right: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-      jump: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
-      attack: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E),
-    };
+    this.cursors = scene.input.keyboard!.createCursorKeys();
 
     this.play("vigile-idle-anim");
     this.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + "vigile-attack-anim", () => {
