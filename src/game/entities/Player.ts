@@ -69,27 +69,31 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
-   * Normalise l'echelle et la position des pieds selon la frame courante,
-   * et garde une hitbox de taille constante dans le monde.
+   * Cale les pieds de la frame courante sur la base du sprite, avec une
+   * echelle unique (celle de l'idle) et une hitbox constante dans le monde.
    */
   private alignBody() {
     const key = this.texture.key;
-    const metrics = METRICS[key] ?? METRICS["vigile-idle"];
-    const index = Math.min(
-      Math.max((this.anims.currentFrame?.index ?? 1) - 1, 0),
-      metrics.footY.length - 1,
-    );
-    const footY = metrics.footY[index];
+    const index = Math.max((this.anims.currentFrame?.index ?? 1) - 1, 0);
+    const metrics = frameMetrics(this.scene, key, index);
+    if (!metrics) return;
 
-    const scale = TARGET_H / metrics.charH;
+    if (this.refCharH <= 0) {
+      this.refCharH = referenceHeight(this.scene, "vigile-idle");
+    }
+
+    const scale = TARGET_H / this.refCharH;
     this.setScale(scale);
-    this.setOrigin(0.5, footY / this.height);
+    this.setOrigin(0.5, metrics.footY / this.height);
 
-    const body = this.body as Phaser.Physics.Arcade.Body;
+    const body = this.body as Phaser.Physics.Arcade.Body | null;
+    if (!body) return;
     const bodyW = BODY_W / scale;
-    body.setSize(bodyW, metrics.charH, false);
-    body.setOffset((this.width - bodyW) / 2, footY - metrics.charH);
+    const bodyH = BODY_H / scale;
+    body.setSize(bodyW, bodyH, false);
+    body.setOffset((this.width - bodyW) / 2, metrics.footY - bodyH);
   }
+
 
 
 
