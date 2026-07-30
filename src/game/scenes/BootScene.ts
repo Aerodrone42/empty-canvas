@@ -70,6 +70,26 @@ export class BootScene extends Phaser.Scene {
       repeat: 0,
     });
 
+    // Esquive du Vigile : depart/plongee, roulade, recuperation.
+    this.anims.create({
+      key: "vigile-dodge-start",
+      frames: this.anims.generateFrameNumbers("vigile-dodge", { start: 0, end: 2 }),
+      frameRate: 26,
+      repeat: 0,
+    });
+    this.anims.create({
+      key: "vigile-dodge-roll",
+      frames: this.anims.generateFrameNumbers("vigile-dodge", { start: 3, end: 4 }),
+      frameRate: 18,
+      repeat: 0,
+    });
+    this.anims.create({
+      key: "vigile-dodge-recover",
+      frames: this.anims.generateFrameNumbers("vigile-dodge", { start: 5, end: 7 }),
+      frameRate: 16,
+      repeat: 0,
+    });
+
     this.scene.start("game");
   }
 }
