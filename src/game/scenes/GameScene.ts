@@ -4,7 +4,7 @@ import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat"
 import { Profiler } from "../debug/Profiler";
 import { BloodFX } from "../effects/Blood";
 import { Parallax } from "../effects/Parallax";
-import { Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
+import { EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
 import { Pickup } from "../entities/Pickup";
 import { Player } from "../entities/Player";
 import type { BackdropKey } from "@/game/assets";
