@@ -47,14 +47,42 @@ export class Parallax {
     const topWorldY = bottomWorldY - drawH;
 
     if (key === "corridor") {
-      // fond panoramique : UNE seule image etiree sur toute la salle,
-      // aucune repetition, aucune couture visible.
+      // Couloir parcouru DANS LE SENS DE LA LONGUEUR.
+      //
+      // 1) fond de perspective fixe a l'ecran : le point de fuite reste
+      //    devant le heros, on remonte le couloir au lieu de le longer.
+      const farBottom = floorScreenY + drawH * BELOW_FLOOR;
       scene.add
-        .image(0, topWorldY, this.def.far)
+        .image(0, farBottom - drawH, this.def.far)
         .setOrigin(0, 0)
-        .setScrollFactor(1)
+        .setScrollFactor(0)
         .setDepth(-30)
-        .setDisplaySize(roomWidth, drawH);
+        .setDisplaySize(viewW, drawH);
+
+      // 2) travees laterales : elles defilent plus lentement que les pas,
+      //    ce qui donne la profondeur du couloir.
+      const midSrc = scene.textures.get(this.def.mid).getSourceImage();
+      const midScale = drawH / (midSrc.height || 1);
+      // la ligne de sol peinte se situe a ~92 % de la hauteur de l'image
+      const midBottom = floorY + drawH * 0.08;
+      scene.add
+        .tileSprite(0, midBottom - drawH, roomWidth, drawH, this.def.mid)
+        .setOrigin(0, 0)
+        .setScrollFactor(0.45)
+        .setDepth(-20)
+        .setTileScale(midScale, midScale);
+
+      // 3) piliers de premier plan : le heros passe derriere eux.
+      const nearSrc = scene.textures.get(this.def.near).getSourceImage();
+      const nearScale = (drawH * 1.15) / (nearSrc.height || 1);
+      const nearH = drawH * 1.15;
+      scene.add
+        .tileSprite(0, floorY + 24 - nearH, roomWidth * 1.7, nearH, this.def.near)
+        .setOrigin(0, 0)
+        .setScrollFactor(1.25)
+        .setDepth(30)
+        .setTileScale(nearScale, nearScale)
+        .setAlpha(0.95);
     } else {
       // rendu d'origine des autres salles : peinture repetee a l'echelle
       const source = scene.textures.get(this.def.far).getSourceImage();
@@ -68,6 +96,7 @@ export class Parallax {
         .setDepth(-30)
         .setTileScale(scale, scale);
     }
+
 
 
 
