@@ -87,6 +87,10 @@ export const COMBO_WINDOW = 500;
 export const HEAVY_CHARGE_MS = 450;
 /** Coût en Chair du Rugissement. */
 export const SPECIAL_COST = 40;
+/** Chair récupérée à chaque coup porté (mise à l'échelle par les dégâts). */
+export const FLESH_PER_HIT = 3;
+/** Bonus de chair pour le finisher de combo / coup lourd. */
+export const FLESH_HEAVY_BONUS = 4;
 /** Paramètres de l'esquive. */
 export const DODGE = {
   distance: 220,

@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 
-import { PARRY, type Strike } from "../combat";
+import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat";
 import { BloodFX } from "../effects/Blood";
 import { Parallax } from "../effects/Parallax";
 import { Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
@@ -200,17 +200,20 @@ export class GameScene extends Phaser.Scene {
 
 
   private resolvePlayerStrike(strike: Strike, damageScale = 1) {
-    const effects = useGameStore.getState().effects;
+    const store = useGameStore.getState();
+    const effects = store.effects;
     const reach = strike.reach + effects.bonusReach;
     const damage = strike.damage * effects.damageMult * damageScale;
     const radial = strike.shape === "radial";
     const originX = radial ? this.player.x : this.player.x + this.player.facingDirection * (reach / 2);
 
+    let hits = 0;
     for (const enemy of this.enemies) {
       if (!enemy.active || enemy.isDead) continue;
       const withinX = Math.abs(enemy.x - originX) < reach;
       const withinY = Math.abs(enemy.y - this.player.y) < strike.vertical;
       if (withinX && withinY) {
+        hits += 1;
         enemy.takeHit(damage, {
           knockback: strike.knockback,
           breakGuard: strike.breakGuard,
@@ -219,8 +222,15 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // chaque coup porté recharge la jauge de Chair qui alimente le Rugissement
+    if (hits > 0 && strike.id !== "special") {
+      const bonus = strike.breakGuard || strike.id === "combo3" ? FLESH_HEAVY_BONUS : 0;
+      store.gainFlesh((FLESH_PER_HIT + bonus) * hits);
+    }
+
     this.cameras.main.shake(70, 0.004);
   }
+
 
   private resolveEnemyStrike(amount: number, source?: Enemy) {
     if (this.player.tryParry(this.time.now)) {
