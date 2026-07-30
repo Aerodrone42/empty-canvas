@@ -120,34 +120,59 @@ export class Parallax {
 
 
   /**
-   * Reperes de progression : traces sombres posees au sol, ancrees au monde.
-   * Sans elles l'oeil n'a aucun point fixe pour percevoir la distance
-   * parcourue. Tout est cuit dans UNE seule texture puis affiche en un seul
-   * objet : aucun surcout de rendu (une vingtaine de formes separees
-   * multiplierait les changements de pipeline).
+   * Geometrie fixe du sol : joints de dallage en perspective + traces et
+   * debris. Ce sont ces reperes immobiles qui donnent la sensation de
+   * marcher sur un sol solide plutot que sur un tapis roulant.
+   * Tout est cuit dans UNE seule texture affichee par UN seul objet.
    */
-  private addFloorMarks(roomWidth: number, floorY: number, camTop: number) {
+  private addFloorMarks(roomWidth: number, floorY: number, groundTop: number) {
     const scene = this.scene;
-    const key = `floor-marks-${this.def.far}`;
-    const bandH = 48;
+    const bandH = Math.max(48, Math.round(floorY - groundTop));
+    const key = `floor-marks-${this.def.far}-${bandH}`;
 
     if (!scene.textures.exists(key)) {
       const rng = new Phaser.Math.RandomDataGenerator([this.def.far]);
-      const count = Math.round(roomWidth / 180);
       const g = scene.make.graphics({ x: 0, y: 0 }, false);
 
+      // --- joints de dallage : rangees de plus en plus espacees vers le
+      // bas (compression perspective), et joints transversaux decales
+      // d'une rangee a l'autre comme un vrai appareillage de dalles.
+      const rows = 7;
+      let prevY = 0;
+      for (let r = 1; r <= rows; r++) {
+        const t = r / rows;
+        const y = Math.round(bandH * t * t); // resserre en haut
+        const depth = 0.1 + 0.22 * t; // les joints proches sont plus lisibles
+
+        g.fillStyle(0x000000, depth * 0.7);
+        g.fillRect(0, y, roomWidth, Math.max(1, Math.round(1 + 2 * t)));
+        g.fillStyle(this.def.ledge, depth * 0.35);
+        g.fillRect(0, y - Math.max(1, Math.round(2 * t)), roomWidth, Math.max(1, Math.round(1.5 * t)));
+
+        // joints transversaux de la rangee courante
+        const slabW = 90 + 150 * t;
+        const offset = (r % 2 === 0 ? slabW / 2 : 0) + rng.between(-14, 14);
+        for (let x = offset; x < roomWidth; x += slabW) {
+          g.fillStyle(0x000000, depth * 0.55);
+          g.fillRect(Math.round(x), prevY, Math.max(1, Math.round(1 + 1.5 * t)), y - prevY);
+        }
+        prevY = y;
+      }
+
+      // --- traces, fissures et debris poses sur les dalles
+      const count = Math.round(roomWidth / 150);
       for (let i = 0; i < count; i++) {
         const x = 60 + (i + rng.frac() * 0.6) * (roomWidth / count);
-        const y = bandH - rng.between(2, 16);
+        const y = bandH - rng.between(2, Math.min(40, bandH - 4));
         const w = rng.between(40, 130);
         const h = Math.max(4, w * rng.realInRange(0.09, 0.16));
 
-        g.fillStyle(0x000000, rng.realInRange(0.18, 0.34));
+        g.fillStyle(0x000000, rng.realInRange(0.16, 0.3));
         g.fillEllipse(x, y, w, h);
 
-        if (rng.frac() > 0.6) {
-          g.fillStyle(this.def.ledge, 0.5);
-          g.fillEllipse(x + rng.between(-40, 40), y - rng.between(4, 14), w * 0.35, h * 0.6);
+        if (rng.frac() > 0.55) {
+          g.fillStyle(this.def.ledge, 0.45);
+          g.fillEllipse(x + rng.between(-40, 40), y - rng.between(4, 14), w * 0.3, h * 0.55);
         }
       }
 
@@ -160,9 +185,8 @@ export class Parallax {
       .setOrigin(0, 0)
       .setScrollFactor(1)
       .setDepth(-18);
-
-    void camTop;
   }
+
 
   /** Voile colore et poussieres flottantes. */
   private addAmbience(viewW: number, viewH: number, floorScreenY: number) {
