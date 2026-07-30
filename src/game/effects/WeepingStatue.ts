@@ -29,14 +29,15 @@ export class WeepingStatue {
     const tex = scene.textures.get("statue-pleureuse").getSourceImage();
     const height = STATUE_H * sizeFactor;
     const scale = height / tex.height;
-    // legerement remontee : la statue est adossee au mur du fond
-    const baseY = floorY - 6 - 40 * sizeFactor - baseLift;
+    // Le bas exact du PNG est pose sur la plinthe du mur. baseLift sert
+    // uniquement a reculer la statue dans la perspective, sans flottement.
+    const baseY = floorY - baseLift;
 
     this.sprite = scene.add
       .image(x, baseY, "statue-pleureuse")
       .setOrigin(0.5, 1)
       .setScale(scale)
-      .setDepth(-20);
+      .setDepth(-3);
 
     // les yeux se situent dans la capuche, tout en haut du corps
     this.eyesY = baseY - height * 0.905;
@@ -44,7 +45,7 @@ export class WeepingStatue {
     this.ensureTearTexture();
 
     // trainees de sang qui descendent sur le visage et la robe
-    this.trails = scene.add.graphics().setDepth(-20);
+    this.trails = scene.add.graphics().setDepth(-3);
 
     this.tears = scene.add
       .particles(x, this.eyesY, "fx-tear", {
@@ -63,7 +64,7 @@ export class WeepingStatue {
           quantity: 1,
         },
       })
-      .setDepth(-20);
+      .setDepth(-3);
     this.tears.stop();
   }
 
