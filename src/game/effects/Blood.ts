@@ -9,12 +9,17 @@ import Phaser from "phaser";
 const DROP_KEY = "fx-blood-drop";
 const MIST_KEY = "fx-blood-mist";
 const SPARK_KEY = "fx-parry-spark";
+const BLOT_KEY = "fx-blood-blot";
 
-const MAX_STAINS = 60;
+const MAX_STAINS = 40;
 /** duree de vie d'une flaque au sol (ms) */
 export const POOL_LIFE = 10000;
 /** debut du fondu de sortie */
 const POOL_FADE = 2000;
+/** hauteur de la bande de sol rendue dans la texture des flaques */
+const POOL_BAND = 90;
+/** rafraichissement de la texture des flaques (ms) */
+const POOL_REDRAW = 90;
 
 function ensureTextures(scene: Phaser.Scene) {
   if (!scene.textures.exists(DROP_KEY)) {
@@ -38,14 +43,31 @@ function ensureTextures(scene: Phaser.Scene) {
     g.generateTexture(SPARK_KEY, 6, 2);
     g.destroy();
   }
+  if (!scene.textures.exists(BLOT_KEY)) {
+    // tache elliptique unique, reutilisee comme tampon pour toutes les flaques
+    const g = scene.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xffffff, 1);
+    g.fillEllipse(32, 16, 62, 30);
+    g.generateTexture(BLOT_KEY, 64, 32);
+    g.destroy();
+  }
 }
 
 // teintes sourdes et desaturees : sang veineux, pas rouge vif
 const CRIMSON = [0x4a0c12, 0x5e1218, 0x741a1c, 0x2e070c];
 
+/** un tampon d'une flaque : decalage local, taille, teinte */
+type Blot = {
+  dx: number;
+  dy: number;
+  scaleX: number;
+  scaleY: number;
+  alpha: number;
+  tint: number;
+};
+
 type Pool = {
-  /** amas d'ellipses formant une silhouette organique */
-  parts: Phaser.GameObjects.Ellipse[];
+  blots: Blot[];
   x: number;
   bornAt: number;
   /** reserve de soin restante dans la flaque */
@@ -61,12 +83,45 @@ export class BloodFX {
   private floorY: number;
   /** anti-spam de l'effet de siphon */
   private lastSiphon = 0;
+  /** toutes les flaques sont dessinees dans une seule texture */
+  private canvas?: Phaser.GameObjects.RenderTexture;
+  private lastRedraw = 0;
 
   constructor(scene: Phaser.Scene, floorY: number) {
     this.scene = scene;
     this.floorY = floorY;
     ensureTextures(scene);
+
+    const bounds = scene.physics.world.bounds;
+    this.canvas = scene.add
+      .renderTexture(bounds.x, floorY - POOL_BAND * 0.5, Math.max(1, bounds.width), POOL_BAND)
+      .setOrigin(0, 0)
+      .setDepth(1);
   }
+
+  /** Redessine l'ensemble des flaques : un seul objet rendu, cout constant. */
+  private redraw() {
+    const rt = this.canvas;
+    if (!rt) return;
+    rt.clear();
+    const now = this.scene.time.now;
+    for (const pool of this.stains) {
+      const age = now - pool.bornAt;
+      const fade = Math.max(0, Math.min(1, (POOL_LIFE - age) / POOL_FADE));
+      const left = Math.max(0.15, pool.charge / pool.maxCharge);
+      for (const b of pool.blots) {
+        rt.draw(
+          BLOT_KEY,
+          pool.x - rt.x + b.dx * left,
+          this.floorY - rt.y + b.dy,
+          b.alpha * fade * left,
+          b.tint,
+        );
+      }
+    }
+  }
+
+
 
 
   /** Gerbe orientee : dirX = -1 vers la gauche, 1 vers la droite. */
