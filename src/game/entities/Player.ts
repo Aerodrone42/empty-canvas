@@ -478,19 +478,44 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   }
 
-  /** Onde sanglante du Rugissement. */
+  /** Rugissement : large fauchee sanglante en croissant, pas de cercle. */
   private spawnWave(bonusRadius: number) {
     const radius = STRIKES.special.reach + bonusRadius;
-    const wave = this.scene.add.circle(this.x, this.y - 60, 20, 0xb01f2b, 0.35);
-    wave.setStrokeStyle(3, 0xff5566, 0.9);
-    wave.setDepth(5);
-    this.scene.tweens.add({
-      targets: wave,
-      radius,
-      scale: radius / 20,
-      alpha: 0,
-      duration: 420,
-      onComplete: () => wave.destroy(),
-    });
+    const dir = this.facingDirection >= 0 ? 1 : -1;
+    const cx = this.x;
+    const cy = this.y - 60;
+
+    // deux croissants de sang decales : la lame balaye devant le heros
+    for (let i = 0; i < 2; i++) {
+      const r = radius * (i === 0 ? 1 : 0.72);
+      const g = this.scene.add.graphics();
+      g.setDepth(5);
+      const color = i === 0 ? 0x6b1119 : 0x8d1a20;
+      g.fillStyle(color, i === 0 ? 0.55 : 0.35);
+      g.beginPath();
+      g.arc(0, 0, r, Phaser.Math.DegToRad(-62), Phaser.Math.DegToRad(62), false);
+      g.arc(0, 0, r * 0.62, Phaser.Math.DegToRad(62), Phaser.Math.DegToRad(-62), true);
+      g.closePath();
+      g.fillPath();
+      g.setPosition(cx, cy);
+      g.setScale(dir * 0.55, 0.7);
+      g.setAngle(dir * -34 + i * 6);
+
+      this.scene.tweens.add({
+        targets: g,
+        scaleX: dir * 1.15,
+        scaleY: 1.1,
+        angle: dir * 30,
+        alpha: 0,
+        duration: 340 + i * 90,
+        delay: i * 60,
+        ease: "Cubic.easeOut",
+        onComplete: () => g.destroy(),
+      });
+    }
+
+    // gerbe de sang projetee dans le sens de la fauchee
+    this.scene.events.emit("fx-blood", cx + dir * radius * 0.55, cy, dir, 2.2);
   }
 }
+
