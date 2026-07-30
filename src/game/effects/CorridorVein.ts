@@ -10,9 +10,9 @@ import Phaser from "phaser";
  */
 
 /** hauteur affichee de la veine principale */
-const MAIN_H = 150;
+const MAIN_H = 190;
 /** hauteur affichee de la veine secondaire */
-const THIN_H = 84;
+const THIN_H = 110;
 
 export class CorridorVein {
   private readonly parts: Phaser.GameObjects.TileSprite[] = [];
@@ -24,17 +24,17 @@ export class CorridorVein {
 
     // veine principale : a hauteur de poitrine du mur, elle traverse la salle
     const main = this.makeBand(scene, roomWidth, MAIN_H, floorY - 300, srcW, srcH, {
-      depth: -25,
-      alpha: 0.72,
-      tint: 0x6d1017,
+      depth: -22,
+      alpha: 0.95,
+      tint: 0xc0242f,
       scrollFactor: 0.92,
     });
 
     // veine secondaire : plus fine, plus haute, plus sombre, battement decale
     const thin = this.makeBand(scene, roomWidth, THIN_H, floorY - 520, srcW, srcH, {
-      depth: -26,
-      alpha: 0.5,
-      tint: 0x460a10,
+      depth: -23,
+      alpha: 0.75,
+      tint: 0x8e1a24,
       scrollFactor: 0.86,
     });
 
@@ -74,7 +74,7 @@ export class CorridorVein {
       .setDepth(opts.depth)
       .setAlpha(opts.alpha)
       .setTint(opts.tint)
-      .setBlendMode(Phaser.BlendModes.MULTIPLY);
+      .setBlendMode(Phaser.BlendModes.NORMAL);
 
     // conserve l'echelle horizontale d'origine, seule la verticale respire
     band.setData("baseScaleY", scale);
