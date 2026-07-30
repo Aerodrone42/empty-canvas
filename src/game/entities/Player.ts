@@ -7,6 +7,14 @@ const JUMP = 520;
 const ATTACK_COOLDOWN = 420;
 const INVULN_MS = 750;
 
+/**
+ * Le sprite du Vigile n'occupe qu'une partie de sa cellule :
+ * silhouette 32x73 px, pieds a 26 px du bas de la frame.
+ */
+const SPRITE_W = 32;
+const SPRITE_H = 73;
+const FOOT_GAP = 26;
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private keys!: {
     left: Phaser.Input.Keyboard.Key;
@@ -26,12 +34,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
+    this.setScale(1.8);
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
-
-    const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(34, 120);
-    body.setOffset((this.width - 34) / 2, this.height - 120);
+    this.alignBody();
 
     const keyboard = scene.input.keyboard!;
     this.cursors = keyboard.createCursorKeys();
@@ -47,6 +53,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.attacking = false;
     });
   }
+
+  /** Les frames n'ont pas toutes la meme largeur : on recentre le corps. */
+  private alignBody() {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setSize(SPRITE_W, SPRITE_H);
+    body.setOffset(
+      (this.width - SPRITE_W) / 2,
+      this.height - FOOT_GAP - SPRITE_H,
+    );
+  }
+
 
   get facingDirection() {
     return this.facing;
