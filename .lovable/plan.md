@@ -1,17 +1,24 @@
-## Objectif
+## Problème
 
-Le fond du 2e niveau (corridor) est trop étroit (1672 × 941 px) pour une salle de 2400 px : il se répète. On remplace la peinture par un **fond panoramique long**, sans répétition.
+Le corridor (salle 2) utilise une seule image (`corridor_bg_far.png`) étirée sur les 2400 px de la salle, sans aucune couche intermédiaire. Résultat : un mur uniforme, sans profondeur ni détail — la salle paraît vide même avec les ennemis.
 
-## Ce qui sera fait
+## Ce que je vais faire
 
-1. **Générer un nouveau décor panoramique** pour le corridor : format large **1920 × 900**, style gothique horreur cohérent avec le reste (pierre sombre, voûtes, dallage en perspective au tiers bas, teintes charbon/cramoisi), composition **non symétrique** pour qu'aucun motif ne saute aux yeux.
-   - Fichier : `public/assets/sprites/backgrounds/corridor_bg_far.png` (remplacement).
-2. **Adapter la salle au fond** dans `src/game/scenes/GameScene.ts` : largeur de salle alignée sur la largeur réelle du décor mis à l'échelle, pour qu'une seule peinture couvre toute la salle (plus aucune répétition).
-3. **Ajuster `Parallax.ts`** : affichage en image unique étirée sur la largeur de la salle (au lieu du `tileSprite` répétitif), ancrage du dallage sur la ligne de sol `FLOOR_Y` inchangé.
-4. Vérification en jeu : traverser la salle 2 d'un bout à l'autre et confirmer qu'aucune couture ni point de fuite dupliqué n'apparaît.
+**1. Nouveau fond panoramique dense**
+Régénérer `corridor_bg_far.png` en format large (1920×1080, cohérent avec le style de la cathédrale : même pierre, mêmes lanternes rouges, même dallage) mais avec un vrai contenu architectural réparti sur toute la longueur :
+- suite d'arches gothiques en enfilade avec ouvertures sombres
+- alcôves latérales, niches à ossements, grilles rouillées
+- chaînes suspendues, drapés en lambeaux tachés de sang
+- variations de lumière (halos de torches espacés) pour casser la monotonie
+
+**2. Couche intermédiaire (midground) pour la profondeur**
+Ajouter dans `Parallax.ts` une couche de props de midground pour le corridor uniquement : piliers/arches partiels dessinés devant le fond avec un `scrollFactor` légèrement différent (≈0.85) et espacés tous les ~600 px. Le héros passe devant, ça crée un vrai effet de traversée plutôt qu'un mur plat.
+
+**3. Ambiance renforcée**
+Pour le corridor : poussière plus dense, quelques particules de braises rouges qui montent, et un léger vignettage latéral pour que les extrémités du couloir se perdent dans le noir.
 
 ## Détails techniques
 
-- Fichiers touchés : `src/game/effects/Parallax.ts`, `src/game/scenes/GameScene.ts`, asset `corridor_bg_far.png`.
-- Aucune modification du gameplay, des collisions, du sol, des ennemis ni de la musique.
-- Les autres salles gardent leur rendu actuel ; si tu veux, je peux ensuite refaire les 3 autres fonds au même format long.
+- `src/game/assets.ts` : entrée `corridor` inchangée côté clés, dimensions du `far` mises à jour.
+- `src/game/effects/Parallax.ts` : branche `key === "corridor"` étendue — image de fond étirée + boucle de placement des props de midground + réglage `addAmbience` paramétré par salle.
+- Les autres salles (cathédrale) gardent strictement le rendu `tileSprite` actuel.
