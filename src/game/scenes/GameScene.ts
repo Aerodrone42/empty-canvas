@@ -94,23 +94,9 @@ export class GameScene extends Phaser.Scene {
     this.player = new Player(this, 180, FLOOR_Y);
     this.physics.add.collider(this.player, this.platforms);
 
-
-    this.spawn(new SuppliantRampant(this, 760, FLOOR_Y));
-    this.spawn(new PenitentGreffe(this, 1180, FLOOR_Y));
-    this.spawn(new SuppliantRampant(this, 1600, FLOOR_Y));
-    this.spawn(new PenitentGreffe(this, 2060, FLOOR_Y));
-    // pendus places a l'ecart des autres creatures : leur chute doit surprendre
-    this.spawnPendu(new EcorchePendu(this, 1400, FLOOR_Y, 60));
-    this.spawnPendu(new EcorchePendu(this, 1900, FLOOR_Y, 60));
+    this.populateRoom();
 
 
-    // pieges : deux mains seulement, placees au hasard dans leur moitie de
-    // salle et redeployees ailleurs apres chaque tentative
-    this.hands = [
-      new GraspingHands(this, 520, 1150, FLOOR_Y),
-      new GraspingHands(this, 1200, 1800, FLOOR_Y),
-      new GraspingHands(this, 1850, 2400, FLOOR_Y),
-    ];
 
     // suivi horizontal uniquement : au saut, l'image ne doit pas bouger
     const cam = this.cameras.main;
