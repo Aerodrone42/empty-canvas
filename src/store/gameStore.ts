@@ -24,10 +24,14 @@ export type GameState = {
   flesh: number;
   maxFlesh: number;
   kills: number;
+  parries: number;
   hasSave: boolean;
   mutations: string[];
   effects: MutationEffects;
   optionsReturnPhase: Phase;
+  /** horodatage (Date.now) de fin de recharge de l'esquive */
+  dodgeReadyAt: number;
+  dodgeCooldownMs: number;
 
   enter: () => void;
   startNewRun: () => void;
@@ -43,7 +47,10 @@ export type GameState = {
   damage: (amount: number) => void;
   heal: (amount: number) => void;
   gainFlesh: (amount: number) => void;
+  spendFlesh: (amount: number) => boolean;
   registerKill: () => void;
+  registerParry: () => void;
+  setDodgeCooldown: (durationMs: number) => void;
   unlockMutation: (id: string) => void;
 };
 
