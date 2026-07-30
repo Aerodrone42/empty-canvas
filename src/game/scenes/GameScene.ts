@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 
-import { PARRY, type Strike } from "../combat";
+import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat";
 import { BloodFX } from "../effects/Blood";
 import { Parallax } from "../effects/Parallax";
 import { Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
