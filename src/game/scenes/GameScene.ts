@@ -143,6 +143,22 @@ export class GameScene extends Phaser.Scene {
     this.enemies.push(enemy);
   }
 
+  /** un pendu ne se decroche que si aucune autre creature n'est active pres du heros */
+  private spawnPendu(enemy: EcorchePendu) {
+    enemy.dropGate = () => {
+      const px = this.player?.x ?? 0;
+      return !this.enemies.some(
+        (e) =>
+          e !== enemy &&
+          e.active &&
+          !e.isDead &&
+          Math.abs(e.x - px) < 620,
+      );
+    };
+    this.spawn(enemy);
+  }
+
+
   private onBlood(x: number, y: number, dir: number, intensity: number) {
     this.blood.splatter(x, y, dir, intensity);
   }
