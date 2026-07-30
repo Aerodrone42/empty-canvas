@@ -19,6 +19,18 @@ const POOL_REGEN_PER_SEC = 6;
 /** distance en dessous de laquelle une creature empeche de se soigner */
 const SAFE_RADIUS = 300;
 
+/** plateforme-ascenseur en bout de salle */
+const LIFT_W = 220;
+const LIFT_H = 26;
+const LIFT_X = ROOM_WIDTH - 190;
+const LIFT_TRAVEL = 300;
+const LIFT_SPEED = 90;
+const LIFT_RETURN_SPEED = 60;
+
+/** enchainement des salles : l'ascenseur mene a la suivante */
+const ROOM_ORDER: BackdropKey[] = ["cathedrale", "corridor", "throne", "exterieur"];
+
+
 export class GameScene extends Phaser.Scene {
   private player!: Player;
   private enemies: Enemy[] = [];
