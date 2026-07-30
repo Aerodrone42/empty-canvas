@@ -74,30 +74,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
-   * Cale les pieds de la frame courante sur la base du sprite, avec une
-   * echelle unique (celle de l'idle) et une hitbox constante dans le monde.
+   * Echelle et origine fixes (gabarit normalise), hitbox constante.
    */
   private alignBody() {
-    const key = this.texture.key;
-    const index = Math.max((this.anims.currentFrame?.index ?? 1) - 1, 0);
-    const metrics = frameMetrics(this.scene, key, index);
-    if (!metrics) return;
-
-    if (this.refCharH <= 0) {
-      this.refCharH = referenceHeight(this.scene, "vigile-idle");
-    }
-
-    const scale = TARGET_H / this.refCharH;
-    this.setScale(scale);
-    this.setOrigin(0.5, metrics.footY / this.height);
+    this.setScale(SCALE);
+    this.setOrigin(0.5, ORIGIN_Y);
 
     const body = this.body as Phaser.Physics.Arcade.Body | null;
     if (!body) return;
-    const bodyW = BODY_W / scale;
-    const bodyH = BODY_H / scale;
+    const bodyW = BODY_W / SCALE;
+    const bodyH = BODY_H / SCALE;
     body.setSize(bodyW, bodyH, false);
-    body.setOffset((this.width - bodyW) / 2, metrics.footY - bodyH);
+    body.setOffset((this.width - bodyW) / 2, HERO_BASELINE_Y - bodyH);
   }
+
 
 
 
