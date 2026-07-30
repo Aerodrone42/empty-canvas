@@ -96,11 +96,12 @@ export class GameScene extends Phaser.Scene {
 
 
     this.spawn(new SuppliantRampant(this, 760, FLOOR_Y));
-    this.spawn(new EcorchePendu(this, 980, FLOOR_Y, 60));
     this.spawn(new PenitentGreffe(this, 1180, FLOOR_Y));
     this.spawn(new SuppliantRampant(this, 1600, FLOOR_Y));
-    this.spawn(new EcorchePendu(this, 1820, FLOOR_Y, 60));
     this.spawn(new PenitentGreffe(this, 2060, FLOOR_Y));
+    // pendus places a l'ecart des autres creatures : leur chute doit surprendre
+    this.spawnPendu(new EcorchePendu(this, 1400, FLOOR_Y, 60));
+    this.spawnPendu(new EcorchePendu(this, 2450, FLOOR_Y, 60));
 
     // pieges : deux mains seulement, placees au hasard dans leur moitie de
     // salle et redeployees ailleurs apres chaque tentative
@@ -141,6 +142,22 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(enemy, this.platforms);
     this.enemies.push(enemy);
   }
+
+  /** un pendu ne se decroche que si aucune autre creature n'est active pres du heros */
+  private spawnPendu(enemy: EcorchePendu) {
+    enemy.dropGate = () => {
+      const px = this.player?.x ?? 0;
+      return !this.enemies.some(
+        (e) =>
+          e !== enemy &&
+          e.active &&
+          !e.isDead &&
+          Math.abs(e.x - px) < 620,
+      );
+    };
+    this.spawn(enemy);
+  }
+
 
   private onBlood(x: number, y: number, dir: number, intensity: number) {
     this.blood.splatter(x, y, dir, intensity);
