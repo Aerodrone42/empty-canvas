@@ -287,8 +287,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // ---------- parade ----------
+    // ---------- parade / absorption de chair ----------
     if (this.actions.justDown("parry") && onGround) {
+      const canHeal =
+        this.canAbsorb && store.flesh >= ABSORB_COST && store.health < store.maxHealth;
+
+      if (canHeal && !left && !right) {
+        this.beginState("absorb", time, ABSORB_DURATION);
+        this.absorbStartedAt = time;
+        body.setVelocityX(0);
+        this.setTint(0xff6b7d);
+        useGameStore.getState().setAbsorb(true, 0);
+        this.play("vigile-idle-anim", true);
+        return;
+      }
+
       this.parryUntil = time + PARRY.window + effects.parryWindowBonus;
       this.beginState("parry", time, PARRY.window + effects.parryWindowBonus + PARRY.recovery);
       body.setVelocityX(0);
@@ -296,6 +309,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.play("vigile-idle-anim", true);
       return;
     }
+
 
     // ---------- rugissement de chair ----------
     if (this.actions.justDown("special")) {
