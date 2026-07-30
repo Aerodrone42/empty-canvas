@@ -22,7 +22,7 @@ export class WeepingStatue {
   private weeping = false;
   private trailAmount = 0;
 
-  constructor(scene: Phaser.Scene, x: number, floorY: number, sizeFactor = 1) {
+  constructor(scene: Phaser.Scene, x: number, floorY: number, sizeFactor = 1, baseLift = 0) {
     this.scene = scene;
     this.x = x;
 
@@ -30,7 +30,7 @@ export class WeepingStatue {
     const height = STATUE_H * sizeFactor;
     const scale = height / tex.height;
     // legerement remontee : la statue est adossee au mur du fond
-    const baseY = floorY - 6 - 40 * sizeFactor;
+    const baseY = floorY - 6 - 40 * sizeFactor - baseLift;
 
     this.sprite = scene.add
       .image(x, baseY, "statue-pleureuse")

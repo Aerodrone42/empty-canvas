@@ -251,8 +251,8 @@ export class GameScene extends Phaser.Scene {
       this.statues = [
         // reculees dans le decor : posees contre le mur du fond, plus
         // petites et rendues derriere le heros -> plus rien sur le passage
-        new WeepingStatue(this, 700, FLOOR_Y, 0.62),
-        new WeepingStatue(this, 2050, FLOOR_Y, 0.62),
+        new WeepingStatue(this, 700, FLOOR_Y, 0.42, 210),
+        new WeepingStatue(this, 2050, FLOOR_Y, 0.42, 210),
       ];
     }
   }
