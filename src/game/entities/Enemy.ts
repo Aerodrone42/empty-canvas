@@ -63,7 +63,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   takeHit(amount: number) {
     if (this.dying) return;
     this.health -= amount;
-    this.setTintFill(0xd94b4b);
+    this.setTint(0xd94b4b);
     this.scene.time.delayedCall(90, () => this.clearTint());
 
     if (this.health <= 0) {
