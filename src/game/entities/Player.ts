@@ -108,11 +108,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return this.moveState === "parry" && time < this.parryUntil;
   }
 
+  /** La scene indique s'il n'y a aucune creature a proximite. */
+  setSafeToAbsorb(safe: boolean) {
+    this.canAbsorb = safe;
+  }
+
   receiveDamage(amount: number, time: number) {
     if (time < this.invulnUntil) return;
     this.invulnUntil = time + INVULN_MS;
     useGameStore.getState().damage(amount);
+    this.cancelAbsorb();
     this.rumble(0.6, 180);
+    this.scene.events.emit("fx-blood", this.x, this.y - 70, -this.facing, 1.6);
+    this.scene.cameras.main.flash(110, 90, 0, 8);
+
 
     this.setTint(0xff6b6b);
     this.scene.tweens.add({
