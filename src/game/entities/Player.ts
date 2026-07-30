@@ -47,9 +47,9 @@ export type PlayerState =
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  private input = new ActionInput();
+  private actions = new ActionInput();
 
-  private state: PlayerState = "idle";
+  private moveState: PlayerState = "idle";
   /** fin de l'etat verrouille (attaque, esquive, parade...) */
   private stateUntil = 0;
   private comboStep = 0;
@@ -95,12 +95,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   get isAttacking() {
-    return this.state === "attack" || this.state === "heavy" || this.state === "special";
+    return this.moveState === "attack" || this.moveState === "heavy" || this.moveState === "special";
   }
 
   /** Vrai si la parade est active : le coup est annulé et l'ennemi étourdi. */
   tryParry(time: number) {
-    return this.state === "parry" && time < this.parryUntil;
+    return this.moveState === "parry" && time < this.parryUntil;
   }
 
   receiveDamage(amount: number, time: number) {
@@ -151,7 +151,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private beginState(state: PlayerState, time: number, duration: number) {
-    this.state = state;
+    this.moveState = state;
     this.stateUntil = time + duration;
   }
 
@@ -163,7 +163,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const onGround = body.blocked.down || body.touching.down;
     const pad = this.scene.input.gamepad?.getPad(0) ?? undefined;
 
-    this.input.update(pad, time);
+    this.actions.update(pad, time);
 
     if (onGround) this.airJumpsUsed = 0;
 
@@ -171,17 +171,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const jumpPower = JUMP * effects.jumpMult;
     const cooldown = ATTACK_COOLDOWN * effects.attackCooldownMult;
 
-    const left = this.input.isDown("left") || !!this.cursors.left?.isDown;
-    const right = this.input.isDown("right") || !!this.cursors.right?.isDown;
+    const left = this.actions.isDown("left") || !!this.cursors.left?.isDown;
+    const right = this.actions.isDown("right") || !!this.cursors.right?.isDown;
     const jump =
-      this.input.justDown("jump") ||
+      this.actions.justDown("jump") ||
       (this.cursors.up ? Phaser.Input.Keyboard.JustDown(this.cursors.up) : false);
     const downHeld = !!this.cursors.down?.isDown || (pad?.axes[1]?.getValue() ?? 0) > 0.5;
 
     // ---------- etats verrouilles ----------
-    if (this.state === "dodge") {
+    if (this.moveState === "dodge") {
       if (time >= this.stateUntil) {
-        this.state = "idle";
+        this.moveState = "idle";
         this.clearTint();
         this.setAlpha(1);
       } else {
@@ -189,7 +189,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    if (this.state === "dive") {
+    if (this.moveState === "dive") {
       if (!this.diveStrikeDone && onGround) {
         this.diveStrikeDone = true;
         this.emitStrike(STRIKES.dive);
@@ -198,16 +198,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.beginState("dive", time, STRIKES.dive.duration);
       }
       if (this.diveStrikeDone && time >= this.stateUntil) {
-        this.state = "idle";
+        this.moveState = "idle";
       } else {
         if (onGround) body.setVelocityX(0);
         return;
       }
     }
 
-    if (this.state === "parry") {
+    if (this.moveState === "parry") {
       if (time >= this.stateUntil) {
-        this.state = "idle";
+        this.moveState = "idle";
         this.clearTint();
       } else {
         if (onGround) body.setVelocityX(0);
@@ -215,9 +215,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    if (this.state === "attack" || this.state === "heavy" || this.state === "special") {
+    if (this.moveState === "attack" || this.moveState === "heavy" || this.moveState === "special") {
       if (time >= this.stateUntil) {
-        this.state = "idle";
+        this.moveState = "idle";
         this.clearTint();
         this.setScale(SCALE);
       } else {
@@ -227,7 +227,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // ---------- esquive ----------
-    if (this.input.justDown("dodge") && time >= this.dodgeReadyAt) {
+    if (this.actions.justDown("dodge") && time >= this.dodgeReadyAt) {
       const distance = DODGE.distance * effects.dodgeDistanceMult;
       this.dodgeReadyAt = time + DODGE.cooldown;
       useGameStore.getState().setDodgeCooldown(DODGE.cooldown);
@@ -244,7 +244,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // ---------- parade ----------
-    if (this.input.justDown("parry") && onGround) {
+    if (this.actions.justDown("parry") && onGround) {
       this.parryUntil = time + PARRY.window + effects.parryWindowBonus;
       this.beginState("parry", time, PARRY.window + effects.parryWindowBonus + PARRY.recovery);
       body.setVelocityX(0);
@@ -254,7 +254,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // ---------- rugissement de chair ----------
-    if (this.input.justDown("special")) {
+    if (this.actions.justDown("special")) {
       const cost = Math.round(SPECIAL_COST * effects.specialCostMult);
       if (useGameStore.getState().spendFlesh(cost)) {
         this.beginState("special", time, STRIKES.special.duration);
@@ -273,7 +273,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // ---------- attaque aerienne piquee ----------
-    if (!onGround && this.input.justDown("attack") && downHeld) {
+    if (!onGround && this.actions.justDown("attack") && downHeld) {
       this.diveStrikeDone = false;
       this.beginState("dive", time, 2000);
       body.setVelocityX(0);
@@ -284,10 +284,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // ---------- coup lourd (relachement apres charge) ----------
-    if (this.input.isDown("attack")) this.charging = true;
+    if (this.actions.isDown("attack")) this.charging = true;
 
-    const releasedHeld = this.input.justUp("attack") ? this.input.releasedHeldMs("attack") : 0;
-    if (this.input.justUp("attack")) this.charging = false;
+    const releasedHeld = this.actions.justUp("attack") ? this.actions.releasedHeldMs("attack") : 0;
+    if (this.actions.justUp("attack")) this.charging = false;
 
     if (releasedHeld >= HEAVY_CHARGE_MS && time - this.lastAttackAt >= cooldown) {
       this.lastAttackAt = time;
@@ -346,13 +346,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (!onGround) {
-      this.state = "air";
+      this.moveState = "air";
       this.play("vigile-idle-anim", true);
     } else if (left || right) {
-      this.state = "run";
+      this.moveState = "run";
       this.play("vigile-walk-anim", true);
     } else {
-      this.state = "idle";
+      this.moveState = "idle";
       this.play("vigile-idle-anim", true);
     }
   }
