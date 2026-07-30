@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { HERO_BASELINE_Y, HERO_CHAR_H, HERO_FRAME_H } from "@/game/assets";
+import { isKeyDown, isKeyJustDown, padFor } from "@/game/input";
 import { useGameStore } from "@/store/gameStore";
 
 const SPEED = 190;
