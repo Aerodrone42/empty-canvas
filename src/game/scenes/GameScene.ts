@@ -2,9 +2,11 @@ import Phaser from "phaser";
 
 import { PARRY, type Strike } from "../combat";
 import { BloodFX } from "../effects/Blood";
+import { Parallax } from "../effects/Parallax";
 import { Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
 import { Pickup } from "../entities/Pickup";
 import { Player } from "../entities/Player";
+import type { BackdropKey } from "@/game/assets";
 import { useGameStore } from "@/store/gameStore";
 
 const ROOM_WIDTH = 2400;
