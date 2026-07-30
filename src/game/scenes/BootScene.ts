@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 
-import { FRAME_SPACING, SHEETS } from "../assets";
+import { BACKDROPS, FRAME_SPACING, SHEETS } from "../assets";
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -14,9 +14,16 @@ export class BootScene extends Phaser.Scene {
         frameHeight: sheet.frameHeight,
         spacing: sheet.spacing ?? FRAME_SPACING,
       });
+    }
 
+    // decors de parallaxe : 4 scenes x 3 calques
+    for (const def of Object.values(BACKDROPS)) {
+      this.load.image(def.far, def.paths[0]);
+      this.load.image(def.mid, def.paths[1]);
+      this.load.image(def.near, def.paths[2]);
     }
   }
+
 
   create() {
     for (const sheet of SHEETS) {
