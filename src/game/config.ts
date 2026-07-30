@@ -11,6 +11,9 @@ export function createGameConfig(parent: HTMLElement): Phaser.Types.Core.GameCon
     height: 540,
     pixelArt: true,
     backgroundColor: "#14090b",
+    input: {
+      gamepad: true,
+    },
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
