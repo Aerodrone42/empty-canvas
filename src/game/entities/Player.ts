@@ -8,12 +8,32 @@ const ATTACK_COOLDOWN = 420;
 const INVULN_MS = 750;
 
 /**
- * Le sprite du Vigile n'occupe qu'une partie de sa cellule :
- * silhouette 32x73 px, pieds a 26 px du bas de la frame.
+ * Les trois feuilles du Vigile ne dessinent pas la silhouette a la meme
+ * echelle (idle 73 px de haut, marche 35 px, attaque 30 px) ni a la meme
+ * hauteur dans la cellule. On normalise donc l'echelle et la position des
+ * pieds par animation, sinon le personnage retrecit et flotte.
  */
-const SPRITE_W = 32;
-const SPRITE_H = 73;
-const FOOT_GAP = 26;
+type Metrics = {
+  /** hauteur de la silhouette en pixels de texture */
+  charH: number;
+  /** largeur de la silhouette en pixels de texture */
+  charW: number;
+  /** y des pieds dans la cellule, par frame */
+  footY: number[];
+};
+
+/** hauteur affichee constante, en pixels monde */
+const TARGET_H = 130;
+
+/** largeur de hitbox constante, en pixels monde */
+const BODY_W = 58;
+
+const METRICS: Record<string, Metrics> = {
+  "vigile-idle": { charH: 73, charW: 33, footY: [102, 102, 102, 102] },
+  "vigile-walk": { charH: 35, charW: 29, footY: [82, 128, 82, 83, 82, 82] },
+  "vigile-attack": { charH: 30, charW: 40, footY: [83, 83, 84, 83, 83] },
+};
+
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private keys!: {
@@ -39,7 +59,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.setScale(1.8);
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
     this.alignBody();
@@ -59,15 +78,29 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  /** Les frames n'ont pas toutes la meme largeur : on recentre le corps. */
+  /**
+   * Normalise l'echelle et la position des pieds selon la frame courante,
+   * et garde une hitbox de taille constante dans le monde.
+   */
   private alignBody() {
-    const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(SPRITE_W, SPRITE_H);
-    body.setOffset(
-      (this.width - SPRITE_W) / 2,
-      this.height - FOOT_GAP - SPRITE_H,
+    const key = this.texture.key;
+    const metrics = METRICS[key] ?? METRICS["vigile-idle"];
+    const index = Math.min(
+      Math.max((this.anims.currentFrame?.index ?? 1) - 1, 0),
+      metrics.footY.length - 1,
     );
+    const footY = metrics.footY[index];
+
+    const scale = TARGET_H / metrics.charH;
+    this.setScale(scale);
+    this.setOrigin(0.5, footY / this.height);
+
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const bodyW = BODY_W / scale;
+    body.setSize(bodyW, metrics.charH, false);
+    body.setOffset((this.width - bodyW) / 2, footY - metrics.charH);
   }
+
 
 
   get facingDirection() {
