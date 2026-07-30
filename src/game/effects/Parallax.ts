@@ -72,18 +72,11 @@ export class Parallax {
         .setDepth(-20)
         .setTileScale(midScale, midScale);
 
-      // 3) piliers de premier plan : le heros passe derriere eux.
-      const nearSrc = scene.textures.get(this.def.near).getSourceImage();
-      const nearScale = (drawH * 1.15) / (nearSrc.height || 1);
-      const nearH = drawH * 1.15;
-      scene.add
-        .tileSprite(0, floorY + 24 - nearH, roomWidth * 1.7, nearH, this.def.near)
-        .setOrigin(0, 0)
-        .setScrollFactor(1.25)
-        .setDepth(30)
-        .setTileScale(nearScale, nearScale)
-        .setAlpha(0.95);
+      // 3) dallage reel : ancre au monde, il defile exactement a la vitesse
+      //    des pas et rattrape le vide sous les pieds du heros.
+      this.addFloor(floorY, roomHeight, roomWidth);
     } else {
+
       // rendu d'origine des autres salles : peinture repetee a l'echelle
       const source = scene.textures.get(this.def.far).getSourceImage();
       const srcH = source.height || 1;
@@ -103,10 +96,31 @@ export class Parallax {
     this.addAmbience(viewW, viewH, floorScreenY, key === "corridor");
   }
 
+  /**
+   * Dallage du couloir : bande de pierre ancree au monde, posee sur la ligne
+   * de sol jouable, avec un degrade sombre en haut pour fondre la jonction
+   * avec le fond peint.
+   */
+  private addFloor(floorY: number, roomHeight: number, roomWidth: number) {
+    const scene = this.scene;
+    const top = floorY - 110;
+    const height = roomHeight - top + 40;
 
+    const src = scene.textures.get("corridor-floor").getSourceImage();
+    const scale = height / (src.height || 1);
 
+    scene.add
+      .tileSprite(0, top, roomWidth, height, "corridor-floor")
+      .setOrigin(0, 0)
+      .setScrollFactor(1)
+      .setDepth(-10)
+      .setTileScale(scale, scale);
 
-
+    // fondu du haut du dallage vers l'obscurite du fond
+    const blend = scene.add.graphics().setScrollFactor(0, 1).setDepth(-9);
+    blend.fillGradientStyle(0x0a0506, 0x0a0506, 0x0a0506, 0x0a0506, 0.9, 0.9, 0, 0);
+    blend.fillRect(0, top - 10, scene.cameras.main.width, 70);
+  }
 
 
   /** Voile colore, poussieres flottantes, braises et vignettage. */

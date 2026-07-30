@@ -27,6 +27,10 @@ export class BootScene extends Phaser.Scene {
       this.load.image(def.near, def.paths[2]);
     }
 
+    // dallage du corridor (tuilable horizontalement)
+    this.load.image("corridor-floor", "/assets/sprites/backgrounds/corridor_floor.png");
+
+
     // colonne de fin de salle (visceres animes)
     this.load.image("gate-column-shaft", "/assets/sprites/props/gate_column_shaft.png");
     this.load.image("gate-column-base", "/assets/sprites/props/gate_column_base.png");
