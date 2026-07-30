@@ -51,6 +51,7 @@ export class GameScene extends Phaser.Scene {
   private exiting = false;
   /** le heros touche le plateau (mis a jour par le collider) */
   private liftContact = false;
+  private liftContactAt = -9999;
 
 
   constructor() {
