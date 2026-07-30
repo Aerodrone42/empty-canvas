@@ -16,7 +16,12 @@ export type EnemyStats = {
   bodyHeight: number;
   fleshReward: number;
   animPrefix: string;
+  /** garde : seuls les coups brise-garde passent en plein */
+  guarded?: boolean;
 };
+
+/** Temps d'anticipation avant que le coup ne parte : laisse esquiver ou parer. */
+const TELEGRAPH_MS = 350;
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   protected stats: EnemyStats;
@@ -26,6 +31,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   protected attacking = false;
   protected dying = false;
   protected patrolOrigin: number;
+  protected stunnedUntil = 0;
+  protected guardBrokenUntil = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, stats: EnemyStats) {
     super(scene, x, y, `${stats.animPrefix}-idle`);
@@ -78,16 +85,50 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
 
-  takeHit(amount: number) {
+  takeHit(
+    amount: number,
+    options: { knockback?: number; breakGuard?: boolean; fromX?: number } = {},
+  ) {
     if (this.dying) return;
-    this.health -= amount;
-    this.setTint(0xd94b4b);
-    this.scene.time.delayedCall(90, () => this.clearTint());
+
+    const time = this.scene.time.now;
+    const guarding =
+      !!this.stats.guarded && !options.breakGuard && time > this.guardBrokenUntil;
+
+    const dealt = guarding ? amount * 0.25 : amount;
+    this.health -= dealt;
+
+    if (options.breakGuard) this.guardBrokenUntil = time + 1500;
+
+    this.setTint(guarding ? 0x9aa7b5 : 0xd94b4b);
+    this.scene.time.delayedCall(90, () => {
+      if (this.active && !this.dying) this.clearTint();
+    });
+
+    const knockback = (options.knockback ?? 0) * (guarding ? 0.25 : 1);
+    if (knockback > 0 && this.body) {
+      const dir = options.fromX !== undefined ? Math.sign(this.x - options.fromX) || 1 : 1;
+      const body = this.body as Phaser.Physics.Arcade.Body;
+      body.setVelocityX(dir * knockback);
+      body.setVelocityY(-Math.min(220, knockback * 0.5));
+    }
 
     if (this.health <= 0) {
       this.die();
     }
   }
+
+  /** Etourdissement (parade réussie) : l'ennemi reste ouvert. */
+  stun(durationMs: number) {
+    if (this.dying) return;
+    this.stunnedUntil = this.scene.time.now + durationMs;
+    this.attacking = false;
+    this.setTint(0x6fa8dc);
+    this.scene.time.delayedCall(durationMs, () => {
+      if (this.active && !this.dying) this.clearTint();
+    });
+  }
+
 
   protected die() {
     this.dying = true;
@@ -117,6 +158,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const distance = Math.abs(dx);
     const sameLevel = Math.abs(playerY - this.y) < 140;
 
+    if (time < this.stunnedUntil) {
+      body.setVelocityX(0);
+      this.play(`${this.stats.animPrefix}-idle-anim`, true);
+      return;
+    }
+
     if (this.attacking) {
       body.setVelocityX(0);
       return;
@@ -130,17 +177,29 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       if (time - this.lastAttackAt >= this.stats.attackCooldown) {
         this.lastAttackAt = time;
         this.attacking = true;
-        this.play(`${this.stats.animPrefix}-attack-anim`, true);
-        this.scene.time.delayedCall(180, () => {
+
+        // anticipation lisible : la creature se teinte avant de frapper
+        this.setTint(0xffcf6b);
+        this.play(`${this.stats.animPrefix}-idle-anim`, true);
+
+        this.scene.time.delayedCall(TELEGRAPH_MS, () => {
           if (!this.active || this.dying) return;
-          const stillClose = Math.abs(playerX - this.x) <= this.stats.attackRange + 20;
-          if (stillClose) {
-            this.scene.events.emit("enemy-strike", this.stats.damage);
+          if (this.scene.time.now < this.stunnedUntil) {
+            this.attacking = false;
+            return;
           }
+          this.clearTint();
+          this.play(`${this.stats.animPrefix}-attack-anim`, true);
+          this.scene.time.delayedCall(180, () => {
+            if (!this.active || this.dying) return;
+            if (this.scene.time.now < this.stunnedUntil) return;
+            this.scene.events.emit("enemy-strike", this.stats.damage, this);
+          });
         });
       }
       return;
     }
+
 
     if (sameLevel && distance <= this.stats.detectRange) {
       this.direction = dx >= 0 ? 1 : -1;
@@ -174,6 +233,7 @@ export class PenitentGreffe extends Enemy {
       bodyHeight: 128,
       fleshReward: 14,
       animPrefix: "penitent",
+      guarded: true,
     });
   }
 }

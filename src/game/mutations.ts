@@ -27,6 +27,14 @@ export type MutationEffects = {
   doubleJump: boolean;
   /** Reduction des degats subis (0 = aucune, 0.3 = -30%). */
   damageReduction: number;
+  /** Allonge la roulade d'esquive. */
+  dodgeDistanceMult: number;
+  /** Millisecondes ajoutees a la fenetre de parade. */
+  parryWindowBonus: number;
+  /** Multiplicateur du cout en Chair du Rugissement. */
+  specialCostMult: number;
+  /** Rayon ajoute a l'onde du Rugissement. */
+  specialRadiusBonus: number;
 };
 
 export const BASE_EFFECTS: MutationEffects = {
@@ -40,6 +48,10 @@ export const BASE_EFFECTS: MutationEffects = {
   fleshGainMult: 1,
   doubleJump: false,
   damageReduction: 0,
+  dodgeDistanceMult: 1,
+  parryWindowBonus: 0,
+  specialCostMult: 1,
+  specialRadiusBonus: 0,
 };
 
 export type Mutation = {
@@ -146,6 +158,38 @@ export const MUTATIONS: Mutation[] = [
     description: "L'humérus s'allonge d'une paume de trop.",
     effects: { bonusReach: 55, damageMult: 1.25 },
   },
+
+  // --- Greffes de combat ---
+  {
+    id: "ten-roulade",
+    name: "Genoux Inversés",
+    branch: "Tendon",
+    tier: 2,
+    cost: 30,
+    requires: "ten-jarret",
+    description: "La roulade porte deux fois plus loin.",
+    effects: { dodgeDistanceMult: 1.7 },
+  },
+  {
+    id: "os-parade",
+    name: "Avant-bras Ossifié",
+    branch: "Ossuaire",
+    tier: 2,
+    cost: 34,
+    requires: "os-carapace",
+    description: "L'os encaisse : la fenêtre de parade s'élargit.",
+    effects: { parryWindowBonus: 120 },
+  },
+  {
+    id: "san-rugissement",
+    name: "Gorge Béante",
+    branch: "Sanie",
+    tier: 3,
+    cost: 58,
+    requires: "san-langue",
+    description: "Le Rugissement coûte moins de Chair et porte plus loin.",
+    effects: { specialCostMult: 0.6, specialRadiusBonus: 90 },
+  },
 ];
 
 export const BRANCHES: Array<Mutation["branch"]> = ["Ossuaire", "Tendon", "Sanie"];
@@ -168,6 +212,10 @@ export function computeEffects(unlocked: string[]): MutationEffects {
     effects.fleshGainMult *= e.fleshGainMult ?? 1;
     effects.doubleJump = effects.doubleJump || (e.doubleJump ?? false);
     effects.damageReduction = 1 - (1 - effects.damageReduction) * (1 - (e.damageReduction ?? 0));
+    effects.dodgeDistanceMult *= e.dodgeDistanceMult ?? 1;
+    effects.parryWindowBonus += e.parryWindowBonus ?? 0;
+    effects.specialCostMult *= e.specialCostMult ?? 1;
+    effects.specialRadiusBonus += e.specialRadiusBonus ?? 0;
   }
 
   return effects;

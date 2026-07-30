@@ -1,6 +1,15 @@
 import { create } from "zustand";
 
-export type ActionId = "left" | "right" | "jump" | "attack" | "pause" | "flesh";
+export type ActionId =
+  | "left"
+  | "right"
+  | "jump"
+  | "attack"
+  | "dodge"
+  | "parry"
+  | "special"
+  | "pause"
+  | "flesh";
 
 export type Binding = {
   /** KeyboardEvent.code, ex: "KeyQ", "Space" */
@@ -15,7 +24,10 @@ export const ACTION_LABELS: Record<ActionId, string> = {
   left: "Aller à gauche",
   right: "Aller à droite",
   jump: "Sauter",
-  attack: "Frapper",
+  attack: "Frapper (maintenir = coup lourd)",
+  dodge: "Esquive / roulade",
+  parry: "Parade",
+  special: "Rugissement de Chair",
   pause: "Pause",
   flesh: "Voie de la Chair",
 };
@@ -25,6 +37,9 @@ export const ACTION_ORDER: ActionId[] = [
   "right",
   "jump",
   "attack",
+  "dodge",
+  "parry",
+  "special",
   "pause",
   "flesh",
 ];
@@ -34,6 +49,9 @@ export const DEFAULT_BINDINGS: Bindings = {
   right: { key: "KeyD", pad: 15 },
   jump: { key: "Space", pad: 0 },
   attack: { key: "KeyE", pad: 2 },
+  dodge: { key: "ShiftLeft", pad: 1 },
+  parry: { key: "KeyA", pad: 4 },
+  special: { key: "KeyR", pad: 5 },
   pause: { key: "Escape", pad: 9 },
   flesh: { key: "KeyF", pad: 8 },
 };
@@ -46,6 +64,7 @@ function loadBindings(): Bindings {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_BINDINGS;
     const parsed = JSON.parse(raw) as Partial<Bindings>;
+    // migration douce : les actions inconnues de l'ancienne config gardent le defaut
     const merged = { ...DEFAULT_BINDINGS };
     for (const action of ACTION_ORDER) {
       const value = parsed[action];
@@ -117,7 +136,15 @@ export function keyLabel(code: string) {
   if (!code) return "—";
   if (code.startsWith("Key")) return code.slice(3);
   if (code.startsWith("Digit")) return code.slice(5);
-  if (code.startsWith("Arrow")) return "↑↓←→"[["Up", "Down", "Left", "Right"].indexOf(code.slice(5))] ?? code;
+  if (code.startsWith("Arrow")) {
+    const arrows: Record<string, string> = {
+      ArrowUp: "↑",
+      ArrowDown: "↓",
+      ArrowLeft: "←",
+      ArrowRight: "→",
+    };
+    return arrows[code] ?? code;
+  }
   if (code.startsWith("Numpad")) return "Pav. " + code.slice(6);
   const map: Record<string, string> = {
     Space: "Espace",
@@ -134,26 +161,47 @@ export function keyLabel(code: string) {
   return map[code] ?? code;
 }
 
-/** Libellé lisible pour un bouton de manette. */
-export function padLabel(index: number) {
+export type PadBrand = "xbox" | "playstation" | "generic";
+
+/** Devine la famille de manette branchée pour afficher les bons libellés. */
+export function detectPadBrand(): PadBrand {
+  if (typeof navigator === "undefined" || !navigator.getGamepads) return "generic";
+  const pad = Array.from(navigator.getGamepads?.() ?? []).find(Boolean);
+  const id = pad?.id?.toLowerCase() ?? "";
+  if (!id) return "generic";
+  if (/playstation|dualshock|dualsense|054c|sony|wireless controller/.test(id)) {
+    return "playstation";
+  }
+  if (/xbox|xinput|045e|microsoft/.test(id)) return "xbox";
+  return "generic";
+}
+
+const PAD_NAMES: Record<number, [xbox: string, ps: string]> = {
+  0: ["A", "Croix"],
+  1: ["B", "Cercle"],
+  2: ["X", "Carré"],
+  3: ["Y", "Triangle"],
+  4: ["LB", "L1"],
+  5: ["RB", "R1"],
+  6: ["LT", "L2"],
+  7: ["RT", "R2"],
+  8: ["View", "Share"],
+  9: ["Menu", "Options"],
+  10: ["L3", "L3"],
+  11: ["R3", "R3"],
+  12: ["D-Pad ↑", "D-Pad ↑"],
+  13: ["D-Pad ↓", "D-Pad ↓"],
+  14: ["D-Pad ←", "D-Pad ←"],
+  15: ["D-Pad →", "D-Pad →"],
+};
+
+/** Libellé lisible pour un bouton de manette, adapté à la marque détectée. */
+export function padLabel(index: number, brand: PadBrand = "generic") {
   if (index < 0) return "—";
-  const map: Record<number, string> = {
-    0: "A / Croix",
-    1: "B / Cercle",
-    2: "X / Carré",
-    3: "Y / Triangle",
-    4: "LB",
-    5: "RB",
-    6: "LT",
-    7: "RT",
-    8: "Select",
-    9: "Start",
-    10: "L3",
-    11: "R3",
-    12: "D-Pad ↑",
-    13: "D-Pad ↓",
-    14: "D-Pad ←",
-    15: "D-Pad →",
-  };
-  return map[index] ?? `Bouton ${index}`;
+  const names = PAD_NAMES[index];
+  if (!names) return `Bouton ${index}`;
+  const [xbox, ps] = names;
+  if (brand === "xbox") return xbox;
+  if (brand === "playstation") return ps;
+  return xbox === ps ? xbox : `${xbox} / ${ps}`;
 }

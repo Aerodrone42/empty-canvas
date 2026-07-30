@@ -24,10 +24,14 @@ export type GameState = {
   flesh: number;
   maxFlesh: number;
   kills: number;
+  parries: number;
   hasSave: boolean;
   mutations: string[];
   effects: MutationEffects;
   optionsReturnPhase: Phase;
+  /** horodatage (Date.now) de fin de recharge de l'esquive */
+  dodgeReadyAt: number;
+  dodgeCooldownMs: number;
 
   enter: () => void;
   startNewRun: () => void;
@@ -43,7 +47,10 @@ export type GameState = {
   damage: (amount: number) => void;
   heal: (amount: number) => void;
   gainFlesh: (amount: number) => void;
+  spendFlesh: (amount: number) => boolean;
   registerKill: () => void;
+  registerParry: () => void;
+  setDodgeCooldown: (durationMs: number) => void;
   unlockMutation: (id: string) => void;
 };
 
@@ -57,10 +64,13 @@ export const useGameStore = create<GameState>((set, get) => ({
   flesh: 0,
   maxFlesh: MAX_FLESH,
   kills: 0,
+  parries: 0,
   hasSave: false,
   mutations: [],
   effects: BASE_EFFECTS,
   optionsReturnPhase: "menu",
+  dodgeReadyAt: 0,
+  dodgeCooldownMs: 700,
 
   enter: () => set({ phase: "menu" }),
 
@@ -71,6 +81,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       maxHealth: BASE_MAX_HEALTH,
       flesh: 0,
       kills: 0,
+      parries: 0,
       hasSave: true,
       mutations: [],
       effects: BASE_EFFECTS,
@@ -106,11 +117,24 @@ export const useGameStore = create<GameState>((set, get) => ({
       flesh: Math.min(s.maxFlesh, s.flesh + Math.round(amount * s.effects.fleshGainMult)),
     })),
 
+  spendFlesh: (amount) => {
+    if (get().flesh < amount) return false;
+    set((s) => ({ flesh: Math.max(0, s.flesh - amount) }));
+    return true;
+  },
+
   registerKill: () =>
     set((s) => ({
       kills: s.kills + 1,
       health: Math.min(s.maxHealth, s.health + s.effects.lifesteal),
     })),
+
+  registerParry: () => set((s) => ({ parries: s.parries + 1 })),
+
+  setDodgeCooldown: (durationMs) =>
+    set({ dodgeCooldownMs: durationMs, dodgeReadyAt: Date.now() + durationMs }),
+
+
 
   unlockMutation: (id) => {
     const state = get();
