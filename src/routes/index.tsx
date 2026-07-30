@@ -1,24 +1,73 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+import { AgeGate } from "@/components/game/AgeGate";
+import { Hud } from "@/components/game/Hud";
+import { MainMenu } from "@/components/game/MainMenu";
+import { DeathScreen, PauseMenu } from "@/components/game/PauseMenu";
+import { PhaserCanvas } from "@/components/game/PhaserCanvas";
+import { useGameStore } from "@/store/gameStore";
+
+const TITLE = "Sanguine Vigile — Metroidvania d'horreur gothique";
+const DESCRIPTION =
+  "Incarnez le Vigile Muet dans une cathédrale de chair. Explorez la Nef Suppurante, affrontez les Pénitents-Greffés et suivez la Voie de la Chair. Contenu 18+.";
+
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: TITLE },
+      { name: "description", content: DESCRIPTION },
+      { property: "og:title", content: TITLE },
+      { property: "og:description", content: DESCRIPTION },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  const phase = useGameStore((s) => s.phase);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => setHydrated(true), []);
+
+  if (!hydrated) {
+    return (
+      <main className="vignette flex min-h-screen items-center justify-center bg-background">
+        <h1 className="text-glow-blood font-display text-3xl tracking-[0.35em] text-primary uppercase">
+          Sanguine Vigile
+        </h1>
+      </main>
+    );
+  }
+
+  if (phase === "warning") {
+    return (
+      <main>
+        <h1 className="sr-only">Sanguine Vigile</h1>
+        <AgeGate />
+      </main>
+    );
+  }
+
+  if (phase === "menu") {
+    return (
+      <main>
+        <MainMenu />
+      </main>
+    );
+  }
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="vignette relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
+      <h1 className="sr-only">Sanguine Vigile — Chapitre I</h1>
+      <div className="relative aspect-video w-full max-w-[1280px]">
+        <PhaserCanvas />
+        <Hud />
+        {phase === "paused" && <PauseMenu />}
+        {phase === "dead" && <DeathScreen />}
+      </div>
+    </main>
   );
 }
