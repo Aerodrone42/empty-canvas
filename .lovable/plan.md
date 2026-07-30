@@ -1,45 +1,30 @@
-## Constat
+## Objectif
 
-Vérifié dans `src/game/entities/Player.ts` : l'esquive (ligne 284-296) déclenche bien un déplacement rapide + invulnérabilité, mais joue `vigile-walk-anim`. Visuellement, le héros marche pendant qu'il glisse — aucune plongée, aucune roulade. Il n'existe aucune feuille d'esquive dans `public/assets/sprites/`.
+Les ennemis (Pénitent-Greffé, Suppliant Rampant) viennent d'un ancien lot : cadres irréguliers (102/126/172 px de large, hauteur 128, marge de 4 px), lignes de pieds instables et rendu moins soigné que le héros. Le Vigile Muet, lui, a été régénéré sur un gabarit propre : 192x144 par frame, silhouette ~110 px, ligne de pieds fixe à y=138, aucune marge.
 
-## Plan
+On applique exactement le même pipeline aux ennemis.
 
-### 1. Générer la feuille « esquive »
-Nouvelle image `vigile_muet_dodge_spritesheet.png`, même gabarit héros que les autres feuilles (cellules 192x144, silhouette 110 px, ligne de pieds y=138), 8 frames inspirées de la planche de référence fournie :
+## Ce qui sera fait
 
-```text
-1  prêt / idle        appui, buste qui bascule
-2  départ esquive     poussée jambe arrière, manteau qui claque
-3  plongée            corps à l'horizontale, poussière au sol
-4  roulée             corps groupé, manteau enroulé
-5  sortie esquive     déroulé, une main au sol
-6  récupération       redressement, buste bas
-7  fin récupération   redressement complet, épée ramenée
-8  retour idle        pose neutre, raccord avec idle
-```
+1. **Régénération des feuilles de sprites** (pixel art, palette du jeu : crimson sang, os, charbon, ocre, accents rouillés) :
+   - Pénitent-Greffé : idle (4), marche (6), attaque (5)
+   - Suppliant Rampant : idle (4), déplacement (4), attaque (4)
+   Silhouettes cohérentes d'une frame à l'autre, lisibilité de la pose d'attaque (anticipation nette, déjà utilisée par le télégraphe de 350 ms).
 
-Style, palette et silhouette identiques aux feuilles existantes (crimson/os/charbon, capuche, épée longue).
+2. **Normalisation** (script Python, même traitement que le héros) :
+   - cadre unifié 192x144, aucune marge entre cellules
+   - fond transparent, recadrage par la silhouette réelle
+   - ligne de pieds calée à y=138 sur toutes les frames
+   - hauteur de silhouette : ~118 px pour le Pénitent (plus imposant que le héros), ~62 px pour le Suppliant (rampant, bas et large)
+   - quantification de palette partagée par créature pour une cohérence totale
 
-### 2. Normaliser la feuille
-Même script de normalisation que le saut : découpe des colonnes, recadrage sur la ligne de pieds commune, hauteur cohérente avec idle/walk, fond transparent. Les frames roulée/plongée gardent la même hauteur de cellule pour éviter tout saut d'échelle.
+3. **Mise à jour du code** :
+   - `src/game/assets.ts` : `frameWidth: 192`, `frameHeight: 144`, `spacing: 0` pour les 6 entrées ennemies
+   - `src/game/entities/Enemy.ts` : ajuster `scale`, `bodyWidth`, `bodyHeight` des deux classes au nouveau gabarit (les hitbox actuelles, ex. 150x128 pour le Suppliant, correspondent aux anciennes cellules)
+   - `public/assets/sprites/enemies/*_atlas.json` et le README : réécrits selon le nouveau gabarit
 
-### 3. Déclarer et charger la feuille
-- `src/game/assets.ts` : entrée `vigile-dodge` (8 frames, gabarit héros).
-- `src/game/scenes/BootScene.ts` : trois animations découpées
-  - `vigile-dodge-start` (frames 1-3) — départ + plongée
-  - `vigile-dodge-roll` (frames 4-5) — roulade et sortie
-  - `vigile-dodge-recover` (frames 6-8) — récupération jusqu'au retour idle
-
-### 4. Brancher l'animation
-Dans `Player.ts` :
-- Au déclenchement de l'esquive : jouer `vigile-dodge-start` au lieu de `vigile-walk-anim`.
-- Pendant l'état `dodge` : enchaîner `vigile-dodge-roll` à mi-parcours (la durée totale est `DODGE.duration` = 260 ms, donc le découpage suit ce timing).
-- En sortie d'état : `vigile-dodge-recover` sur une brève fenêtre, puis retour normal à idle/walk.
-- Aucun changement de hitbox, de distance, d'invulnérabilité ni de cooldown : seule l'apparence change.
-
-### 5. Vérification
-Captures Playwright aux différentes phases (départ, plongée, roulade, récupération) pour confirmer que les jambes/le corps bougent réellement, que la taille reste constante et que les pieds retombent sur la ligne de sol.
+4. **Vérification en jeu** : capture Playwright de la scène pour confirmer que les deux ennemis restent posés au sol, à la bonne échelle relative au héros, sans rétrécissement entre animations.
 
 ## Détails techniques
 
-La feuille doit respecter exactement `HERO_FRAME_W=192`, `HERO_FRAME_H=144`, `HERO_CHAR_H=110`, `HERO_BASELINE_Y=138` d'`src/game/assets.ts` pour qu'`alignBody()` fonctionne sans compensation. Le corps physique (58x120) reste inchangé pendant toute l'esquive.
+Le calcul de `footY` par `src/game/spriteMetrics.ts` reste en place et fonctionnera mieux avec des lignes de pieds déjà normalisées. Aucune modification de la logique de combat, d'IA ou des dégâts : seuls les assets, leurs métadonnées et les dimensions de collision changent.
