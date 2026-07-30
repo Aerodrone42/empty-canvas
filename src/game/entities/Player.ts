@@ -57,6 +57,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private comboExpiresAt = 0;
   private lastAttackAt = -Infinity;
   private dodgeReadyAt = 0;
+  /** debut de l'esquive en cours, pour enchainer plongee -> roulade */
+  private dodgeStartedAt = 0;
+  /** fenetre de relevee apres la roulade */
+  private dodgeRecoverUntil = 0;
   private invulnUntil = 0;
   private parryUntil = 0;
   private charging = false;
@@ -217,7 +221,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.moveState = "idle";
         this.clearTint();
         this.setAlpha(1);
+        this.dodgeRecoverUntil = time + 170;
+        this.play("vigile-dodge-recover", true);
       } else {
+        // plongee puis roulade au sol
+        const elapsed = time - this.dodgeStartedAt;
+        if (elapsed > DODGE.duration * 0.45) this.play("vigile-dodge-roll", true);
         return;
       }
     }
@@ -287,13 +296,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       useGameStore.getState().setDodgeCooldown(DODGE.cooldown);
       this.invulnUntil = time + DODGE.invuln;
       this.beginState("dodge", time, DODGE.duration);
+      this.dodgeStartedAt = time;
+      this.dodgeRecoverUntil = 0;
       const dir = left ? -1 : right ? 1 : this.facing;
       this.facing = dir;
       this.setFlipX(dir < 0);
       body.setVelocityX(dir * (distance / (DODGE.duration / 1000)));
       this.setTint(0x8ea9c9);
       this.setAlpha(0.6);
-      this.play("vigile-walk-anim", true);
+      this.play("vigile-dodge-start", true);
       return;
     }
 
@@ -452,6 +463,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else if (this.pendingJump > 0) {
       this.moveState = "idle";
     } else if (time < this.landUntil) {
+      this.moveState = "idle";
+    } else if (time < this.dodgeRecoverUntil) {
+      // relevee apres la roulade
       this.moveState = "idle";
     } else if (left || right) {
       this.moveState = "run";
