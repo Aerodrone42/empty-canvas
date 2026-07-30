@@ -91,18 +91,22 @@ export class Parallax {
     apron.setTileScale(scale, scale);
     // on affiche la bande la plus basse de l'image (le dallage au sol)
     apron.tilePositionY = srcH - apronH / scale;
+    // fortement assombri : il ne doit lire que comme la masse d'ombre
+    // sous le dallage, pas comme une frise d'architecture repetee
+    apron.setTint(0x4a3c33).setAlpha(0.55);
     this.layers.push({ sprite: apron, speed: SPEEDS[1] });
 
     // degrade d'assombrissement pour poser les pieds et garder le HUD lisible
-    const steps = 6;
+    const steps = 8;
     for (let i = 0; i < steps; i++) {
       const h = apronH / steps;
       this.scene.add
-        .rectangle(0, floorScreenY + i * h, viewW, h + 1, 0x000000, 0.12 + i * 0.13)
+        .rectangle(0, floorScreenY + i * h, viewW, h + 1, 0x000000, 0.3 + i * 0.09)
         .setOrigin(0, 0)
         .setScrollFactor(0)
         .setDepth(-9);
     }
+
   }
 
 
