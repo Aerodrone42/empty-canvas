@@ -88,7 +88,7 @@ export class Parallax {
   private addAnchoredMid(
     textureKey: string,
     drawH: number,
-    floorScreenY: number,
+    worldFloorY: number,
     roomWidth: number,
   ) {
     const source = this.scene.textures.get(textureKey).getSourceImage();
@@ -101,7 +101,7 @@ export class Parallax {
 
     for (let i = 0, x = -drawW * 0.15; x < roomWidth; i++, x += step) {
       this.scene.add
-        .image(x, floorScreenY, textureKey)
+        .image(x, worldFloorY, textureKey)
         .setOrigin(0, 1)
         .setDisplaySize(i % 2 === 0 ? drawW : -drawW, drawH)
         .setScrollFactor(1)
