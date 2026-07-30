@@ -193,7 +193,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
 
   tick(time: number) {
-    this.alignBody();
     const store = useGameStore.getState();
     const effects = store.effects;
     const body = this.body as Phaser.Physics.Arcade.Body;
