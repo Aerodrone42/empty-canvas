@@ -305,6 +305,8 @@ export class EcorchePendu extends Enemy {
   private phase: EcorcheState = "hanging";
   private readonly floorY: number;
   private readonly triggerRange: number;
+  /** condition externe : la chute n'a lieu que si le heros est seul */
+  public dropGate: (() => boolean) | null = null;
 
   constructor(scene: Phaser.Scene, x: number, floorY: number, ceilingY = 40) {
     super(scene, x, ceilingY, {
