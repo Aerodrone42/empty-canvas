@@ -263,9 +263,10 @@ export class PenitentGreffe extends Enemy {
       detectRange: 320,
       attackRange: 90,
       attackCooldown: 1700,
-      scale: 1.15,
-      bodyWidth: 60,
-      bodyHeight: 128,
+      // silhouette de 118 px dans la cellule -> ~150 px a l'ecran
+      scale: 1.27,
+      bodyWidth: 56,
+      bodyHeight: 118,
       fleshReward: 14,
       animPrefix: "penitent",
       guarded: true,
@@ -283,11 +284,13 @@ export class SuppliantRampant extends Enemy {
       detectRange: 420,
       attackRange: 62,
       attackCooldown: 800,
-      scale: 0.5,
-      bodyWidth: 150,
-      bodyHeight: 128,
+      // creature rampante : silhouette de 62 px -> ~70 px a l'ecran
+      scale: 1.13,
+      bodyWidth: 70,
+      bodyHeight: 58,
       fleshReward: 6,
       animPrefix: "suppliant",
     });
   }
 }
+

@@ -29,6 +29,15 @@ export const HERO_CHAR_H = 110;
 /** ligne de pieds dans la cellule */
 export const HERO_BASELINE_Y = 138;
 
+/** gabarit commun des feuilles d'ennemis, regenerees et normalisees */
+export const ENEMY_FRAME_W = 224;
+export const ENEMY_FRAME_H = 176;
+/** ligne de pieds dans la cellule ennemie */
+export const ENEMY_BASELINE_Y = 168;
+/** hauteurs de silhouette dessinees */
+export const PENITENT_CHAR_H = 118;
+export const SUPPLIANT_CHAR_H = 62;
+
 export const SHEETS: SheetDef[] = [
   // --- Vigile Muet (heros) ---
   {
@@ -83,65 +92,72 @@ export const SHEETS: SheetDef[] = [
   },
 
 
-
   // --- Penitent-Greffe (lourd, lent, resistant) ---
+  // feuilles regenerees : cellule 224x176, silhouette 118px, pieds a y=168
   {
     key: "penitent-idle",
     path: `${ENEMIES}/penitent_greffe_idle_spritesheet.png`,
-    frameWidth: 102,
-    frameHeight: 128,
+    frameWidth: ENEMY_FRAME_W,
+    frameHeight: ENEMY_FRAME_H,
     frameCount: 4,
     frameRate: 4,
     repeat: -1,
+    spacing: 0,
   },
   {
     key: "penitent-walk",
     path: `${ENEMIES}/penitent_greffe_walk_spritesheet.png`,
-    frameWidth: 126,
-    frameHeight: 128,
+    frameWidth: ENEMY_FRAME_W,
+    frameHeight: ENEMY_FRAME_H,
     frameCount: 6,
     frameRate: 6,
     repeat: -1,
+    spacing: 0,
   },
   {
     key: "penitent-attack",
     path: `${ENEMIES}/penitent_greffe_attack_spritesheet.png`,
-    frameWidth: 172,
-    frameHeight: 128,
+    frameWidth: ENEMY_FRAME_W,
+    frameHeight: ENEMY_FRAME_H,
     frameCount: 5,
     frameRate: 8,
     repeat: 0,
+    spacing: 0,
   },
 
   // --- Suppliant Rampant (rapide, faible, quadrupede) ---
   {
     key: "suppliant-idle",
     path: `${ENEMIES}/suppliant_rampant_idle_spritesheet.png`,
-    frameWidth: 240,
-    frameHeight: 128,
+    frameWidth: ENEMY_FRAME_W,
+    frameHeight: ENEMY_FRAME_H,
     frameCount: 4,
     frameRate: 4,
     repeat: -1,
+    spacing: 0,
   },
   {
     key: "suppliant-walk",
     path: `${ENEMIES}/suppliant_rampant_walk_spritesheet.png`,
-    frameWidth: 275,
-    frameHeight: 128,
+    frameWidth: ENEMY_FRAME_W,
+    frameHeight: ENEMY_FRAME_H,
     frameCount: 4,
     frameRate: 10,
     repeat: -1,
+    spacing: 0,
   },
   {
     key: "suppliant-attack",
     path: `${ENEMIES}/suppliant_rampant_attack_spritesheet.png`,
-    frameWidth: 322,
-    frameHeight: 128,
+    frameWidth: ENEMY_FRAME_W,
+    frameHeight: ENEMY_FRAME_H,
     frameCount: 4,
     frameRate: 10,
     repeat: 0,
+    spacing: 0,
   },
 ];
+
 
 export const FRAME_SPACING = 4;
 

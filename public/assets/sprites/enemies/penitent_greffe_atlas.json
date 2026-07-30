@@ -1,123 +1,33 @@
 {
-  "frames": {
-    "penitent_greffe_idle_1": {
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "w": 102,
-        "h": 128
-      }
-    },
-    "penitent_greffe_idle_2": {
-      "frame": {
-        "x": 106,
-        "y": 0,
-        "w": 102,
-        "h": 128
-      }
-    },
-    "penitent_greffe_idle_3": {
-      "frame": {
-        "x": 212,
-        "y": 0,
-        "w": 102,
-        "h": 128
-      }
-    },
-    "penitent_greffe_idle_4": {
-      "frame": {
-        "x": 318,
-        "y": 0,
-        "w": 102,
-        "h": 128
-      }
-    },
-    "penitent_greffe_walk_1": {
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "w": 126,
-        "h": 128
-      }
-    },
-    "penitent_greffe_walk_2": {
-      "frame": {
-        "x": 130,
-        "y": 0,
-        "w": 126,
-        "h": 128
-      }
-    },
-    "penitent_greffe_walk_3": {
-      "frame": {
-        "x": 260,
-        "y": 0,
-        "w": 126,
-        "h": 128
-      }
-    },
-    "penitent_greffe_walk_4": {
-      "frame": {
-        "x": 390,
-        "y": 0,
-        "w": 126,
-        "h": 128
-      }
-    },
-    "penitent_greffe_walk_5": {
-      "frame": {
-        "x": 520,
-        "y": 0,
-        "w": 126,
-        "h": 128
-      }
-    },
-    "penitent_greffe_walk_6": {
-      "frame": {
-        "x": 650,
-        "y": 0,
-        "w": 126,
-        "h": 128
-      }
-    },
-    "penitent_greffe_attack_1": {
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "w": 172,
-        "h": 128
-      }
-    },
-    "penitent_greffe_attack_2": {
-      "frame": {
-        "x": 176,
-        "y": 0,
-        "w": 172,
-        "h": 128
-      }
-    },
-    "penitent_greffe_attack_3": {
-      "frame": {
-        "x": 352,
-        "y": 0,
-        "w": 172,
-        "h": 128
-      }
-    },
-    "penitent_greffe_attack_4": {
-      "frame": {
-        "x": 528,
-        "y": 0,
-        "w": 172,
-        "h": 128
-      }
-    },
-    "penitent_greffe_attack_5": {
-      "frame": {
-        "x": 704,
-        "y": 0,
-        "w": 172,
-        "h": 128
+  "frames": {},
+  "meta": {
+    "animations": {
+      "idle": {
+        "frameWidth": 224,
+        "frameHeight": 176,
+        "frameCount": 4,
+        "padding": 0,
+        "file": "penitent_greffe_idle_spritesheet.png",
+        "baselineY": 168,
+        "charHeight": 118
+      },
+      "walk": {
+        "frameWidth": 224,
+        "frameHeight": 176,
+        "frameCount": 6,
+        "padding": 0,
+        "file": "penitent_greffe_walk_spritesheet.png",
+        "baselineY": 168,
+        "charHeight": 118
+      },
+      "attack": {
+        "frameWidth": 224,
+        "frameHeight": 176,
+        "frameCount": 5,
+        "padding": 0,
+        "file": "penitent_greffe_attack_spritesheet.png",
+        "baselineY": 168,
+        "charHeight": 118
       }
     }
   }
