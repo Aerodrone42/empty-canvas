@@ -129,7 +129,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Decor en trois calques de parallaxe, selon la salle courante. */
   private buildBackdrop() {
-    this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y);
+    this.parallax = new Parallax(this, this.backdropKey);
   }
 
   private buildGeometry() {
