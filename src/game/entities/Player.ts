@@ -121,28 +121,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     const pad = this.scene.input.gamepad?.getPad(0);
     const padAxis = pad?.axes[0]?.getValue() ?? 0;
-    const padLeft = !!pad?.left || padAxis < -0.3;
-    const padRight = !!pad?.right || padAxis > 0.3;
-    // A / croix pour sauter, X ou gachette pour frapper
-    const padJumpDown = !!(pad?.A || pad?.buttons[0]?.pressed);
-    const padAttackDown = !!(
-      pad?.X ||
-      pad?.buttons[2]?.pressed ||
-      pad?.buttons[5]?.pressed ||
-      pad?.buttons[7]?.pressed
-    );
+    const btn = (index: number) => (index >= 0 ? !!pad?.buttons[index]?.pressed : false);
+    const padLeft = btn(padFor("left")) || padAxis < -0.3;
+    const padRight = btn(padFor("right")) || padAxis > 0.3;
+    const padJumpDown = btn(padFor("jump"));
+    const padAttackDown = btn(padFor("attack"));
     const padJump = padJumpDown && !this.padJumpPrev;
     const padAttack = padAttackDown && !this.padAttackPrev;
     this.padJumpPrev = padJumpDown;
     this.padAttackPrev = padAttackDown;
 
-    const left = this.keys.left.isDown || this.cursors.left?.isDown || padLeft;
-    const right = this.keys.right.isDown || this.cursors.right?.isDown || padRight;
+    const left = isKeyDown("left") || this.cursors.left?.isDown || padLeft;
+    const right = isKeyDown("right") || this.cursors.right?.isDown || padRight;
     const jump =
-      Phaser.Input.Keyboard.JustDown(this.keys.jump) ||
+      isKeyJustDown("jump") ||
       (this.cursors.up ? Phaser.Input.Keyboard.JustDown(this.cursors.up) : false) ||
       padJump;
-    const attack = Phaser.Input.Keyboard.JustDown(this.keys.attack) || padAttack;
+    const attack = isKeyJustDown("attack") || padAttack;
 
 
     if (attack && !this.attacking && time - this.lastAttackAt >= cooldown) {
