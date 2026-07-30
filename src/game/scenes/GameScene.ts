@@ -17,6 +17,8 @@ export class GameScene extends Phaser.Scene {
   private player!: Player;
   private enemies: Enemy[] = [];
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
+  private blood!: BloodFX;
+  private pickups: Pickup[] = [];
 
   constructor() {
     super("game");
@@ -24,9 +26,12 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.enemies = [];
+    this.pickups = [];
     this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
     this.cameras.main.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
     this.cameras.main.setBackgroundColor(0x14090b);
+
+    this.blood = new BloodFX(this, FLOOR_Y);
 
     this.buildBackdrop();
     this.buildGeometry();
@@ -43,9 +48,19 @@ export class GameScene extends Phaser.Scene {
 
     this.events.on("player-strike", this.resolvePlayerStrike, this);
     this.events.on("enemy-strike", this.resolveEnemyStrike, this);
+    this.events.on("fx-blood", this.onBlood, this);
+    this.events.on("fx-gore", this.onGore, this);
+    this.events.on("fx-sparks", this.onSparks, this);
+    this.events.on("fx-heal", this.onHeal, this);
+    this.events.on("enemy-died", this.onEnemyDied, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.off("player-strike", this.resolvePlayerStrike, this);
       this.events.off("enemy-strike", this.resolveEnemyStrike, this);
+      this.events.off("fx-blood", this.onBlood, this);
+      this.events.off("fx-gore", this.onGore, this);
+      this.events.off("fx-sparks", this.onSparks, this);
+      this.events.off("fx-heal", this.onHeal, this);
+      this.events.off("enemy-died", this.onEnemyDied, this);
     });
   }
 
@@ -53,6 +68,54 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(enemy, this.platforms);
     this.enemies.push(enemy);
   }
+
+  private onBlood(x: number, y: number, dir: number, intensity: number) {
+    this.blood.splatter(x, y, dir, intensity);
+  }
+
+  private onGore(x: number, y: number, intensity: number) {
+    this.blood.gore(x, y, intensity);
+  }
+
+  private onSparks(x: number, y: number) {
+    this.blood.sparks(x, y);
+  }
+
+  /** Halo de soin lors d'une absorption reussie. */
+  private onHeal(x: number, y: number) {
+    const ring = this.add.circle(x, y, 18, 0xff6b7d, 0.25);
+    ring.setStrokeStyle(3, 0xffb3bd, 0.9);
+    ring.setDepth(8);
+    this.tweens.add({
+      targets: ring,
+      scale: 3,
+      alpha: 0,
+      duration: 420,
+      onComplete: () => ring.destroy(),
+    });
+  }
+
+  /** Butin : orbes de chair, et parfois une fiole de sang. */
+  private onEnemyDied(x: number, y: number, fleshReward: number, elite?: boolean) {
+    const orbs = Phaser.Math.Between(2, 4);
+    const per = Math.max(1, Math.round(fleshReward / orbs));
+    for (let i = 0; i < orbs; i++) {
+      this.pickups.push(
+        new Pickup(
+          this,
+          x + Phaser.Math.Between(-40, 40),
+          y + Phaser.Math.Between(-20, 20),
+          "flesh",
+          per,
+        ),
+      );
+    }
+
+    if (elite || Math.random() < 0.3) {
+      this.pickups.push(new Pickup(this, x, y - 10, "blood", 12));
+    }
+  }
+
 
   private buildBackdrop() {
     const g = this.add.graphics();
