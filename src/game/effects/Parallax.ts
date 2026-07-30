@@ -105,33 +105,47 @@ export class Parallax {
   }
 
   /**
-   * Reperes de progression : quelques traces sombres posees au sol, ancrees
-   * au monde. Sans elles l'oeil n'a aucun point fixe pour percevoir la
-   * distance parcourue quand le heros marche.
+   * Reperes de progression : traces sombres posees au sol, ancrees au monde.
+   * Sans elles l'oeil n'a aucun point fixe pour percevoir la distance
+   * parcourue. Tout est cuit dans UNE seule texture puis affiche en un seul
+   * objet : aucun surcout de rendu (une vingtaine de formes separees
+   * multiplierait les changements de pipeline).
    */
   private addFloorMarks(roomWidth: number, floorY: number, camTop: number) {
     const scene = this.scene;
-    const rng = new Phaser.Math.RandomDataGenerator([this.def.far]);
-    const count = Math.round(roomWidth / 180);
+    const key = `floor-marks-${this.def.far}`;
+    const bandH = 48;
 
-    for (let i = 0; i < count; i++) {
-      const x = 60 + (i + rng.frac() * 0.6) * (roomWidth / count);
-      const y = floorY - rng.between(2, 16);
-      const w = rng.between(40, 130);
-      const h = Math.max(4, w * rng.realInRange(0.09, 0.16));
+    if (!scene.textures.exists(key)) {
+      const rng = new Phaser.Math.RandomDataGenerator([this.def.far]);
+      const count = Math.round(roomWidth / 180);
+      const g = scene.make.graphics({ x: 0, y: 0 }, false);
 
-      scene.add
-        .ellipse(x, y, w, h, 0x000000, rng.realInRange(0.18, 0.34))
-        .setScrollFactor(1)
-        .setDepth(-18);
+      for (let i = 0; i < count; i++) {
+        const x = 60 + (i + rng.frac() * 0.6) * (roomWidth / count);
+        const y = bandH - rng.between(2, 16);
+        const w = rng.between(40, 130);
+        const h = Math.max(4, w * rng.realInRange(0.09, 0.16));
 
-      if (rng.frac() > 0.6) {
-        scene.add
-          .ellipse(x + rng.between(-40, 40), y - rng.between(4, 14), w * 0.35, h * 0.6, this.def.ledge, 0.5)
-          .setScrollFactor(1)
-          .setDepth(-18);
+        g.fillStyle(0x000000, rng.realInRange(0.18, 0.34));
+        g.fillEllipse(x, y, w, h);
+
+        if (rng.frac() > 0.6) {
+          g.fillStyle(this.def.ledge, 0.5);
+          g.fillEllipse(x + rng.between(-40, 40), y - rng.between(4, 14), w * 0.35, h * 0.6);
+        }
       }
+
+      g.generateTexture(key, roomWidth, bandH);
+      g.destroy();
     }
+
+    scene.add
+      .image(0, floorY - bandH, key)
+      .setOrigin(0, 0)
+      .setScrollFactor(1)
+      .setDepth(-18);
+
     void camTop;
   }
 
