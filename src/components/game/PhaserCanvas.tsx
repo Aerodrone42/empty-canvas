@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 
+import { installKeyboardTracking } from "@/game/input";
+import { useBindingsStore } from "@/store/bindingsStore";
 import { useGameStore } from "@/store/gameStore";
 
 export function PhaserCanvas() {
