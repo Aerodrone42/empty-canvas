@@ -177,9 +177,9 @@ export class SuppliantRampant extends Enemy {
       detectRange: 420,
       attackRange: 62,
       attackCooldown: 800,
-      scale: 0.85,
-      bodyWidth: 96,
-      bodyHeight: 62,
+      scale: 0.5,
+      bodyWidth: 150,
+      bodyHeight: 128,
       fleshReward: 6,
       animPrefix: "suppliant",
     });
