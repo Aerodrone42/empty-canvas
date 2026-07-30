@@ -9,7 +9,7 @@ import Phaser from "phaser";
  */
 
 /** hauteur affichee de la veine */
-const VEIN_H = 50;
+const VEIN_H = 62;
 
 export class CorridorVein {
   private readonly parts: Phaser.GameObjects.TileSprite[] = [];
@@ -20,13 +20,13 @@ export class CorridorVein {
     const scale = VEIN_H / srcH;
 
     const band = scene.add
-      .tileSprite(0, floorY - 620, roomWidth / scale, srcH, "corridor-vein")
+      .tileSprite(0, floorY - 540, roomWidth / scale, srcH, "corridor-vein")
       .setOrigin(0, 0.5)
       .setScale(scale)
-      .setScrollFactor(0.94)
+      .setScrollFactor(1)
       .setDepth(-22)
-      .setAlpha(0.55)
-      .setTint(0x5a1218);
+      .setAlpha(0.95)
+      .setTint(0x7e1a22);
 
     this.parts.push(band);
 
@@ -34,7 +34,7 @@ export class CorridorVein {
     scene.tweens.add({
       targets: band,
       scaleY: scale * 1.04,
-      alpha: 0.62,
+      alpha: 1,
       duration: 2600,
       ease: "Sine.easeInOut",
       yoyo: true,
