@@ -65,6 +65,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private diveStrikeDone = false;
   /** aucun ennemi proche : l'absorption de chair est possible */
   private canAbsorb = false;
+  /** deformation visuelle (flexion des jambes / etirement) */
+  public poseX = 1;
+  public poseY = 1;
+  private poseTween?: Phaser.Tweens.Tween;
+  /** flexion d'elan avant decollage */
+  private crouchUntil = 0;
+  private pendingJump = 0;
+  private wasOnGround = true;
+
 
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
