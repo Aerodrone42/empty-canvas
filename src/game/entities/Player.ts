@@ -11,7 +11,7 @@ import {
   type Strike,
 } from "@/game/combat";
 import { ActionInput } from "@/game/input";
-import { useGameStore } from "@/store/gameStore";
+import { ABSORB_COST, ABSORB_DURATION, useGameStore } from "@/store/gameStore";
 
 const SPEED = 190;
 const JUMP = 520;
