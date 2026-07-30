@@ -79,7 +79,10 @@ export class GameScene extends Phaser.Scene {
 
     this.player = new Player(this, 180, FLOOR_Y);
     this.physics.add.collider(this.player, this.platforms);
-    this.physics.add.collider(this.player, this.lift);
+    this.physics.add.collider(this.player, this.lift, () => {
+      const pb = this.player.body as Phaser.Physics.Arcade.Body | null;
+      if (pb && pb.touching.down) this.liftContact = true;
+    });
 
 
     this.spawn(new SuppliantRampant(this, 760, FLOOR_Y));
