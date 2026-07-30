@@ -123,13 +123,14 @@ export class Lighting {
     // cycle jour/nuit : 0 = plein jour, 1 = nuit profonde
     const night = 0.5 - 0.5 * Math.cos((this.t / CYCLE_MS) * Math.PI * 2);
     this.veil.setAlpha(VEIL_MIN + (VEIL_MAX - VEIL_MIN) * night);
+    const c = Phaser.Display.Color.Interpolate.ColorWithColor(
+      new Phaser.Display.Color(0x2a, 0x1a, 0x18),
+      new Phaser.Display.Color(0x08, 0x0a, 0x16),
+      100,
+      Math.round(night * 100),
+    );
     this.veil.setFillStyle(
-      Phaser.Display.Color.Interpolate.ColorWithColor(
-        new Phaser.Display.Color(0x2a, 0x1a, 0x18),
-        new Phaser.Display.Color(0x08, 0x0a, 0x16),
-        100,
-        Math.round(night * 100),
-      ).color ?? 0x080a16,
+      Phaser.Display.Color.GetColor(c.r, c.g, c.b),
       this.veil.fillAlpha,
     );
 
