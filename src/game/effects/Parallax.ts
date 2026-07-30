@@ -55,22 +55,15 @@ export class Parallax {
     this.addTiled(this.def.far, viewW, viewH * 1.12, floorScreenY, -30, SPEEDS[0]);
 
     // --- colonnes d'avant-plan ---------------------------------------
-    // Quatre massifs seulement, larges, devant le joueur : c'est
-    // l'occlusion + la vitesse legerement superieure qui font la
-    // perspective.
-    this.addForegroundPillars(this.def.mid, viewH * 1.15, floorY, roomWidth);
+    // Quatre piliers etroits seulement, tres espaces, devant le joueur :
+    // c'est l'occlusion qui donne la perspective, pas la quantite.
+    this.addForegroundPillars(this.def.mid, viewW, viewH * 1.15, floorY, roomWidth);
 
-    // --- cadre rocheux : ancre aux deux extremites de la salle -------
-    // (objets du monde : on les quitte vraiment quand on avance)
-    const frameW = viewW * 0.42;
+    // --- cadre rocheux : ancre a l'extremite droite de la salle -------
+    // (plus rien a gauche : ca bouchait l'entree de la salle)
+    const frameW = viewW * 0.34;
     const frameH = viewH * 1.04;
     this.frame = scene.add
-      .image(0, floorY, this.def.near)
-      .setOrigin(0, 1)
-      .setDisplaySize(frameW, frameH)
-      .setScrollFactor(1)
-      .setDepth(12);
-    scene.add
       .image(roomWidth, floorY, this.def.near)
       .setOrigin(0, 1)
       .setDisplaySize(-frameW, frameH)
@@ -82,12 +75,13 @@ export class Parallax {
   }
 
   /**
-   * Quatre colonnes posees devant le joueur. Elles debordent en haut et
-   * en bas du cadre, defilent un peu plus vite que le monde et sont
-   * assombries : le heros passe derriere elles.
+   * Quatre piliers etroits poses devant le joueur. On decoupe une bande
+   * verticale dans la planche d'architecture (tileSprite + decalage) au
+   * lieu d'afficher la planche entiere : sinon elle mange tout l'ecran.
    */
   private addForegroundPillars(
     textureKey: string,
+    viewW: number,
     drawH: number,
     worldFloorY: number,
     roomWidth: number,
@@ -95,28 +89,34 @@ export class Parallax {
     const source = this.scene.textures.get(textureKey).getSourceImage();
     const srcW = source.width || 1;
     const srcH = source.height || 1;
-    const drawW = (srcW / srcH) * drawH;
+    const scale = drawH / srcH;
+
+    // pilier etroit : environ un huitieme de la largeur visible
+    const pillarW = viewW * 0.12;
 
     const count = 4;
-    const margin = roomWidth * 0.12;
+    const margin = roomWidth * 0.16;
     const span = roomWidth - margin * 2;
     const step = span / (count - 1);
 
     for (let i = 0; i < count; i++) {
-      const jitter = (i % 2 === 0 ? 1 : -1) * step * 0.06;
-      const x = margin + step * i + jitter;
+      const x = margin + step * i;
       // ne jamais masquer le heros au spawn (x = 180)
-      if (Math.abs(x - 180) < 300) continue;
+      if (Math.abs(x - 180) < 340) continue;
 
       const pillar = this.scene.add
-        .image(x, worldFloorY + drawH * 0.06, textureKey)
+        .tileSprite(x, worldFloorY + drawH * 0.04, pillarW, drawH, textureKey)
         .setOrigin(0.5, 1)
-        .setDisplaySize(i % 2 === 0 ? drawW : -drawW, drawH)
-        .setScrollFactor(1.12, 1)
+        .setScrollFactor(1.1, 1)
         .setDepth(12);
-      pillar.setTint(0x5a4a46);
+
+      pillar.setTileScale(scale, scale);
+      // chaque pilier pioche une bande differente de la planche
+      pillar.tilePositionX = (srcW / count) * i + srcW * 0.1;
+      pillar.setTint(0x4a3d3a);
     }
   }
+
 
 
   /** Cree un calque tuile horizontalement, bas cale sur la ligne de sol. */
