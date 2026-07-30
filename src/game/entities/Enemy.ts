@@ -39,12 +39,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
 
-    const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(stats.bodyWidth, stats.bodyHeight);
-    body.setOffset(
-      (this.width - stats.bodyWidth) / 2,
-      this.height - stats.bodyHeight,
-    );
+    this.alignBody();
 
     this.play(`${stats.animPrefix}-idle-anim`);
 
