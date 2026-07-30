@@ -53,6 +53,9 @@ export class Parallax {
     // --- calque median : les piliers poses sur le sol ----------------
     this.addTiled(this.def.mid, viewW, viewH * 0.78, floorScreenY, -20, SPEEDS[1]);
 
+    // --- tablier de sol : prolonge le dallage jusqu'au bas de l'ecran -
+    this.addApron(viewW, viewH, floorScreenY);
+
     // --- calque proche : cadre fixe, jamais repete -------------------
     this.frame = scene.add
       .image(0, floorScreenY - viewH * 1.04, this.def.near)
@@ -63,6 +66,29 @@ export class Parallax {
 
     this.addAmbience(viewW, viewH, floorScreenY);
   }
+
+  /**
+   * Sous la ligne de sol, les images de decor n'ont plus de matiere.
+   * Plutot qu'un aplat de couleur ou une frise d'architecture repetee,
+   * on y pose un simple degrade qui fond le bas de l'ecran dans l'ombre.
+   */
+  private addApron(viewW: number, viewH: number, floorScreenY: number) {
+    const apronH = Math.max(0, viewH - floorScreenY);
+    if (apronH <= 0) return;
+
+    const steps = 10;
+    for (let i = 0; i < steps; i++) {
+      const h = apronH / steps;
+      const t = i / (steps - 1);
+      this.scene.add
+        .rectangle(0, floorScreenY + i * h, viewW, h + 1, 0x0a0607, 0.45 + t * 0.55)
+        .setOrigin(0, 0)
+        .setScrollFactor(0)
+        .setDepth(-9);
+    }
+  }
+
+
 
   /** Cree un calque tuile horizontalement, bas cale sur la ligne de sol. */
   private addTiled(

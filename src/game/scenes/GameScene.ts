@@ -134,40 +134,22 @@ export class GameScene extends Phaser.Scene {
 
   private buildGeometry() {
     this.platforms = this.physics.add.staticGroup();
-    const palette = this.parallax.def;
 
-    // le sol descend jusqu'au bas de la salle pour eviter une bande vide
+    // Le sol visible est peint par les calques de decor : ici on ne garde
+    // qu'un corps de collision invisible sur toute la largeur de la salle.
     const groundH = ROOM_HEIGHT - FLOOR_Y;
     const ground = this.add.rectangle(
       ROOM_WIDTH / 2,
       FLOOR_Y + groundH / 2,
       ROOM_WIDTH,
       groundH,
-      palette.ground,
     );
+    ground.setVisible(false);
     this.platforms.add(ground);
-
-    // lisere de pierre sur la ligne de sol, pour raccorder au decor
-    this.add
-      .rectangle(ROOM_WIDTH / 2, FLOOR_Y + 2, ROOM_WIDTH, 4, palette.ledge, 0.9)
-      .setDepth(-1);
-
-
-    const ledges: Array<[number, number, number]> = [
-      [520, 620, 220],
-      [900, 500, 180],
-      [1400, 590, 240],
-      [1900, 470, 200],
-    ];
-
-    for (const [x, y, w] of ledges) {
-      const ledge = this.add.rectangle(x, y, w, 24, palette.ledge);
-      this.platforms.add(ledge);
-    }
-
 
     this.platforms.refresh();
   }
+
 
   private resolvePlayerStrike(strike: Strike, damageScale = 1) {
     const effects = useGameStore.getState().effects;
