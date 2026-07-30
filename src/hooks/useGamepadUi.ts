@@ -38,7 +38,8 @@ export function useGamepadUi() {
       const pad = Array.from(navigator.getGamepads?.() ?? []).find(Boolean);
       if (!pad) return;
 
-      const { phase, pause, resume, closeFleshPath } = useGameStore.getState();
+      const { phase, pause, resume, openFleshPath, closeFleshPath } =
+        useGameStore.getState();
 
       const start = !!pad.buttons[9]?.pressed;
       if (start && !prevStart) {
@@ -47,6 +48,14 @@ export function useGamepadUi() {
         else if (phase === "flesh") closeFleshPath();
       }
       prevStart = start;
+
+      const select = !!pad.buttons[8]?.pressed || !!pad.buttons[3]?.pressed;
+      if (select && !prevSelect) {
+        if (phase === "playing") openFleshPath();
+        else if (phase === "flesh") closeFleshPath();
+      }
+      prevSelect = select;
+
 
       if (phase === "playing") {
         prevUp = prevDown = prevA = prevB = false;
