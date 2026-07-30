@@ -171,64 +171,57 @@ export class BloodFX {
     if (!this.scene.scene.isActive()) return;
     const clamped = Phaser.Math.Clamp(intensity, 0.6, 2);
     const w = Phaser.Math.Between(20, 46) * clamped;
-    const parts: Phaser.GameObjects.Ellipse[] = [];
+    const blots: Blot[] = [];
 
     // masse centrale, plus sombre et plus opaque
-    const core = this.scene.add.ellipse(
-      x,
-      this.floorY + Phaser.Math.Between(-1, 3),
-      w,
-      w * 0.3,
-      CRIMSON[3],
-      0.7,
-    );
-    core.setDepth(1);
-    parts.push(core);
+    blots.push({
+      dx: 0,
+      dy: Phaser.Math.Between(-1, 3),
+      scaleX: w / 62,
+      scaleY: (w * 0.3) / 30,
+      alpha: 0.7,
+      tint: CRIMSON[3],
+    });
 
     // eclaboussures satellites : silhouette irreguliere
     const blobs = Phaser.Math.Between(3, 5);
     for (let i = 0; i < blobs; i++) {
       const bw = w * Phaser.Math.FloatBetween(0.28, 0.7);
-      const blob = this.scene.add.ellipse(
-        x + Phaser.Math.Between(-Math.round(w * 0.55), Math.round(w * 0.55)),
-        this.floorY + Phaser.Math.Between(-3, 5),
-        bw,
-        bw * Phaser.Math.FloatBetween(0.22, 0.34),
-        Phaser.Utils.Array.GetRandom(CRIMSON),
-        Phaser.Math.FloatBetween(0.35, 0.55),
-      );
-      blob.setDepth(1);
-      parts.push(blob);
+      blots.push({
+        dx: Phaser.Math.Between(-Math.round(w * 0.55), Math.round(w * 0.55)),
+        dy: Phaser.Math.Between(-3, 5),
+        scaleX: bw / 62,
+        scaleY: (bw * Phaser.Math.FloatBetween(0.22, 0.34)) / 30,
+        alpha: Phaser.Math.FloatBetween(0.35, 0.55),
+        tint: Phaser.Utils.Array.GetRandom(CRIMSON),
+      });
     }
 
     const charge = 6 * Phaser.Math.Clamp(intensity, 0.5, 2);
     this.stains.push({
-      parts,
+      blots,
       x,
       bornAt: this.scene.time.now,
       charge,
       maxCharge: charge,
       width: w,
     });
-    while (this.stains.length > MAX_STAINS) {
-      const old = this.stains.shift();
-      old?.parts.forEach((p) => p.destroy());
-    }
+    while (this.stains.length > MAX_STAINS) this.stains.shift();
+    this.lastRedraw = 0;
   }
 
   /** Purge temporelle : a appeler chaque frame depuis la scene. */
   tick(time: number) {
-    this.stains = this.stains.filter((pool) => {
-      const age = time - pool.bornAt;
-      if (age >= POOL_LIFE || pool.charge <= 0) {
-        pool.parts.forEach((p) => p.destroy());
-        return false;
-      }
-      const fade = Math.max(0, Math.min(1, (POOL_LIFE - age) / POOL_FADE));
-      const left = Math.max(0.15, pool.charge / pool.maxCharge);
-      pool.parts.forEach((p, i) => p.setAlpha((i === 0 ? 0.7 : 0.48) * fade * left));
-      return true;
-    });
+    const before = this.stains.length;
+    this.stains = this.stains.filter(
+      (pool) => time - pool.bornAt < POOL_LIFE && pool.charge > 0,
+    );
+    if (this.stains.length !== before) this.lastRedraw = 0;
+
+    if (time - this.lastRedraw >= POOL_REDRAW) {
+      this.lastRedraw = time;
+      this.redraw();
+    }
   }
 
   /** Flaque active la plus proche sous une abscisse donnee, s'il y en a une. */
@@ -252,10 +245,9 @@ export class BloodFX {
   drainPool(pool: Pool, amount: number) {
     const taken = Math.min(pool.charge, amount);
     pool.charge -= taken;
-    const ratio = Math.max(0.15, pool.charge / pool.maxCharge);
-    pool.parts.forEach((p) => p.setScale(ratio));
     return taken;
   }
+
 
   /**
    * Siphon : le sang quitte le sol et remonte le long du corps du heros.
