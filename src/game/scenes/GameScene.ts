@@ -218,8 +218,13 @@ export class GameScene extends Phaser.Scene {
     if (!this.lift || this.exiting) return;
     const body = this.lift.body as Phaser.Physics.Arcade.Body;
 
-    const riding = this.liftContact;
+    if (this.liftContact) this.liftContactAt = this.time.now;
     this.liftContact = false;
+    // petite tolerance : un rebond d'un frame ne doit pas faire redescendre
+    const near =
+      Math.abs(this.player.x - this.lift.x) < LIFT_W / 2 + 20 &&
+      Math.abs(this.player.y - (this.lift.y - LIFT_H / 2)) < 60;
+    const riding = near && this.time.now - this.liftContactAt < 250;
 
     const step = (delta / 1000) * LIFT_SPEED;
     let dy = 0;
