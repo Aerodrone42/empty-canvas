@@ -75,22 +75,34 @@ export class Parallax {
     this.skyOffset = Phaser.Math.Between(0, srcW);
     this.sky.tilePositionX = this.skyOffset;
 
-    // --- dallage : defile exactement a la vitesse du heros ------------
-    // le calque reste large comme le viewport (pas de surcout de rendu),
-    // mais son motif est pilote par scrollX a la vitesse 1 : visuellement
-    // c'est equivalent a un sol ancre au monde.
+    // --- dallage : VRAI sol ancre au monde ----------------------------
+    // On ne fait plus glisser un motif sous les pieds : la bande basse de
+    // la peinture est cuite UNE fois sur toute la largeur de la salle dans
+    // une seule texture (copies alternativement retournees pour casser la
+    // repetition), puis posee en scrollFactor 1. Le sol ne bouge plus :
+    // c'est la camera qui se deplace au-dessus. Un seul objet a l'ecran.
     const groundScreenTop = skyTop + skyH;
     const groundH = Math.max(viewH - groundScreenTop, (srcH - splitY) * scale);
+    const groundWorldY = groundScreenTop + camTop;
+    const bandW = Math.max(2, srcW * scale);
 
-    this.ground = scene.add
-      .tileSprite(0, groundScreenTop, viewW, groundH, this.def.far, "ground")
+    const rt = scene.add
+      .renderTexture(0, groundWorldY, roomWidth, groundH)
       .setOrigin(0, 0)
-      .setScrollFactor(0)
+      .setScrollFactor(1)
       .setDepth(-20);
-    this.ground.setTileScale(scale, scale);
 
-    // ombre douce sur la ligne de raccord : masque la coupure entre les
-    // deux calques quand ils defilent a des vitesses differentes
+    const stamp = scene.make.image({ key: this.def.far, frame: "ground" }, false);
+    stamp.setOrigin(0, 0).setScale(scale);
+    const tiles = Math.ceil(roomWidth / bandW) + 1;
+    for (let i = 0; i < tiles; i++) {
+      stamp.setFlipX(i % 2 === 1);
+      rt.draw(stamp, i * bandW, 0);
+    }
+    stamp.destroy();
+
+    // ombre douce sur la ligne de raccord : masque la coupure entre le
+    // fond (qui defile lentement) et le sol (fixe dans le monde)
     const seam = scene.add
       .rectangle(0, groundScreenTop - 6, viewW, 22, 0x000000)
       .setOrigin(0, 0)
@@ -100,9 +112,10 @@ export class Parallax {
     seam.setBlendMode(Phaser.BlendModes.MULTIPLY);
 
 
-    this.addFloorMarks(roomWidth, floorY, camTop);
+    this.addFloorMarks(roomWidth, floorY, groundWorldY);
     this.addAmbience(viewW, viewH, floorScreenY);
   }
+
 
   /**
    * Reperes de progression : traces sombres posees au sol, ancrees au monde.
