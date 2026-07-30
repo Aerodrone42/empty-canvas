@@ -46,6 +46,8 @@ export class GameScene extends Phaser.Scene {
   private backdropKey: BackdropKey = "cathedrale";
   /** colonne de sortie et son verrou physique */
   private gateColumn?: GateColumn;
+  /** supplicie ecorche du fond de la cathedrale */
+  private crucified?: CrucifiedProp;
   private gateWall?: Phaser.GameObjects.Rectangle;
   private gateVeil?: Phaser.GameObjects.Rectangle;
   private roomCleared = false;
