@@ -27,6 +27,7 @@ export type GameState = {
   hasSave: boolean;
   mutations: string[];
   effects: MutationEffects;
+  optionsReturnPhase: Phase;
 
   enter: () => void;
   startNewRun: () => void;
@@ -35,6 +36,8 @@ export type GameState = {
   resume: () => void;
   openFleshPath: () => void;
   closeFleshPath: () => void;
+  openOptions: () => void;
+  closeOptions: () => void;
   toMenu: () => void;
 
   damage: (amount: number) => void;
