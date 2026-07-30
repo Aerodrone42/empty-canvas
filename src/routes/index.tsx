@@ -6,6 +6,7 @@ import { FleshPath } from "@/components/game/FleshPath";
 import { Hud } from "@/components/game/Hud";
 
 import { MainMenu } from "@/components/game/MainMenu";
+import { Options } from "@/components/game/Options";
 import { DeathScreen, PauseMenu } from "@/components/game/PauseMenu";
 import { PhaserCanvas } from "@/components/game/PhaserCanvas";
 import { useGamepadUi } from "@/hooks/useGamepadUi";
