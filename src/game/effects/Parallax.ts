@@ -3,34 +3,35 @@ import Phaser from "phaser";
 import { BACKDROPS, type BackdropDef, type BackdropKey } from "@/game/assets";
 
 /**
- * Decor de salle en trois calques de profondeur.
+ * Decor de salle en deux profondeurs distinctes.
  *
- * Les feuilles fournies n'ont pas le meme role :
- *  - `far`  : peinture pleine, opaque, tuilable horizontalement ;
- *  - `mid`  : bande d'architecture posee au sol, fond transparent ;
- *  - `near` : cadre d'encadrement (rochers / chaines) a fond transparent,
- *             NON tuilable : il sert de vignette et reste fixe.
+ * Probleme corrige : auparavant TOUT le decor (ciel, ville, colonnes ET
+ * dallage du sol) etait peint sur un seul calque colle a la camera et
+ * defilant a 8 % de la vitesse du heros. Le personnage avancait a 190 px/s
+ * alors que le sol sous ses pieds ne bougeait qu'a ~15 px/s : on avait
+ * l'impression de marcher sur un tapis roulant.
  *
- * Tous les calques sont fixes a la camera (scrollFactor 0) ; c'est
- * `tilePositionX` qui defile a des vitesses differentes pour les deux
- * premiers, ce qui donne la parallaxe meme quand la salle est bien plus
- * large que l'image source. Le bas de chaque image est cale sur la ligne
- * de sol, sinon l'architecture flotte.
+ * Desormais :
+ *  - `sky`    : la partie haute de la peinture (ciel, ville lointaine),
+ *               collee a la camera, defilement lent -> profondeur ;
+ *  - `ground` : la bande basse de la MEME peinture (le dallage qui recule),
+ *               ancree au monde (`scrollFactor 1`) et tuilee sur toute la
+ *               largeur de la salle -> elle defile exactement a la vitesse
+ *               du heros, la marche devient lisible.
+ *
+ * Les deux calques proviennent de la meme image, decoupee en deux frames :
+ * ils se raccordent donc au pixel pres a l'ouverture de la salle.
  */
 
-/** vitesses de defilement, du plus lointain au plus proche */
-const SPEEDS = [0.08, 0.55] as const;
-
-type Layer = {
-  sprite: Phaser.GameObjects.TileSprite;
-  speed: number;
-  /** decalage initial : casse la symetrie des repetitions */
-  offset: number;
-};
+/** vitesse de defilement du fond lointain (fraction du scroll camera) */
+const SKY_SPEED = 0.12;
+/** fraction verticale de l'image ou commence le dallage qui recule */
+const FLOOR_SPLIT = 0.85;
 
 export class Parallax {
-  private layers: Layer[] = [];
-  private frame?: Phaser.GameObjects.Image;
+  private sky?: Phaser.GameObjects.TileSprite;
+  private ground?: Phaser.GameObjects.TileSprite;
+  private skyOffset = 0;
   readonly def: BackdropDef;
 
   constructor(
@@ -46,48 +47,112 @@ export class Parallax {
     const viewW = cam.width;
     const viewH = cam.height;
 
-    // ligne de sol exprimee en coordonnees ecran : la camera est bloquee
-    // en bas de la salle la plupart du temps
-    const floorScreenY = floorY - Math.max(0, roomHeight - viewH);
+    // la camera est bloquee en bas de la salle : conversion monde -> ecran
+    const camTop = Math.max(0, roomHeight - viewH);
+    const floorScreenY = floorY - camTop;
 
-    // --- calque lointain : la peinture, plein cadre ------------------
-    // seul le fond profond defile lentement (ciel, fleches lointaines)
-    this.addTiled(this.def.far, viewW, viewH * 1.12, floorScreenY, -30, SPEEDS[0]);
+    const drawH = viewH * 1.12;
+    const source = scene.textures.get(this.def.far).getSourceImage();
+    const srcW = source.width || 1;
+    const srcH = source.height || 1;
+    const scale = drawH / srcH;
 
+    // --- decoupe de la peinture en deux frames -----------------------
+    const splitY = Math.round(srcH * FLOOR_SPLIT);
+    const tex = scene.textures.get(this.def.far);
+    if (!tex.has("sky")) tex.add("sky", 0, 0, 0, srcW, splitY);
+    if (!tex.has("ground")) tex.add("ground", 0, 0, splitY, srcW, srcH - splitY);
+
+    // --- ciel + ville : colles a la camera, defilement lent -----------
+    const skyH = splitY * scale;
+    const skyTop = floorScreenY - drawH;
+    this.sky = scene.add
+      .tileSprite(0, skyTop, viewW, skyH, this.def.far, "sky")
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(-30);
+    this.sky.setTileScale(scale, scale);
+    this.skyOffset = Phaser.Math.Between(0, srcW);
+    this.sky.tilePositionX = this.skyOffset;
+
+    // --- dallage : defile exactement a la vitesse du heros ------------
+    // le calque reste large comme le viewport (pas de surcout de rendu),
+    // mais son motif est pilote par scrollX a la vitesse 1 : visuellement
+    // c'est equivalent a un sol ancre au monde.
+    const groundScreenTop = skyTop + skyH;
+    const groundH = Math.max(viewH - groundScreenTop, (srcH - splitY) * scale);
+
+    this.ground = scene.add
+      .tileSprite(0, groundScreenTop, viewW, groundH, this.def.far, "ground")
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(-20);
+    this.ground.setTileScale(scale, scale);
+
+    // ombre douce sur la ligne de raccord : masque la coupure entre les
+    // deux calques quand ils defilent a des vitesses differentes
+    const seam = scene.add
+      .rectangle(0, groundScreenTop - 6, viewW, 22, 0x000000)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(-19)
+      .setAlpha(0.35);
+    seam.setBlendMode(Phaser.BlendModes.MULTIPLY);
+
+
+    this.addFloorMarks(roomWidth, floorY, camTop);
     this.addAmbience(viewW, viewH, floorScreenY);
   }
 
-  /** Cree un calque tuile horizontalement, bas cale sur la ligne de sol. */
-  private addTiled(
-    textureKey: string,
-    viewW: number,
-    drawH: number,
-    floorScreenY: number,
-    depth: number,
-    speed: number,
-  ) {
-    const source = this.scene.textures.get(textureKey).getSourceImage();
-    const srcH = source.height || drawH;
-    const scale = drawH / srcH;
+  /**
+   * Reperes de progression : traces sombres posees au sol, ancrees au monde.
+   * Sans elles l'oeil n'a aucun point fixe pour percevoir la distance
+   * parcourue. Tout est cuit dans UNE seule texture puis affiche en un seul
+   * objet : aucun surcout de rendu (une vingtaine de formes separees
+   * multiplierait les changements de pipeline).
+   */
+  private addFloorMarks(roomWidth: number, floorY: number, camTop: number) {
+    const scene = this.scene;
+    const key = `floor-marks-${this.def.far}`;
+    const bandH = 48;
 
-    const sprite = this.scene.add
-      .tileSprite(0, floorScreenY - drawH, viewW, drawH, textureKey)
+    if (!scene.textures.exists(key)) {
+      const rng = new Phaser.Math.RandomDataGenerator([this.def.far]);
+      const count = Math.round(roomWidth / 180);
+      const g = scene.make.graphics({ x: 0, y: 0 }, false);
+
+      for (let i = 0; i < count; i++) {
+        const x = 60 + (i + rng.frac() * 0.6) * (roomWidth / count);
+        const y = bandH - rng.between(2, 16);
+        const w = rng.between(40, 130);
+        const h = Math.max(4, w * rng.realInRange(0.09, 0.16));
+
+        g.fillStyle(0x000000, rng.realInRange(0.18, 0.34));
+        g.fillEllipse(x, y, w, h);
+
+        if (rng.frac() > 0.6) {
+          g.fillStyle(this.def.ledge, 0.5);
+          g.fillEllipse(x + rng.between(-40, 40), y - rng.between(4, 14), w * 0.35, h * 0.6);
+        }
+      }
+
+      g.generateTexture(key, roomWidth, bandH);
+      g.destroy();
+    }
+
+    scene.add
+      .image(0, floorY - bandH, key)
       .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setDepth(depth);
+      .setScrollFactor(1)
+      .setDepth(-18);
 
-    sprite.setTileScale(scale, scale);
-    const offset = Phaser.Math.Between(0, source.width || 0);
-    sprite.tilePositionX = offset;
-    this.layers.push({ sprite, speed, offset });
+    void camTop;
   }
 
-
-  /** Voile colore, poussieres et vacillement de cierges. */
+  /** Voile colore et poussieres flottantes. */
   private addAmbience(viewW: number, viewH: number, floorScreenY: number) {
     const scene = this.scene;
 
-    // voile d'ambiance par dessus les calques, sous les personnages
     scene.add
       .rectangle(0, 0, viewW, viewH, this.def.tint, this.def.tintAlpha)
       .setOrigin(0, 0)
@@ -96,7 +161,6 @@ export class Parallax {
 
     this.ensureDustTexture();
 
-    // cendres et poussieres flottantes, a mi-profondeur
     const dust = scene.add
       .particles(0, 0, "fx-dust", {
         x: { min: 0, max: viewW },
@@ -115,18 +179,6 @@ export class Parallax {
       .setDepth(-6);
 
     dust.setParticleAlpha({ start: 0.5, end: 0 });
-
-    // vacillement des cierges sur le cadre proche
-    if (this.frame) {
-      scene.tweens.add({
-        targets: this.frame,
-        alpha: { from: 1, to: 0.88 },
-        duration: 1700,
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.InOut",
-      });
-    }
   }
 
   /** Petite texture ronde pour les poussieres, generee une seule fois. */
@@ -139,12 +191,15 @@ export class Parallax {
     g.destroy();
   }
 
-  /** A appeler dans update() : lie le defilement a la camera. */
+  /** A appeler dans update() : lie le defilement des calques a la camera. */
   update() {
     const scrollX = this.scene.cameras.main.scrollX;
-    for (const layer of this.layers) {
-      layer.sprite.tilePositionX =
-        layer.offset + (scrollX * layer.speed) / layer.sprite.tileScaleX;
+    if (this.sky) {
+      this.sky.tilePositionX = this.skyOffset + (scrollX * SKY_SPEED) / this.sky.tileScaleX;
+    }
+    if (this.ground) {
+      // vitesse 1 : le dallage defile exactement comme le monde
+      this.ground.tilePositionX = scrollX / this.ground.tileScaleX;
     }
   }
 }

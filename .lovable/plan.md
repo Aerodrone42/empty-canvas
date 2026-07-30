@@ -1,24 +1,34 @@
-## Constat
+## Ce que j'ai mesuré
 
-Mesure faite dans l'aperçu : le rendu tourne bien à ~60 FPS (16,7 ms par image), donc le problème n'est **plus** graphique. Il vient de la logique de déplacement dans `src/game/entities/Player.ts`.
+J'ai lancé une partie et tenu la touche de marche pendant 5 secondes, panneau F3 activé.
 
-Deux causes identifiées à la lecture du code :
+Relevés :
+- Panneau de profilage en jeu : **60 im/s, frame 16,7 ms, pic 16,7 ms, saccades 0**, update total **0,15 ms**.
+- Détail par système : player 0,06 / ennemis 0,03 / absorption 0,02 / parallax 0,02 / sang 0,00 ms.
+- Scène : **11 objets, 6 corps physiques, 0 tween** — c'est extrêmement léger.
+- Marche vs immobile : temps de frame identique (aucune dégradation quand le héros avance).
 
-1. `alignBody()` est appelé **à chaque frame** (`tick()` ligne 196). Il refait `setScale`, `setOrigin`, `body.setSize()` et `body.setOffset()` 60 fois par seconde. Redimensionner un corps Arcade en pleine collision repositionne le corps et réinitialise son état de contact : le héros « accroche » au sol, les drapeaux `blocked.down` clignotent, d'où les saccades à la marche et les sauts qui ne partent pas.
-2. Aucune tolérance d'entrée sur le saut : le saut n'est pris en compte que si `onGround` est vrai **exactement** à la frame de l'appui. Avec des contacts sol instables (point 1) ou un appui juste avant l'atterrissage, l'appui est perdu — c'est le « parfois ça ne saute pas ».
+Conclusion : **il n'y a pas de perte de performance pendant la marche.** Le jeu tourne à 60 im/s sans saccade. Ce que tu ressens n'est donc pas un ralentissement machine, mais un problème de **lisibilité du mouvement**.
 
-## Correctifs prévus
+## Cause identifiée
 
-**Player.ts**
-- Appeler `alignBody()` une seule fois dans le constructeur (le gabarit des sprites est déjà normalisé, l'échelle et la hitbox sont constantes) au lieu de chaque frame. Remettre `setScale(SCALE)` uniquement là où une attaque l'a modifié.
-- Ajouter un **coyote time** (~110 ms) : le héros peut encore sauter juste après avoir quitté le sol.
-- Ajouter un **buffer de saut** (~130 ms) : un appui fait juste avant de toucher le sol déclenche le saut à l'atterrissage.
-- Vérifier que les états verrouillés (attaque, parade, réception) ne bloquent pas le déplacement plus longtemps que prévu, et que la flexion d'élan (`CROUCH_MS`) n'annule pas l'élan horizontal de façon trop agressive (`velocity.x * 0.35` pendant l'accroupissement).
-- Ne plus figer la vitesse horizontale à 0 pendant les frames de récupération d'attaque au sol lorsque le joueur tient une direction (reprise du contrôle plus souple).
+Dans `Parallax.ts`, un seul calque est créé (`far`), collé à la caméra (`scrollFactor 0`) et défilant à la vitesse **0,08**. Or ce calque contient tout ce qu'on voit : la ville, les colonnes **et le dallage du sol**.
 
-**Ressenti de déplacement**
-- Passer le suivi caméra horizontal d'un lerp de 0,12 à ~0,2 dans `GameScene.ts` pour que l'image suive mieux le héros et que l'avancée paraisse franche.
+Le héros avance à 190 px/s, mais l'image (sol compris) ne défile qu'à ~15 px/s. Résultat : on marche « sur un tapis roulant », le sol ne défile quasiment pas, et sur un saut le décor est totalement figé — d'où l'impression de « ne pas avancer » ou de « ramer ».
 
-## Vérification
+S'ajoute le fait que la caméra ne bouge pas du tout tant que le héros n'a pas dépassé le milieu de l'écran, ni au-delà de x≈1920 : dans ces zones, ni le décor ni la caméra ne bougent.
 
-Test Playwright sur l'aperçu : lancer une partie, maintenir la direction, mesurer le déplacement réel du héros sur 2 s, puis enchaîner 10 sauts et vérifier que chacun décolle. Capture d'écran à l'appui.
+## Ce que je propose de faire
+
+1. **Séparer sol et fond.** Poser le dallage/l'avant-plan sur un calque défilant à vitesse **1** (ancré au monde), et ne garder la vitesse lente (0,1–0,2) que pour la ville lointaine et le ciel. Le sol défilera alors exactement à la vitesse du héros.
+2. **Réintroduire un calque intermédiaire** (`mid`, déjà présent dans les assets, actuellement inutilisé) à ~0,5 pour retrouver la profondeur sans le côté « décor qui suit le personnage ».
+3. **Repères de progression** : quelques éléments fixes du monde (dalles, débris, marques au sol) posés en `scrollFactor 1` pour que l'œil ait des points de référence quand on marche.
+4. **Caméra** : réduire la zone morte au centre pour qu'elle réagisse plus tôt, tout en gardant l'axe vertical bloqué (déjà en place).
+5. **Vérification** : re-mesurer après coup (F3 + capture pendant la marche) et confirmer que le décor défile bien à la même vitesse que le héros, sans dépasser 16,7 ms par frame.
+
+## Détails techniques
+
+- `src/game/effects/Parallax.ts` : passer d'un `TileSprite` unique `scrollFactor 0` + `tilePositionX` manuel à trois calques (`far` 0,15 / `mid` 0,5 / sol 1,0), le calque sol étant un `TileSprite` ancré au monde sur toute la largeur de `ROOM_WIDTH`.
+- Les images de fond font 1536–1672 px de large pour une salle de 2400 px : le calque sol doit être tuilé horizontalement (`setTileScale`) pour couvrir la salle sans étirement.
+- `src/game/scenes/GameScene.ts` : ajuster le `startFollow` (deadzone horizontale) ; `FLOOR_Y = 880` reste inchangé.
+- Aucun changement côté physique, combat ou sang : la mesure montre qu'ils ne coûtent rien.
