@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 
+import { PARRY, type Strike } from "../combat";
 import { Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
 import { Player } from "../entities/Player";
 import { useGameStore } from "@/store/gameStore";
