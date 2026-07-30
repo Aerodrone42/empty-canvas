@@ -56,7 +56,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.setScale(1.8);
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
     this.alignBody();
@@ -76,15 +75,29 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  /** Les frames n'ont pas toutes la meme largeur : on recentre le corps. */
+  /**
+   * Normalise l'echelle et la position des pieds selon la frame courante,
+   * et garde une hitbox de taille constante dans le monde.
+   */
   private alignBody() {
-    const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(SPRITE_W, SPRITE_H);
-    body.setOffset(
-      (this.width - SPRITE_W) / 2,
-      this.height - FOOT_GAP - SPRITE_H,
+    const key = this.texture.key;
+    const metrics = METRICS[key] ?? METRICS["vigile-idle"];
+    const index = Math.min(
+      Math.max((this.anims.currentFrame?.index ?? 1) - 1, 0),
+      metrics.footY.length - 1,
     );
+    const footY = metrics.footY[index];
+
+    const scale = TARGET_H / metrics.charH;
+    this.setScale(scale);
+    this.setOrigin(0.5, footY / this.height);
+
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const bodyW = BODY_W / scale;
+    body.setSize(bodyW, metrics.charH, false);
+    body.setOffset((this.width - bodyW) / 2, footY - metrics.charH);
   }
+
 
 
   get facingDirection() {
