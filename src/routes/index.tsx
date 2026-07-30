@@ -32,6 +32,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const phase = useGameStore((s) => s.phase);
+  const optionsReturnPhase = useGameStore((s) => s.optionsReturnPhase);
   const [hydrated, setHydrated] = useState(false);
 
   useGamepadUi();

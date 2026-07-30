@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 
+import { useBindingsStore } from "@/store/bindingsStore";
 import { useGameStore } from "@/store/gameStore";
 
 /**
