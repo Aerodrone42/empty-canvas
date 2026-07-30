@@ -62,6 +62,16 @@ export const SHEETS: SheetDef[] = [
     spacing: 0,
   },
   {
+    key: "vigile-dodge",
+    path: `${SPRITES}/vigile_muet_dodge_spritesheet.png`,
+    frameWidth: HERO_FRAME_W,
+    frameHeight: HERO_FRAME_H,
+    frameCount: 8,
+    frameRate: 20,
+    repeat: 0,
+    spacing: 0,
+  },
+  {
     key: "vigile-jump",
     path: `${SPRITES}/vigile_muet_jump_spritesheet.png`,
     frameWidth: HERO_FRAME_W,
