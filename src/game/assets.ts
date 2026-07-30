@@ -233,8 +233,8 @@ export const SHEETS: SheetDef[] = [
   {
     key: "crucifie-idle",
     path: `${SPRITES}/props/crucifie_ecorche_spritesheet.png`,
-    frameWidth: 229,
-    frameHeight: 856,
+    frameWidth: 223,
+    frameHeight: 665,
     frameCount: 8,
     frameRate: 5,
     repeat: -1,
