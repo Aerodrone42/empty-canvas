@@ -8,7 +8,14 @@ import {
   type MutationEffects,
 } from "@/game/mutations";
 
-export type Phase = "warning" | "menu" | "playing" | "paused" | "flesh" | "dead";
+export type Phase =
+  | "warning"
+  | "menu"
+  | "playing"
+  | "paused"
+  | "flesh"
+  | "options"
+  | "dead";
 
 export type GameState = {
   phase: Phase;
