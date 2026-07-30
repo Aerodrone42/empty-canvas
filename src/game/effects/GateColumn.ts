@@ -14,6 +14,8 @@ const BASE_W = 150;
 const SHAFT_W = 112;
 /** le fut monte bien au dessus du viewport */
 const TOP_Y = -260;
+/** la base mord un peu dans le sol : plus de vide sous la colonne */
+const BASE_SINK = 34;
 
 export class GateColumn {
   private readonly scene: Phaser.Scene;
@@ -33,7 +35,8 @@ export class GateColumn {
 
     const baseTex = scene.textures.get("gate-column-base").getSourceImage();
     const baseScale = BASE_W / baseTex.width;
-    const baseTopY = floorY - baseTex.height * baseScale;
+    const groundY = floorY + BASE_SINK;
+    const baseTopY = groundY - baseTex.height * baseScale;
 
     const shaftTex = scene.textures.get("gate-column-shaft").getSourceImage();
     const tileScale = SHAFT_W / shaftTex.width;
@@ -49,7 +52,7 @@ export class GateColumn {
       .setDepth(20);
 
     this.base = scene.add
-      .image(x, floorY, "gate-column-base")
+      .image(x, groundY, "gate-column-base")
       .setOrigin(0.5, 1)
       .setScale(baseScale)
       .setScrollFactor(1)
@@ -67,7 +70,7 @@ export class GateColumn {
       .setAlpha(0.12);
 
     this.glowBase = scene.add
-      .image(x, floorY, "gate-column-base")
+      .image(x, groundY, "gate-column-base")
       .setOrigin(0.5, 1)
       .setScale(baseScale)
       .setScrollFactor(1)
