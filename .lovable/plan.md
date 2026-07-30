@@ -1,50 +1,44 @@
-## Objectif
+## Ce que j'ai trouvé
 
-Trois manques constatés en jeu : aucun sang, une mort d'ennemi fade (simple fondu + rotation), et aucun moyen clair de récupérer de la vie.
+Le document que tu m'envoies correspond exactement au README déjà présent dans le dépôt. Les 12 images sont bien arrivées dans `public/assets/sprites/backgrounds/` : 4 scènes × 3 calques (far / mid / near).
 
-## 1. Système de sang (nouveau `src/game/effects/Blood.ts`)
+| Scène | Usage prévu |
+|---|---|
+| `cathedrale_*` | nef gothique — salle d'exploration principale |
+| `corridor_*` | couloir de chair et d'os — transitions |
+| `throne_*` | arène de boss (Mère-Suture) |
+| `exterieur_*` | parvis en ruine — zone à ciel ouvert |
 
-Un module unique de VFX réutilisé partout, à base de particules Phaser + rectangles :
+Aujourd'hui `GameScene.buildBackdrop()` dessine des arches à la main avec `Phaser.Graphics` : ces décors ne sont ni chargés ni affichés. Point technique à corriger : les calques `far` font 1672×941 alors que `mid`/`near` font 1536×1024 — sans normalisation, les trois calques ne s'aligneraient pas verticalement.
 
-- **Gerbe d'impact** : à chaque coup encaissé (joueur ou ennemi), 8–16 gouttes projetées dans la direction du coup, gravité, taille aléatoire, teintes crimson (#8e1220 → #d93b3b).
-- **Brume** : petit nuage rouge translucide au point d'impact, fondu en 200 ms.
-- **Éclaboussures au sol** : les gouttes qui touchent le sol laissent une tache persistante (max ~60 taches, les plus vieilles s'effacent) — la salle se salit au fil du combat.
-- **Traînée sur parade** : étincelles dorées au lieu de sang (déjà distinct visuellement).
-- **Vignette rouge** quand la vie du joueur passe sous 30 % (overlay CSS dans le HUD, pas de coût Phaser).
+## Ce que je vais faire
 
-Branchements : `Enemy.takeHit` (gerbe orientée), `Player.receiveDamage` (gerbe + flash écran), coup lourd / plongeon / rugissement (gerbe amplifiée).
+**1. Déclarer les décors**
+Nouvelle table `BACKDROPS` dans `src/game/assets.ts` : pour chaque scène (`cathedrale`, `corridor`, `throne`, `exterieur`), les 3 chemins de calques + une teinte d'ambiance et une couleur de sol assortie à la palette de la scène.
 
-## 2. Mort d'ennemi retravaillée
+**2. Les charger**
+`BootScene` précharge les 12 images en plus des spritesheets.
 
-Remplacement du tween actuel dans `Enemy.die()` par une séquence :
+**3. Un module de parallaxe réutilisable**
+Nouveau `src/game/effects/Parallax.ts`, suivant la méthode `tileSprite` du README :
+- 3 `tileSprite` plein écran, `scrollFactor(0)`, profondeurs -30 / -20 / -10
+- défilement lié à `cameras.main.scrollX` dans `update()` aux vitesses 0,1 / 0,3 / 0,6
+- normalisation de l'échelle des trois calques sur la hauteur de salle (900 px) pour corriger le décalage 941 vs 1024, et ancrage du bas de l'image sur la ligne de sol (y=780) pour que l'architecture repose sur le plancher
+- léger décalage vertical du calque near vers le bas pour renforcer la profondeur
 
-1. Freeze-frame de 60 ms + zoom caméra léger sur les kills au coup lourd/spécial.
-2. Explosion de sang (30–40 particules) + 3–5 morceaux de chair qui rebondissent au sol.
-3. Le corps se teinte en rouge sombre, s'affaisse (rotation vers le sol + squash), puis se fond dans une flaque de sang persistante.
-4. Orbes de chair : la récompense en chair devient 2–4 orbes lumineux qui volent vers le joueur avant d'être crédités (feedback lisible du gain).
-5. Son/rumble : shake caméra court + vibration manette légère.
+**4. Améliorations d'ambiance (par-dessus les images)**
+- voile de couleur global par scène (crimson/ocre selon la salle) et vignette assombrissant les bords
+- poussière et cendres flottantes en particules, à `scrollFactor` intermédiaire
+- vacillement lent de luminosité sur le calque `near` pour simuler les cierges
+- le sol dessiné en code reprend la couleur de la scène pour se fondre avec le décor
 
-Les morts par rugissement sont plus violentes (plus de particules, plus de gibs).
-
-## 3. Récupération de vie
-
-Actuellement seule la greffe « vol de vie » soigne. Ajout de trois sources :
-
-- **Absorption de chair** (mécanique principale) : maintenir la touche parade à vide (hors combat, aucun ennemi à moins de 300 px) pendant 900 ms consomme 25 chair et rend 20 PV. Interruptible si on est touché — un vrai choix ressource/risque, dans l'esprit Blasphemous.
-- **Orbes de sang** : chaque ennemi tué a une chance (30 %, 100 % pour le Pénitent) de lâcher une fiole de sang ramassable qui rend 12 PV.
-- **Autel de la Chair** : soin complet quand on ouvre l'autel (touche autel), une seule fois par salle, et l'autel se marque comme consommé.
-
-Le HUD affiche : la barre de vitalité avec pulsation à basse vie, le coût du soin sous la jauge de chair, et un anneau de progression pendant l'absorption.
+**5. Brancher la salle actuelle**
+`GameScene.buildBackdrop()` est remplacé par un appel au module de parallaxe avec la scène `cathedrale`, et `GameScene.update()` fait avancer les calques. La scène accepte une donnée `backdrop` optionnelle, pour basculer sur `corridor`, `throne` ou `exterieur` quand les autres salles arriveront.
 
 ## Détails techniques
 
-- Nouveaux fichiers : `src/game/effects/Blood.ts` (émetteurs de particules et taches), `src/game/entities/Pickup.ts` (fioles de sang et orbes de chair).
-- `src/store/gameStore.ts` : action `consumeFleshForHealth()`, compteur d'autels utilisés, drapeau `absorbing` pour l'UI.
-- `src/game/entities/Enemy.ts` : `die()` réécrit, `takeHit()` émet les VFX.
-- `src/game/entities/Player.ts` : état `absorb` dans la machine à états, VFX sur dégâts reçus.
-- `src/game/scenes/GameScene.ts` : instancie le gestionnaire de sang, groupe de pickups + overlap joueur.
-- `src/components/game/Hud.tsx` : vignette basse vie, indicateur d'absorption.
-- Textures de particules générées à la volée (`scene.textures.generate`) — aucun asset à télécharger.
-- Plafond de particules pour préserver le framerate.
-
-Vérification finale : partie jouée via Playwright, captures d'un impact, d'une mort et d'une absorption, console sans erreur.
+- `pixelArt: true` est déjà actif dans `src/game/config.ts` : rendu net sans lissage, comme le recommande le README.
+- Les fichiers `PREVIEW_*` ne sont pas dans le dépôt, donc rien à exclure du chargement.
+- Aucune image n'est modifiée sur le disque ; tout l'ajustement se fait au chargement.
+- Les taches de sang persistantes (`BloodFX.stain`) restent au-dessus du décor et sous les personnages.
+- Vérification finale au navigateur : captures en début et en fin de salle pour confirmer le défilement différencié des trois calques, plus contrôle de la console.
