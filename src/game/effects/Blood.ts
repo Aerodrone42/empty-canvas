@@ -11,6 +11,10 @@ const MIST_KEY = "fx-blood-mist";
 const SPARK_KEY = "fx-parry-spark";
 
 const MAX_STAINS = 60;
+/** duree de vie d'une flaque au sol (ms) */
+export const POOL_LIFE = 10000;
+/** debut du fondu de sortie */
+const POOL_FADE = 2000;
 
 function ensureTextures(scene: Phaser.Scene) {
   if (!scene.textures.exists(DROP_KEY)) {
@@ -38,9 +42,17 @@ function ensureTextures(scene: Phaser.Scene) {
 
 const CRIMSON = [0x8e1220, 0xb01f2b, 0xd93b3b, 0x6a0d18];
 
+type Pool = {
+  ellipse: Phaser.GameObjects.Ellipse;
+  bornAt: number;
+  /** reserve de soin restante dans la flaque */
+  charge: number;
+  width: number;
+};
+
 export class BloodFX {
   private scene: Phaser.Scene;
-  private stains: Phaser.GameObjects.Ellipse[] = [];
+  private stains: Pool[] = [];
   /** ordonnee du sol utilisee pour les taches persistantes */
   private floorY: number;
 
@@ -92,11 +104,11 @@ export class BloodFX {
     }
   }
 
-  /** Tache persistante au sol, limitee en nombre. */
+  /** Flaque au sol : persiste 10 s puis s'estompe. */
   stain(x: number, intensity = 1) {
     if (!this.scene.scene.isActive()) return;
     const w = Phaser.Math.Between(20, 46) * Phaser.Math.Clamp(intensity, 0.6, 2);
-    const stain = this.scene.add.ellipse(
+    const ellipse = this.scene.add.ellipse(
       x,
       this.floorY + Phaser.Math.Between(-2, 4),
       w,
@@ -104,12 +116,56 @@ export class BloodFX {
       Phaser.Utils.Array.GetRandom(CRIMSON),
       0.75,
     );
-    stain.setDepth(1);
-    this.stains.push(stain);
+    ellipse.setDepth(1);
+    this.stains.push({
+      ellipse,
+      bornAt: this.scene.time.now,
+      charge: 6 * Phaser.Math.Clamp(intensity, 0.5, 2),
+      width: w,
+    });
     while (this.stains.length > MAX_STAINS) {
       const old = this.stains.shift();
-      old?.destroy();
+      old?.ellipse.destroy();
     }
+  }
+
+  /** Purge temporelle : a appeler chaque frame depuis la scene. */
+  tick(time: number) {
+    this.stains = this.stains.filter((pool) => {
+      const age = time - pool.bornAt;
+      if (age >= POOL_LIFE || pool.charge <= 0) {
+        pool.ellipse.destroy();
+        return false;
+      }
+      const fade = Math.max(0, Math.min(1, (POOL_LIFE - age) / POOL_FADE));
+      pool.ellipse.setAlpha(0.75 * fade);
+      return true;
+    });
+  }
+
+  /** Flaque active la plus proche sous une abscisse donnee, s'il y en a une. */
+  poolAt(x: number): Pool | undefined {
+    let best: Pool | undefined;
+    let bestDist = Infinity;
+    for (const pool of this.stains) {
+      const dist = Math.abs(pool.ellipse.x - x);
+      if (dist < pool.width * 0.7 && dist < bestDist) {
+        best = pool;
+        bestDist = dist;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Le heros boit la flaque : retire de la reserve et renvoie ce qui a
+   * reellement ete consomme.
+   */
+  drainPool(pool: Pool, amount: number) {
+    const taken = Math.min(pool.charge, amount);
+    pool.charge -= taken;
+    pool.ellipse.setScale(Math.max(0.15, pool.charge / 6));
+    return taken;
   }
 
   /** Explosion de mort : beaucoup de sang + morceaux de chair qui rebondissent. */
