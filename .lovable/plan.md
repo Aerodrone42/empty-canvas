@@ -1,24 +1,30 @@
-## Problèmes constatés
+## Problème
 
-Dans `src/game/effects/Parallax.ts`, la branche `corridor` empile trois couches :
-1. un fond fixe (`corridor_bg_far`) redimensionné en `viewW × drawH`,
-2. des travées latérales (`corridor_bg_mid`) en tileSprite à scrollFactor 0.45,
-3. des « piliers de premier plan » (`corridor_bg_near`) en tileSprite à scrollFactor 1.25, ancrés à `floorY + 24`.
+Le corridor empile 4 couches mal alignées (fond « perspective » fixe, travées tuilées, dallage tuilé, dégradé de raccord) → rendu brouillon. Et surtout le sol actuel est une texture de pierre vue **de face** : elle se lit comme un mur au lieu d'un plancher. Les statues sont en plus posées en plein milieu de la voie de marche.
 
-La couche 3 produit les deux colonnes qui flottent devant le héros (elles n'ont pas de base posée au sol et défilent plus vite que lui). Et aucune des couches ne peint un vrai sol à la hauteur de collision `FLOOR_Y = 880` : la ligne de sol des images tombe plus haut, d'où le vide sous les pieds et la statue (`WeepingStatue`, posée à `floorY - 6`) qui paraît en lévitation.
+## Correctifs
 
-## Correctifs prévus
+**1. Un seul décor pour le corridor (`src/game/effects/Parallax.ts`)**
+- Supprimer le cas spécial `corridor` : plus de couche `far` fixe à l'écran, plus de tileSprite `mid`, plus de `addFloor()` ni de dégradé de raccord.
+- Le corridor rendu comme les autres salles : une peinture unique répétée horizontalement, ancrée au monde (scrollFactor 1), sol peint inclus dans l'image. Le sol défile donc pile à la vitesse des pas.
+- Nettoyer les assets/chargements devenus inutiles (`corridor_bg_mid`, `corridor_bg_near`, `corridor-floor` dans `BootScene.ts` et `assets.ts`), supprimer les fichiers PNG correspondants.
 
-1. **Supprimer la couche des piliers de premier plan** (bloc `near`) dans la branche corridor de `Parallax.ts`. Le héros ne passera plus derrière des colonnes flottantes.
-2. **Ajouter un sol réel au corridor**, dans le style du jeu :
-   - générer une texture de dallage `corridor_floor.png` (pierre sombre humide, joints rougis, reflets de lanternes, cohérente avec la cathédrale),
-   - la charger dans `src/game/scenes/BootScene.ts`,
-   - l'afficher en `tileSprite` ancré au monde (scrollFactor 1) depuis `FLOOR_Y` jusqu'au bas de la salle, sur toute la largeur `ROOM_WIDTH`, en profondeur intermédiaire (au-dessus du fond, sous les personnages).
-3. **Raccorder le fond au sol** : abaisser/recadrer la couche `far` fixe pour que sa ligne de fuite rejoigne exactement `FLOOR_Y`, plus un léger dégradé sombre à la jonction pour éviter la ligne de coupe nette.
-4. **Recaler la statue** : vérifier que `WeepingStatue` (et les travées `mid`) reposent sur la nouvelle ligne de sol, en ajustant l'ancrage si un décalage subsiste.
+**2. Décor de corridor régénéré, avec un vrai sol au sol**
+- Régénérer `corridor_bg_far.png` (1920×1080) dans le style exact de la salle 1 (cathédrale), avec la contrainte clé : **le dallage du bas doit être vu en fuite, pas de face**.
+  - dalles en perspective (trapèzes qui s'élargissent vers le bas de l'image), lignes de joints convergentes, reflets et flaques allongés horizontalement ;
+  - occupe environ le tiers inférieur de l'image, éclairage rasant plus clair près du bord bas, plus sombre vers le mur du fond ;
+  - transition nette mur/sol (plinthe, base des colonnes) pour que l'œil lise immédiatement un plancher ;
+  - bords gauche/droite raccordables pour éviter la couture visible en tuilage.
+- Vérifier après génération que la ligne de sol peinte tombe bien sur `FLOOR_Y` (héros posé dessus, pas flottant ni enfoncé) et ajuster l'ancrage vertical de la peinture si besoin.
 
-## Détails techniques
+**3. Statues hors du chemin (`src/game/scenes/GameScene.ts`)**
+- Réduire à 2 statues au lieu de 3.
+- Les reculer dans le décor : contre le mur du fond, rendues derrière le joueur et les ennemis (depth inférieur), légèrement réduites et posées sur la ligne de sol peinte — plus rien au milieu du passage.
+- `WeepingStatue.ts` accepte une échelle et une profondeur en paramètre.
 
-- Fichiers touchés : `src/game/effects/Parallax.ts`, `src/game/scenes/BootScene.ts`, éventuellement `src/game/effects/WeepingStatue.ts` (ancrage seulement).
-- Nouvel asset : `public/assets/sprites/backgrounds/corridor_floor.png` (tuilable horizontalement).
-- Aucun changement de gameplay, de collisions ou de logique de salle : `FLOOR_Y` et les colliders restent inchangés.
+**4. Ambiance allégée**
+- Garder poussières et vignettage, retirer les braises et la densité doublée qui surchargeaient l'écran.
+
+## Résultat attendu
+
+Un corridor lisible : un fond unique dont le sol se lit clairement comme un plancher en fuite sous les pieds du héros, aucune superposition décalée, et des statues intégrées au décor de fond.
