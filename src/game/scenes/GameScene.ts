@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat";
 import { Profiler } from "../debug/Profiler";
 import { BloodFX } from "../effects/Blood";
+import { GateColumn } from "../effects/GateColumn";
 import { Parallax } from "../effects/Parallax";
 import { EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
 import { GraspingHands } from "../entities/GraspingHands";
@@ -19,9 +20,13 @@ const FLOOR_Y = 880;
 const POOL_REGEN_PER_SEC = 6;
 /** distance en dessous de laquelle une creature empeche de se soigner */
 const SAFE_RADIUS = 300;
+/** position de la colonne de fin de salle */
+const GATE_X = 2150;
+/** au dela de ce point, le heros bascule dans la salle suivante */
+const GATE_EXIT_X = GATE_X + 110;
 
 
-/** enchainement des salles : l'ascenseur mene a la suivante */
+/** enchainement des salles : la colonne mene a la suivante */
 const ROOM_ORDER: BackdropKey[] = ["cathedrale", "corridor", "throne", "exterieur"];
 
 
@@ -37,6 +42,11 @@ export class GameScene extends Phaser.Scene {
   private profiler!: Profiler;
   /** salle courante : determine le decor et la palette */
   private backdropKey: BackdropKey = "cathedrale";
+  /** colonne de sortie et son verrou physique */
+  private gateColumn?: GateColumn;
+  private gateWall?: Phaser.GameObjects.Rectangle;
+  private gateVeil?: Phaser.GameObjects.Rectangle;
+  private roomCleared = false;
 
   private exiting = false;
   /** le heros touche le plateau (mis a jour par le collider) */
@@ -49,6 +59,7 @@ export class GameScene extends Phaser.Scene {
   init(data?: { backdrop?: BackdropKey }) {
     this.backdropKey = data?.backdrop ?? "cathedrale";
   }
+
 
   create() {
     this.enemies = [];
