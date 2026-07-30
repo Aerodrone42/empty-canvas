@@ -15,8 +15,11 @@ export function createGameConfig(parent: HTMLElement): Phaser.Types.Core.GameCon
       gamepad: true,
     },
     scale: {
-      mode: Phaser.Scale.FIT,
+      // ENVELOP remplit toute la fenêtre (pas de bandes noires) : le décor
+      // déborde légèrement au lieu d'être encadré.
+      mode: Phaser.Scale.ENVELOP,
       autoCenter: Phaser.Scale.CENTER_BOTH,
+      fullscreenTarget: parent,
     },
     physics: {
       default: "arcade",
