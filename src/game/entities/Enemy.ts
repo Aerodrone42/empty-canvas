@@ -158,6 +158,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const distance = Math.abs(dx);
     const sameLevel = Math.abs(playerY - this.y) < 140;
 
+    if (time < this.stunnedUntil) {
+      body.setVelocityX(0);
+      this.play(`${this.stats.animPrefix}-idle-anim`, true);
+      return;
+    }
+
     if (this.attacking) {
       body.setVelocityX(0);
       return;
@@ -171,17 +177,29 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       if (time - this.lastAttackAt >= this.stats.attackCooldown) {
         this.lastAttackAt = time;
         this.attacking = true;
-        this.play(`${this.stats.animPrefix}-attack-anim`, true);
-        this.scene.time.delayedCall(180, () => {
+
+        // anticipation lisible : la creature se teinte avant de frapper
+        this.setTint(0xffcf6b);
+        this.play(`${this.stats.animPrefix}-idle-anim`, true);
+
+        this.scene.time.delayedCall(TELEGRAPH_MS, () => {
           if (!this.active || this.dying) return;
-          const stillClose = Math.abs(playerX - this.x) <= this.stats.attackRange + 20;
-          if (stillClose) {
-            this.scene.events.emit("enemy-strike", this.stats.damage);
+          if (this.scene.time.now < this.stunnedUntil) {
+            this.attacking = false;
+            return;
           }
+          this.clearTint();
+          this.play(`${this.stats.animPrefix}-attack-anim`, true);
+          this.scene.time.delayedCall(180, () => {
+            if (!this.active || this.dying) return;
+            if (this.scene.time.now < this.stunnedUntil) return;
+            this.scene.events.emit("enemy-strike", this.stats.damage, this);
+          });
         });
       }
       return;
     }
+
 
     if (sameLevel && distance <= this.stats.detectRange) {
       this.direction = dx >= 0 ? 1 : -1;
