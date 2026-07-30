@@ -70,4 +70,7 @@ export class BootScene extends Phaser.Scene {
       repeat: 0,
     });
 
+    this.scene.start("game");
+  }
 }
+
