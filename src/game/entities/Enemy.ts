@@ -85,16 +85,50 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
 
-  takeHit(amount: number) {
+  takeHit(
+    amount: number,
+    options: { knockback?: number; breakGuard?: boolean; fromX?: number } = {},
+  ) {
     if (this.dying) return;
-    this.health -= amount;
-    this.setTint(0xd94b4b);
-    this.scene.time.delayedCall(90, () => this.clearTint());
+
+    const time = this.scene.time.now;
+    const guarding =
+      !!this.stats.guarded && !options.breakGuard && time > this.guardBrokenUntil;
+
+    const dealt = guarding ? amount * 0.25 : amount;
+    this.health -= dealt;
+
+    if (options.breakGuard) this.guardBrokenUntil = time + 1500;
+
+    this.setTint(guarding ? 0x9aa7b5 : 0xd94b4b);
+    this.scene.time.delayedCall(90, () => {
+      if (this.active && !this.dying) this.clearTint();
+    });
+
+    const knockback = (options.knockback ?? 0) * (guarding ? 0.25 : 1);
+    if (knockback > 0 && this.body) {
+      const dir = options.fromX !== undefined ? Math.sign(this.x - options.fromX) || 1 : 1;
+      const body = this.body as Phaser.Physics.Arcade.Body;
+      body.setVelocityX(dir * knockback);
+      body.setVelocityY(-Math.min(220, knockback * 0.5));
+    }
 
     if (this.health <= 0) {
       this.die();
     }
   }
+
+  /** Etourdissement (parade réussie) : l'ennemi reste ouvert. */
+  stun(durationMs: number) {
+    if (this.dying) return;
+    this.stunnedUntil = this.scene.time.now + durationMs;
+    this.attacking = false;
+    this.setTint(0x6fa8dc);
+    this.scene.time.delayedCall(durationMs, () => {
+      if (this.active && !this.dying) this.clearTint();
+    });
+  }
+
 
   protected die() {
     this.dying = true;
