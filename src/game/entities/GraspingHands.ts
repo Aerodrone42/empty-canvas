@@ -6,8 +6,8 @@ import { ENEMY_BASELINE_Y, ENEMY_FRAME_H } from "@/game/assets";
 const GRAB_MS = 3000;
 /** temps avant qu'un meme piege puisse reattraper */
 const COOLDOWN_MS = 2500;
-/** annonce : le sol tremble avant que les mains jaillissent */
-const TELL_MS = 350;
+/** annonce : le sol tremble 1 seconde avant que les mains jaillissent */
+const TELL_MS = 1000;
 /** cooldown court quand le heros s'echappe pendant l'annonce */
 const ABORT_COOLDOWN_MS = 900;
 
