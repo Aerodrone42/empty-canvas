@@ -46,14 +46,29 @@ export class Parallax {
     const bottomWorldY = floorY + drawH * BELOW_FLOOR;
     const topWorldY = bottomWorldY - drawH;
 
-    // UNE seule image etiree sur toute la largeur de la salle :
-    // aucune repetition, aucune couture visible.
-    const bg = scene.add
-      .image(0, topWorldY, this.def.far)
-      .setOrigin(0, 0)
-      .setScrollFactor(1)
-      .setDepth(-30);
-    bg.setDisplaySize(roomWidth, drawH);
+    if (key === "corridor") {
+      // fond panoramique : UNE seule image etiree sur toute la salle,
+      // aucune repetition, aucune couture visible.
+      scene.add
+        .image(0, topWorldY, this.def.far)
+        .setOrigin(0, 0)
+        .setScrollFactor(1)
+        .setDepth(-30)
+        .setDisplaySize(roomWidth, drawH);
+    } else {
+      // rendu d'origine des autres salles : peinture repetee a l'echelle
+      const source = scene.textures.get(this.def.far).getSourceImage();
+      const srcH = source.height || 1;
+      const scale = drawH / srcH;
+
+      scene.add
+        .tileSprite(0, topWorldY, roomWidth, drawH, this.def.far)
+        .setOrigin(0, 0)
+        .setScrollFactor(1)
+        .setDepth(-30)
+        .setTileScale(scale, scale);
+    }
+
 
 
     this.addAmbience(viewW, viewH, floorScreenY);
