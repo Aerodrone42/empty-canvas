@@ -8,8 +8,8 @@ import Phaser from "phaser";
  * fremit tres legerement, comme un vaisseau qui pompe lentement.
  */
 
-/** hauteur affichee de la veine */
-const VEIN_H = 62;
+/** hauteur affichee : lisible, mais assez fine pour rester un detail mural */
+const VEIN_H = 78;
 
 export class CorridorVein {
   private readonly parts: Phaser.GameObjects.TileSprite[] = [];
@@ -20,13 +20,15 @@ export class CorridorVein {
     const scale = VEIN_H / srcH;
 
     const band = scene.add
-      .tileSprite(0, floorY - 540, roomWidth / scale, srcH, "corridor-vein")
+      .tileSprite(0, floorY - 430, roomWidth / scale, srcH, "corridor-vein")
       .setOrigin(0, 0.5)
       .setScale(scale)
       .setScrollFactor(1)
-      .setDepth(-22)
-      .setAlpha(0.95)
-      .setTint(0x7e1a22);
+      // Devant le voile d'ambiance, mais toujours derriere les statues
+      // et tous les elements de jeu.
+      .setDepth(-4)
+      .setAlpha(0.9)
+      .setTint(0x9b3038);
 
     this.parts.push(band);
 
