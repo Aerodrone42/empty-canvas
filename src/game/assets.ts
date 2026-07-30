@@ -175,9 +175,10 @@ function backdrop(
 }
 
 export const BACKDROPS: Record<BackdropKey, BackdropDef> = {
-  cathedrale: backdrop("cathedrale", 0x2a0d12, 0.28, 0x2a181b, 0x3a2226, 0xd8b877),
-  corridor: backdrop("corridor", 0x36070d, 0.34, 0x24100f, 0x351b1a, 0xc98a7a),
-  throne: backdrop("throne", 0x40060f, 0.38, 0x2c0f14, 0x40191f, 0xff8a9a),
-  exterieur: backdrop("exterieur", 0x1b1410, 0.22, 0x2e2620, 0x3f342a, 0xcfc0a0),
+  cathedrale: backdrop("cathedrale", 0x2a0d12, 0.18, 0x140d0e, 0x2b1f1c, 0xd8b877),
+  corridor: backdrop("corridor", 0x36070d, 0.24, 0x130b0a, 0x281512, 0xc98a7a),
+  throne: backdrop("throne", 0x40060f, 0.26, 0x16090c, 0x301216, 0xff8a9a),
+  exterieur: backdrop("exterieur", 0x1b1410, 0.16, 0x161210, 0x2d251e, 0xcfc0a0),
+
 };
 
