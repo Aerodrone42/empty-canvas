@@ -36,14 +36,14 @@ export class GraspingHands {
     if (near && !this.active && time > this.nextGrabAt) {
       this.active = true;
       this.sprite.setAlpha(1);
-      this.sprite.play("mains-sol-emerge", true);
+      this.sprite.play("mains-sol-anim", true);
       this.scene.events.emit("fx-blood", this.x, floorY - 12, 1, 0.7);
     }
 
     if (!near && this.active) {
       this.active = false;
       this.nextGrabAt = time + 900;
-      this.sprite.playReverse("mains-sol-emerge", true);
+      this.sprite.playReverse("mains-sol-anim", true);
       this.scene.time.delayedCall(340, () => this.sprite.setAlpha(0));
     }
 
