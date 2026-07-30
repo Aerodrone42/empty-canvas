@@ -5,6 +5,7 @@ import { Profiler } from "../debug/Profiler";
 import { BloodFX } from "../effects/Blood";
 import { Parallax } from "../effects/Parallax";
 import { EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
+import { GraspingHands } from "../entities/GraspingHands";
 import { Pickup } from "../entities/Pickup";
 import { Player } from "../entities/Player";
 import type { BackdropKey } from "@/game/assets";
@@ -27,6 +28,7 @@ const ROOM_ORDER: BackdropKey[] = ["cathedrale", "corridor", "throne", "exterieu
 export class GameScene extends Phaser.Scene {
   private player!: Player;
   private enemies: Enemy[] = [];
+  private hands: GraspingHands[] = [];
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
   private blood!: BloodFX;
   private parallax!: Parallax;
@@ -74,6 +76,11 @@ export class GameScene extends Phaser.Scene {
     this.spawn(new SuppliantRampant(this, 1600, FLOOR_Y));
     this.spawn(new EcorchePendu(this, 1820, FLOOR_Y, 60));
     this.spawn(new PenitentGreffe(this, 2060, FLOOR_Y));
+
+    // pieges : mains qui jaillissent du sol et agrippent le heros
+    this.hands = [620, 1040, 1420, 1900, 2260].map(
+      (x) => new GraspingHands(this, x, FLOOR_Y),
+    );
 
     // suivi horizontal uniquement : au saut, l'image ne doit pas bouger
     const cam = this.cameras.main;
@@ -271,6 +278,13 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.isPaused = false;
 
     prof.measure("player", () => this.player.tick(time));
+    prof.measure("mains", () => {
+      for (const hand of this.hands) {
+        if (hand.update(this.player.x, this.player.y, FLOOR_Y, time)) {
+          this.player.snare(0.38, 200);
+        }
+      }
+    });
     prof.measure("sang", () => this.blood.tick(time));
 
     this.enemies = this.enemies.filter((e) => e.active);

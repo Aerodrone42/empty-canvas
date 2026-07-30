@@ -79,6 +79,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private jumpBufferedAt = -Infinity;
   /** fin de l'animation de reception */
   private landUntil = 0;
+  /** entrave (mains du sol) : ralentit la course et brise le saut */
+  private snareUntil = 0;
+  private snareMult = 1;
+
+  /** Agrippe le heros : sa vitesse est reduite tant que l'entrave dure. */
+  snare(mult: number, durationMs: number) {
+    this.snareUntil = this.scene.time.now + durationMs;
+    this.snareMult = mult;
+  }
+
 
 
 
@@ -207,7 +217,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (onGround) this.airJumpsUsed = 0;
 
-    const speed = SPEED * effects.speedMult;
+    const snared = time < this.snareUntil;
+    const speed = SPEED * effects.speedMult * (snared ? this.snareMult : 1);
     const jumpPower = JUMP * effects.jumpMult;
     const cooldown = ATTACK_COOLDOWN * effects.attackCooldownMult;
 
