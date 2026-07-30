@@ -79,6 +79,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private jumpBufferedAt = -Infinity;
   /** fin de l'animation de reception */
   private landUntil = 0;
+  /** entrave (mains du sol) : ralentit la course et brise le saut */
+  private snareUntil = 0;
+  private snareMult = 1;
+
+  /** Agrippe le heros : sa vitesse est reduite tant que l'entrave dure. */
+  snare(mult: number, durationMs: number) {
+    this.snareUntil = this.scene.time.now + durationMs;
+    this.snareMult = mult;
+  }
+
 
 
 
