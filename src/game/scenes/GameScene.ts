@@ -136,14 +136,22 @@ export class GameScene extends Phaser.Scene {
     this.platforms = this.physics.add.staticGroup();
     const palette = this.parallax.def;
 
+    // le sol descend jusqu'au bas de la salle pour eviter une bande vide
+    const groundH = ROOM_HEIGHT - FLOOR_Y;
     const ground = this.add.rectangle(
       ROOM_WIDTH / 2,
-      FLOOR_Y + 40,
+      FLOOR_Y + groundH / 2,
       ROOM_WIDTH,
-      80,
+      groundH,
       palette.ground,
     );
     this.platforms.add(ground);
+
+    // lisere de pierre sur la ligne de sol, pour raccorder au decor
+    this.add
+      .rectangle(ROOM_WIDTH / 2, FLOOR_Y + 2, ROOM_WIDTH, 4, palette.ledge, 0.9)
+      .setDepth(-1);
+
 
     const ledges: Array<[number, number, number]> = [
       [520, 620, 220],
