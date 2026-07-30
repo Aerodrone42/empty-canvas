@@ -105,14 +105,7 @@ export class Parallax {
     g.destroy();
   }
 
-  /**
-   * A appeler dans update() : seul le fond lointain defile.
-   * Le sol est ancre au monde, il n'a plus aucun calcul par frame.
-   */
-  update() {
-    if (!this.sky) return;
-    const scrollX = this.scene.cameras.main.scrollX;
-    this.sky.tilePositionX = this.skyOffset + (scrollX * SKY_SPEED) / this.sky.tileScaleX;
-  }
-
+  /** Le decor est ancre au monde : plus aucun calcul par frame. */
+  update() {}
 }
+
