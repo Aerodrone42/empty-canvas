@@ -40,21 +40,21 @@ export class Parallax {
     const floorScreenY = floorY - camTop;
 
     const drawH = viewH * 1.12;
-    const source = scene.textures.get(this.def.far).getSourceImage();
-    const srcH = source.height || 1;
-    const scale = drawH / srcH;
 
     // la peinture descend legerement sous la ligne de sol pour que le
     // dallage passe sous les pieds du heros sans laisser de vide
     const bottomWorldY = floorY + drawH * BELOW_FLOOR;
     const topWorldY = bottomWorldY - drawH;
 
-    scene.add
-      .tileSprite(0, topWorldY, roomWidth, drawH, this.def.far)
+    // UNE seule image etiree sur toute la largeur de la salle :
+    // aucune repetition, aucune couture visible.
+    const bg = scene.add
+      .image(0, topWorldY, this.def.far)
       .setOrigin(0, 0)
       .setScrollFactor(1)
-      .setDepth(-30)
-      .setTileScale(scale, scale);
+      .setDepth(-30);
+    bg.setDisplaySize(roomWidth, drawH);
+
 
     this.addAmbience(viewW, viewH, floorScreenY);
   }
