@@ -34,6 +34,9 @@ export class BootScene extends Phaser.Scene {
     // statue de pleureuse (larmes de sang a l'approche du heros)
     this.load.image("statue-pleureuse", "/assets/sprites/props/weeping_statue.png");
 
+    // grosse veine animee du corridor (decor de fond)
+    this.load.image("corridor-vein", "/assets/sprites/props/corridor_vein.png");
+
     // bande-son : ambiance piano + theme de combat
     this.load.audio(MUSIC_AMBIENT, ambientTrack.url);
     this.load.audio(MUSIC_COMBAT, combatTrack.url);
