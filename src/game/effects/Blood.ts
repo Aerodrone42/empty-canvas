@@ -40,7 +40,7 @@ function ensureTextures(scene: Phaser.Scene) {
   }
 }
 
-const CRIMSON = [0x8e1220, 0xb01f2b, 0xd93b3b, 0x6a0d18];
+const CRIMSON = [0x59randomPLACE];
 
 type Pool = {
   /** amas d'ellipses formant une silhouette organique */
