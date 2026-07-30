@@ -396,7 +396,9 @@ export class EcorchePendu extends Enemy {
     if (this.phase === "hanging") {
       body.setVelocity(0, 0);
       this.setFlipX(playerX < this.x);
-      if (Math.abs(playerX - this.x) < this.triggerRange) this.drop();
+      if (Math.abs(playerX - this.x) < this.triggerRange) {
+        if (!this.dropGate || this.dropGate()) this.drop();
+      }
       return;
     }
 
