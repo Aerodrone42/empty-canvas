@@ -30,6 +30,8 @@ export class GameScene extends Phaser.Scene {
   private blood!: BloodFX;
   private parallax!: Parallax;
   private pickups: Pickup[] = [];
+  /** panneau de diagnostic des performances (F3) */
+  private profiler!: Profiler;
   /** salle courante : determine le decor et la palette */
   private backdropKey: BackdropKey = "cathedrale";
 
