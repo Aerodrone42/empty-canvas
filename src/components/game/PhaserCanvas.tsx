@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 
+import { toggleFullscreen } from "@/game/fullscreen";
 import { installKeyboardTracking } from "@/game/input";
 import { useBindingsStore } from "@/store/bindingsStore";
 import { useGameStore } from "@/store/gameStore";
+
 
 export function PhaserCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);
