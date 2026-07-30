@@ -43,6 +43,7 @@ export type PlayerState =
   | "dive"
   | "dodge"
   | "parry"
+  | "absorb"
   | "special";
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
@@ -62,6 +63,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private facing = 1;
   private airJumpsUsed = 0;
   private diveStrikeDone = false;
+  /** aucun ennemi proche : l'absorption de chair est possible */
+  private canAbsorb = false;
+  private absorbStartedAt = 0;
+
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, "vigile-idle");
