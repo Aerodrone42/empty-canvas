@@ -94,28 +94,56 @@ export class Parallax {
     // pilier etroit : environ un huitieme de la largeur visible
     const pillarW = viewW * 0.12;
 
+    const viewH = this.scene.cameras.main.height;
+    // haut de la salle visible : la camera reste calee en bas
+    const topY = worldFloorY - viewH - 20;
+
     const count = 4;
     const margin = roomWidth * 0.16;
     const span = roomWidth - margin * 2;
     const step = span / (count - 1);
+    // hauteurs inegales : colonnes brisees, pas un peigne regulier
+    const ratios = [0.72, 0.55, 0.84, 0.63];
 
     for (let i = 0; i < count; i++) {
       const x = margin + step * i;
       // ne jamais masquer le heros au spawn (x = 180)
       if (Math.abs(x - 180) < 340) continue;
 
+      const h = viewH * ratios[i % ratios.length];
+
       const pillar = this.scene.add
-        .tileSprite(x, worldFloorY + drawH * 0.04, pillarW, drawH, textureKey)
-        .setOrigin(0.5, 1)
+        .tileSprite(x, topY, pillarW, h, textureKey)
+        .setOrigin(0.5, 0)
         .setScrollFactor(1.1, 1)
         .setDepth(12);
 
       pillar.setTileScale(scale, scale);
       // chaque pilier pioche une bande differente de la planche
       pillar.tilePositionX = (srcW / count) * i + srcW * 0.1;
+      pillar.tilePositionY = srcH * 0.05;
       pillar.setTint(0x4a3d3a);
+
+      // bas casse : petit degrade sombre pour eviter la coupe nette
+      const fadeH = 46;
+      const slices = 6;
+      for (let s = 0; s < slices; s++) {
+        this.scene.add
+          .rectangle(
+            x,
+            topY + h - fadeH + (fadeH / slices) * s,
+            pillarW,
+            fadeH / slices + 1,
+            0x0b0507,
+            0.16 + s * 0.14,
+          )
+          .setOrigin(0.5, 0)
+          .setScrollFactor(1.1, 1)
+          .setDepth(13);
+      }
     }
   }
+
 
 
 
