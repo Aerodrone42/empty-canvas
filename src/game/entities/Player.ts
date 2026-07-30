@@ -83,7 +83,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** Echelle et origine fixes (gabarit normalise), hitbox constante. */
   private alignBody() {
-    this.setScale(SCALE);
+    this.setScale(SCALE * this.poseX, SCALE * this.poseY);
     this.setOrigin(0.5, ORIGIN_Y);
 
     const body = this.body as Phaser.Physics.Arcade.Body | null;
@@ -93,6 +93,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setSize(bodyW, bodyH, false);
     body.setOffset((this.width - bodyW) / 2, HERO_BASELINE_Y - bodyH);
   }
+
+  /** Deformation (flexion / etirement) pendant le saut et la reception. */
+  private setPose(sx: number, sy: number, duration = 90) {
+    this.poseTween?.remove();
+    this.poseTween = this.scene.tweens.add({
+      targets: this,
+      poseX: sx,
+      poseY: sy,
+      duration,
+      ease: "Quad.easeOut",
+    });
+  }
+
+  /** Retour progressif au gabarit neutre. */
+  private relaxPose(delta = 1) {
+    if (this.poseTween?.isPlaying()) return;
+    const k = Math.min(1, delta * 0.18);
+    this.poseX += (1 - this.poseX) * k;
+    this.poseY += (1 - this.poseY) * k;
+  }
+
 
   get facingDirection() {
     return this.facing;
