@@ -13,6 +13,9 @@ export class Pickup extends Phaser.GameObjects.Container {
   readonly amount: number;
   private collected = false;
   private bornAt: number;
+  /** flottement vertical, coupe des que l'orbe est attire */
+  private bob?: Phaser.Tweens.Tween;
+
 
   constructor(scene: Phaser.Scene, x: number, y: number, kind: PickupKind, amount: number) {
     super(scene, x, y);
