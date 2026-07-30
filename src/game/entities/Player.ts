@@ -296,13 +296,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       useGameStore.getState().setDodgeCooldown(DODGE.cooldown);
       this.invulnUntil = time + DODGE.invuln;
       this.beginState("dodge", time, DODGE.duration);
+      this.dodgeStartedAt = time;
+      this.dodgeRecoverUntil = 0;
       const dir = left ? -1 : right ? 1 : this.facing;
       this.facing = dir;
       this.setFlipX(dir < 0);
       body.setVelocityX(dir * (distance / (DODGE.duration / 1000)));
       this.setTint(0x8ea9c9);
       this.setAlpha(0.6);
-      this.play("vigile-walk-anim", true);
+      this.play("vigile-dodge-start", true);
       return;
     }
 
