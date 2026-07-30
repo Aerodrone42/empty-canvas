@@ -27,6 +27,14 @@ export type MutationEffects = {
   doubleJump: boolean;
   /** Reduction des degats subis (0 = aucune, 0.3 = -30%). */
   damageReduction: number;
+  /** Allonge la roulade d'esquive. */
+  dodgeDistanceMult: number;
+  /** Millisecondes ajoutees a la fenetre de parade. */
+  parryWindowBonus: number;
+  /** Multiplicateur du cout en Chair du Rugissement. */
+  specialCostMult: number;
+  /** Rayon ajoute a l'onde du Rugissement. */
+  specialRadiusBonus: number;
 };
 
 export const BASE_EFFECTS: MutationEffects = {
@@ -40,6 +48,10 @@ export const BASE_EFFECTS: MutationEffects = {
   fleshGainMult: 1,
   doubleJump: false,
   damageReduction: 0,
+  dodgeDistanceMult: 1,
+  parryWindowBonus: 0,
+  specialCostMult: 1,
+  specialRadiusBonus: 0,
 };
 
 export type Mutation = {

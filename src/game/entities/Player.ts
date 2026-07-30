@@ -1,19 +1,27 @@
 import Phaser from "phaser";
 
 import { HERO_BASELINE_Y, HERO_CHAR_H, HERO_FRAME_H } from "@/game/assets";
-import { isKeyDown, isKeyJustDown, padFor } from "@/game/input";
+import {
+  COMBO_WINDOW,
+  DODGE,
+  HEAVY_CHARGE_MS,
+  PARRY,
+  SPECIAL_COST,
+  STRIKES,
+  type Strike,
+} from "@/game/combat";
+import { ActionInput } from "@/game/input";
 import { useGameStore } from "@/store/gameStore";
 
 const SPEED = 190;
 const JUMP = 520;
-const ATTACK_COOLDOWN = 420;
+const ATTACK_COOLDOWN = 240;
 const INVULN_MS = 750;
 
 /**
  * Les feuilles du Vigile ont ete regenerees sur un gabarit unique : meme
  * cellule 192x144, silhouette de 110 px et ligne de pieds a y=138 sur toutes
- * les frames. L'echelle et l'origine sont donc constantes : plus besoin de
- * recalibrer frame par frame.
+ * les frames. L'echelle et l'origine sont donc constantes.
  */
 
 /** hauteur affichee constante, en pixels monde */
@@ -26,19 +34,34 @@ const ORIGIN_Y = HERO_BASELINE_Y / HERO_FRAME_H;
 const BODY_W = 58;
 const BODY_H = 120;
 
-
-
-
+export type PlayerState =
+  | "idle"
+  | "run"
+  | "air"
+  | "attack"
+  | "heavy"
+  | "dive"
+  | "dodge"
+  | "parry"
+  | "special";
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  private attacking = false;
+  private input = new ActionInput();
+
+  private state: PlayerState = "idle";
+  /** fin de l'etat verrouille (attaque, esquive, parade...) */
+  private stateUntil = 0;
+  private comboStep = 0;
+  private comboExpiresAt = 0;
   private lastAttackAt = -Infinity;
+  private dodgeReadyAt = 0;
   private invulnUntil = 0;
+  private parryUntil = 0;
+  private charging = false;
   private facing = 1;
   private airJumpsUsed = 0;
-  private padJumpPrev = false;
-  private padAttackPrev = false;
+  private diveStrikeDone = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, "vigile-idle");
@@ -51,16 +74,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.alignBody();
 
     this.cursors = scene.input.keyboard!.createCursorKeys();
-
     this.play("vigile-idle-anim");
-    this.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + "vigile-attack-anim", () => {
-      this.attacking = false;
-    });
   }
 
-  /**
-   * Echelle et origine fixes (gabarit normalise), hitbox constante.
-   */
+  /** Echelle et origine fixes (gabarit normalise), hitbox constante. */
   private alignBody() {
     this.setScale(SCALE);
     this.setOrigin(0.5, ORIGIN_Y);
@@ -73,22 +90,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setOffset((this.width - bodyW) / 2, HERO_BASELINE_Y - bodyH);
   }
 
-
-
-
-
   get facingDirection() {
     return this.facing;
   }
 
   get isAttacking() {
-    return this.attacking;
+    return this.state === "attack" || this.state === "heavy" || this.state === "special";
+  }
+
+  /** Vrai si la parade est active : le coup est annulé et l'ennemi étourdi. */
+  tryParry(time: number) {
+    return this.state === "parry" && time < this.parryUntil;
   }
 
   receiveDamage(amount: number, time: number) {
     if (time < this.invulnUntil) return;
     this.invulnUntil = time + INVULN_MS;
     useGameStore.getState().damage(amount);
+    this.rumble(0.6, 180);
 
     this.setTint(0xff6b6b);
     this.scene.tweens.add({
@@ -107,11 +126,44 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setVelocity(-this.facing * 160, -180);
   }
 
+  /** Vibration si la manette la supporte (Xbox, DualSense, DualShock). */
+  rumble(intensity: number, duration: number) {
+    const pad = this.scene.input.gamepad?.getPad(0) as
+      | (Phaser.Input.Gamepad.Gamepad & {
+          vibration?: {
+            playEffect?: (type: string, options: Record<string, number>) => void;
+          };
+        })
+      | undefined;
+    try {
+      pad?.vibration?.playEffect?.("dual-rumble", {
+        duration,
+        strongMagnitude: intensity,
+        weakMagnitude: intensity * 0.6,
+      });
+    } catch {
+      /* la manette ne supporte pas la vibration */
+    }
+  }
+
+  private emitStrike(strike: Strike, damageScale = 1) {
+    this.scene.events.emit("player-strike", strike, damageScale);
+  }
+
+  private beginState(state: PlayerState, time: number, duration: number) {
+    this.state = state;
+    this.stateUntil = time + duration;
+  }
+
   tick(time: number) {
     this.alignBody();
-    const effects = useGameStore.getState().effects;
+    const store = useGameStore.getState();
+    const effects = store.effects;
     const body = this.body as Phaser.Physics.Arcade.Body;
     const onGround = body.blocked.down || body.touching.down;
+    const pad = this.scene.input.gamepad?.getPad(0) ?? undefined;
+
+    this.input.update(pad, time);
 
     if (onGround) this.airJumpsUsed = 0;
 
@@ -119,41 +171,159 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const jumpPower = JUMP * effects.jumpMult;
     const cooldown = ATTACK_COOLDOWN * effects.attackCooldownMult;
 
-    const pad = this.scene.input.gamepad?.getPad(0);
-    const padAxis = pad?.axes[0]?.getValue() ?? 0;
-    const btn = (index: number) => (index >= 0 ? !!pad?.buttons[index]?.pressed : false);
-    const padLeft = btn(padFor("left")) || padAxis < -0.3;
-    const padRight = btn(padFor("right")) || padAxis > 0.3;
-    const padJumpDown = btn(padFor("jump"));
-    const padAttackDown = btn(padFor("attack"));
-    const padJump = padJumpDown && !this.padJumpPrev;
-    const padAttack = padAttackDown && !this.padAttackPrev;
-    this.padJumpPrev = padJumpDown;
-    this.padAttackPrev = padAttackDown;
-
-    const left = isKeyDown("left") || this.cursors.left?.isDown || padLeft;
-    const right = isKeyDown("right") || this.cursors.right?.isDown || padRight;
+    const left = this.input.isDown("left") || !!this.cursors.left?.isDown;
+    const right = this.input.isDown("right") || !!this.cursors.right?.isDown;
     const jump =
-      isKeyJustDown("jump") ||
-      (this.cursors.up ? Phaser.Input.Keyboard.JustDown(this.cursors.up) : false) ||
-      padJump;
-    const attack = isKeyJustDown("attack") || padAttack;
+      this.input.justDown("jump") ||
+      (this.cursors.up ? Phaser.Input.Keyboard.JustDown(this.cursors.up) : false);
+    const downHeld = !!this.cursors.down?.isDown || (pad?.axes[1]?.getValue() ?? 0) > 0.5;
 
+    // ---------- etats verrouilles ----------
+    if (this.state === "dodge") {
+      if (time >= this.stateUntil) {
+        this.state = "idle";
+        this.clearTint();
+        this.setAlpha(1);
+      } else {
+        return;
+      }
+    }
 
-    if (attack && !this.attacking && time - this.lastAttackAt >= cooldown) {
-      this.attacking = true;
-      this.lastAttackAt = time;
+    if (this.state === "dive") {
+      if (!this.diveStrikeDone && onGround) {
+        this.diveStrikeDone = true;
+        this.emitStrike(STRIKES.dive);
+        this.rumble(0.5, 150);
+        this.scene.cameras.main.shake(120, 0.008);
+        this.beginState("dive", time, STRIKES.dive.duration);
+      }
+      if (this.diveStrikeDone && time >= this.stateUntil) {
+        this.state = "idle";
+      } else {
+        if (onGround) body.setVelocityX(0);
+        return;
+      }
+    }
+
+    if (this.state === "parry") {
+      if (time >= this.stateUntil) {
+        this.state = "idle";
+        this.clearTint();
+      } else {
+        if (onGround) body.setVelocityX(0);
+        return;
+      }
+    }
+
+    if (this.state === "attack" || this.state === "heavy" || this.state === "special") {
+      if (time >= this.stateUntil) {
+        this.state = "idle";
+        this.clearTint();
+        this.setScale(SCALE);
+      } else {
+        if (onGround) body.setVelocityX(0);
+        return;
+      }
+    }
+
+    // ---------- esquive ----------
+    if (this.input.justDown("dodge") && time >= this.dodgeReadyAt) {
+      const distance = DODGE.distance * effects.dodgeDistanceMult;
+      this.dodgeReadyAt = time + DODGE.cooldown;
+      useGameStore.getState().setDodgeCooldown(DODGE.cooldown);
+      this.invulnUntil = time + DODGE.invuln;
+      this.beginState("dodge", time, DODGE.duration);
+      const dir = left ? -1 : right ? 1 : this.facing;
+      this.facing = dir;
+      this.setFlipX(dir < 0);
+      body.setVelocityX(dir * (distance / (DODGE.duration / 1000)));
+      this.setTint(0x8ea9c9);
+      this.setAlpha(0.6);
+      this.play("vigile-walk-anim", true);
+      return;
+    }
+
+    // ---------- parade ----------
+    if (this.input.justDown("parry") && onGround) {
+      this.parryUntil = time + PARRY.window + effects.parryWindowBonus;
+      this.beginState("parry", time, PARRY.window + effects.parryWindowBonus + PARRY.recovery);
       body.setVelocityX(0);
+      this.setTint(0xf2d9a0);
+      this.play("vigile-idle-anim", true);
+      return;
+    }
+
+    // ---------- rugissement de chair ----------
+    if (this.input.justDown("special")) {
+      const cost = Math.round(SPECIAL_COST * effects.specialCostMult);
+      if (useGameStore.getState().spendFlesh(cost)) {
+        this.beginState("special", time, STRIKES.special.duration);
+        body.setVelocityX(0);
+        this.play("vigile-attack-anim", true);
+        this.setTint(0xff4d5e);
+        this.spawnWave(effects.specialRadiusBonus);
+        this.emitStrike({
+          ...STRIKES.special,
+          reach: STRIKES.special.reach + effects.specialRadiusBonus,
+        });
+        this.rumble(0.9, 300);
+        this.scene.cameras.main.shake(220, 0.012);
+        return;
+      }
+    }
+
+    // ---------- attaque aerienne piquee ----------
+    if (!onGround && this.input.justDown("attack") && downHeld) {
+      this.diveStrikeDone = false;
+      this.beginState("dive", time, 2000);
+      body.setVelocityX(0);
+      body.setVelocityY(900);
       this.play("vigile-attack-anim", true);
-      this.scene.events.emit("player-strike");
+      this.setTint(0xffc9a0);
       return;
     }
 
-    if (this.attacking) {
-      if (onGround) body.setVelocityX(0);
+    // ---------- coup lourd (relachement apres charge) ----------
+    if (this.input.isDown("attack")) this.charging = true;
+
+    const releasedHeld = this.input.justUp("attack") ? this.input.releasedHeldMs("attack") : 0;
+    if (this.input.justUp("attack")) this.charging = false;
+
+    if (releasedHeld >= HEAVY_CHARGE_MS && time - this.lastAttackAt >= cooldown) {
+      this.lastAttackAt = time;
+      this.comboStep = 0;
+      this.beginState("heavy", time, STRIKES.heavy.duration);
+      body.setVelocityX(this.facing * 60);
+      this.play("vigile-attack-anim", true);
+      this.setTint(0xff8a5c);
+      this.emitStrike(STRIKES.heavy);
+      this.rumble(0.8, 220);
+      this.scene.cameras.main.shake(140, 0.009);
       return;
     }
 
+    // ---------- combo 3 coups (relachement court) ----------
+    const lightAttack = releasedHeld > 0 && releasedHeld < HEAVY_CHARGE_MS;
+    if (lightAttack && time - this.lastAttackAt >= cooldown) {
+      this.lastAttackAt = time;
+      this.comboStep = time <= this.comboExpiresAt ? Math.min(this.comboStep + 1, 2) : 0;
+      const strike = [STRIKES.combo1, STRIKES.combo2, STRIKES.combo3][this.comboStep];
+      this.comboExpiresAt = time + strike.duration + COMBO_WINDOW;
+      this.beginState("attack", time, strike.duration);
+      body.setVelocityX(this.facing * (this.comboStep === 2 ? 90 : 30));
+      this.play("vigile-attack-anim", true);
+      if (this.comboStep === 2) {
+        this.setTint(0xffb36b);
+        this.rumble(0.5, 160);
+        this.scene.cameras.main.shake(110, 0.006);
+      }
+      this.emitStrike(strike);
+      return;
+    }
+
+    if (time > this.comboExpiresAt) this.comboStep = 0;
+
+    // ---------- deplacement ----------
     if (left) {
       body.setVelocityX(-speed);
       this.facing = -1;
@@ -176,12 +346,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (!onGround) {
+      this.state = "air";
       this.play("vigile-idle-anim", true);
     } else if (left || right) {
+      this.state = "run";
       this.play("vigile-walk-anim", true);
     } else {
+      this.state = "idle";
       this.play("vigile-idle-anim", true);
     }
   }
-}
 
+  /** Onde sanglante du Rugissement. */
+  private spawnWave(bonusRadius: number) {
+    const radius = STRIKES.special.reach + bonusRadius;
+    const wave = this.scene.add.circle(this.x, this.y - 60, 20, 0xb01f2b, 0.35);
+    wave.setStrokeStyle(3, 0xff5566, 0.9);
+    wave.setDepth(5);
+    this.scene.tweens.add({
+      targets: wave,
+      radius,
+      scale: radius / 20,
+      alpha: 0,
+      duration: 420,
+      onComplete: () => wave.destroy(),
+    });
+  }
+}
