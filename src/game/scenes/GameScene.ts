@@ -179,8 +179,8 @@ export class GameScene extends Phaser.Scene {
     if (healed <= 0) return;
     store.heal(healed);
 
-    if (Math.random() < 0.08) {
-      this.blood.sparks(this.player.x, this.player.y - 40);
+    if (Math.random() < 0.05) {
+      this.onHeal(this.player.x, this.player.y - 40);
     }
   }
 
