@@ -28,6 +28,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private invulnUntil = 0;
   private facing = 1;
   private airJumpsUsed = 0;
+  private padJumpPrev = false;
+  private padAttackPrev = false;
+
 
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
@@ -109,12 +112,31 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const jumpPower = JUMP * effects.jumpMult;
     const cooldown = ATTACK_COOLDOWN * effects.attackCooldownMult;
 
-    const left = this.keys.left.isDown || this.cursors.left?.isDown;
-    const right = this.keys.right.isDown || this.cursors.right?.isDown;
+    const pad = this.scene.input.gamepad?.getPad(0);
+    const padAxis = pad?.axes[0]?.getValue() ?? 0;
+    const padLeft = !!pad?.left || padAxis < -0.3;
+    const padRight = !!pad?.right || padAxis > 0.3;
+    // A / croix pour sauter, X ou gachette pour frapper
+    const padJumpDown = !!(pad?.A || pad?.buttons[0]?.pressed);
+    const padAttackDown = !!(
+      pad?.X ||
+      pad?.buttons[2]?.pressed ||
+      pad?.buttons[5]?.pressed ||
+      pad?.buttons[7]?.pressed
+    );
+    const padJump = padJumpDown && !this.padJumpPrev;
+    const padAttack = padAttackDown && !this.padAttackPrev;
+    this.padJumpPrev = padJumpDown;
+    this.padAttackPrev = padAttackDown;
+
+    const left = this.keys.left.isDown || this.cursors.left?.isDown || padLeft;
+    const right = this.keys.right.isDown || this.cursors.right?.isDown || padRight;
     const jump =
       Phaser.Input.Keyboard.JustDown(this.keys.jump) ||
-      (this.cursors.up ? Phaser.Input.Keyboard.JustDown(this.cursors.up) : false);
-    const attack = Phaser.Input.Keyboard.JustDown(this.keys.attack);
+      (this.cursors.up ? Phaser.Input.Keyboard.JustDown(this.cursors.up) : false) ||
+      padJump;
+    const attack = Phaser.Input.Keyboard.JustDown(this.keys.attack) || padAttack;
+
 
     if (attack && !this.attacking && time - this.lastAttackAt >= cooldown) {
       this.attacking = true;

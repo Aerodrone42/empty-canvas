@@ -8,6 +8,7 @@ import { Hud } from "@/components/game/Hud";
 import { MainMenu } from "@/components/game/MainMenu";
 import { DeathScreen, PauseMenu } from "@/components/game/PauseMenu";
 import { PhaserCanvas } from "@/components/game/PhaserCanvas";
+import { useGamepadUi } from "@/hooks/useGamepadUi";
 import { useGameStore } from "@/store/gameStore";
 
 const TITLE = "Sanguine Vigile — Metroidvania d'horreur gothique";
@@ -32,6 +33,7 @@ function Index() {
   const phase = useGameStore((s) => s.phase);
   const [hydrated, setHydrated] = useState(false);
 
+  useGamepadUi();
   useEffect(() => setHydrated(true), []);
 
   if (!hydrated) {
