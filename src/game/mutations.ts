@@ -212,6 +212,10 @@ export function computeEffects(unlocked: string[]): MutationEffects {
     effects.fleshGainMult *= e.fleshGainMult ?? 1;
     effects.doubleJump = effects.doubleJump || (e.doubleJump ?? false);
     effects.damageReduction = 1 - (1 - effects.damageReduction) * (1 - (e.damageReduction ?? 0));
+    effects.dodgeDistanceMult *= e.dodgeDistanceMult ?? 1;
+    effects.parryWindowBonus += e.parryWindowBonus ?? 0;
+    effects.specialCostMult *= e.specialCostMult ?? 1;
+    effects.specialRadiusBonus += e.specialRadiusBonus ?? 0;
   }
 
   return effects;
