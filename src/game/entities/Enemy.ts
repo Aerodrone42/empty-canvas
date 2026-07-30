@@ -16,7 +16,12 @@ export type EnemyStats = {
   bodyHeight: number;
   fleshReward: number;
   animPrefix: string;
+  /** garde : seuls les coups brise-garde passent en plein */
+  guarded?: boolean;
 };
+
+/** Temps d'anticipation avant que le coup ne parte : laisse esquiver ou parer. */
+const TELEGRAPH_MS = 350;
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   protected stats: EnemyStats;
@@ -26,6 +31,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   protected attacking = false;
   protected dying = false;
   protected patrolOrigin: number;
+  protected stunnedUntil = 0;
+  protected guardBrokenUntil = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, stats: EnemyStats) {
     super(scene, x, y, `${stats.animPrefix}-idle`);
