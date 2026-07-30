@@ -236,6 +236,13 @@ export class GameScene extends Phaser.Scene {
     // supplicie ecorche : uniquement dans la cathedrale
     if (this.backdropKey === "cathedrale") {
       this.crucified = new CrucifiedProp(this, CRUCIFIED_X, FLOOR_Y);
+    } else if (this.backdropKey === "corridor") {
+      // statues de pleureuses qui saignent des yeux quand le heros approche
+      this.statues = [
+        new WeepingStatue(this, 640, FLOOR_Y),
+        new WeepingStatue(this, 1480, FLOOR_Y),
+        new WeepingStatue(this, 2320, FLOOR_Y),
+      ];
     }
   }
 
