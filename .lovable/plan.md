@@ -1,30 +1,16 @@
 ## Objectif
 
-Au bout de la salle (côté droit, là où se trouve la plateforme de pierre du décor), ajouter une **plateforme praticable** sur laquelle le héros peut monter. Une fois dessus, elle s'active comme un **ascenseur** qui monte — point de sortie prévu pour enchaîner plus tard sur une nouvelle map.
+Les piliers d'avant-plan flottent : leur base s'arrête en l'air et un vide apparaît en haut de l'écran. On les colle au **haut de la salle**, de sorte qu'ils descendent depuis le plafond — le joueur lit alors « colonne dont le bas est détruit », ce qui est cohérent avec les ruines.
 
 ## Ce qui sera fait
 
-Dans `src/game/scenes/GameScene.ts` :
+Dans `src/game/effects/Parallax.ts`, méthode `addForegroundPillars` :
 
-1. **Plateforme physique en bout de salle**
-   - Un corps statique (`staticGroup`) posé à l'extrémité droite, calé sur la ligne de sol, largeur ~220 px, épaisseur fine.
-   - Collision uniquement par le dessus (le héros peut sauter dessus, pas se cogner en dessous) via `checkCollision.down/left/right = false`.
-   - Un visuel discret en pierre (rectangle sombre + liseré clair) aligné sur la plateforme du décor, pour que le joueur comprenne qu'elle est praticable.
-
-2. **Comportement d'ascenseur**
-   - Le corps devient un `staticBody` déplacé manuellement (ou un body cinématique) : tant que le héros est posé dessus, la plateforme monte à vitesse constante (~90 px/s).
-   - Le héros est porté : sa position Y suit le déplacement de la plateforme tant qu'il reste au contact.
-   - Si le héros saute ou descend, l'ascenseur s'arrête puis redescend lentement à sa position de départ.
-
-3. **Sortie vers la map suivante (préparation)**
-   - Quand l'ascenseur atteint le haut de la salle, on déclenche un événement `room-exit` avec un fondu au noir de la caméra.
-   - Pour l'instant ce fondu relance la scène sur le décor suivant (`this.scene.restart({ backdrop: ... })`) — le point d'accroche est prêt pour brancher une vraie nouvelle salle plus tard.
-
-4. **Repère visuel**
-   - Léger halo/pulsation lumineuse sur la plateforme quand elle est inactive, pour signaler qu'il y a quelque chose à faire là.
+1. **Ancrage haut** : origine passée de `(0.5, 1)` (base au sol) à `(0.5, 0)` avec `y` calé sur le haut de la salle (y = 0, voire légèrement au-dessus, -20 px) pour qu'aucun bord supérieur ne soit visible.
+2. **Hauteur variable** : chaque pilier reçoit une hauteur différente (entre ~55 % et ~85 % de la hauteur visible) au lieu d'une hauteur unique, pour éviter l'effet « peigne » régulier et suggérer une destruction inégale.
+3. **Bas cassé** : la tranche de texture est choisie pour finir sur une section brisée, et un léger fondu vers le bas (dégradé alpha ou masque sombre sur les ~40 derniers px) évite la coupe nette.
+4. **Espacement conservé** : toujours 4 piliers max, marge de sécurité autour du spawn du héros, même largeur (~12 % de l'écran) et même parallaxe (`scrollFactor 1.1`, teinte sombre) — le héros continue de passer derrière.
 
 ## Détails techniques
 
-Aucune modification des ennemis, du combat ni du HUD. La plateforme est ajoutée au `staticGroup` existant `platforms` (déjà collisionné avec le joueur et les ennemis) — les ennemis pourront donc aussi s'y poser, ce qui est cohérent. Le décor `Parallax` n'est pas touché : la plateforme est positionnée pour coïncider visuellement avec le socle de pierre déjà peint à droite. Vérification par capture Playwright : montée sur la plateforme, déclenchement de la montée, fondu en haut.
-
-Question ouverte que je peux trancher par défaut : l'ascenseur monte **automatiquement** dès qu'on est dessus (choix retenu), plutôt que sur appui d'une touche « interagir ».
+Aucun changement de gameplay, de collision ni d'ascenseur. Les piliers restent purement décoratifs à `depth 12`. Vérification par capture Playwright : contrôle qu'aucun pilier ne touche le sol, qu'aucun bord supérieur n'est visible, et que le héros reste lisible au spawn.
