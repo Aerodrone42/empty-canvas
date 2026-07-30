@@ -1,6 +1,10 @@
 import Phaser from "phaser";
 
 import { BACKDROPS, FRAME_SPACING, SHEETS } from "../assets";
+import { MUSIC_AMBIENT, MUSIC_COMBAT } from "../audio/Music";
+import ambientTrack from "@/assets/music_obscura_piano.mp3.asset.json";
+import combatTrack from "@/assets/music_sinister_power.mp3.asset.json";
+
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -26,7 +30,12 @@ export class BootScene extends Phaser.Scene {
     // colonne de fin de salle (visceres animes)
     this.load.image("gate-column-shaft", "/assets/sprites/props/gate_column_shaft.png");
     this.load.image("gate-column-base", "/assets/sprites/props/gate_column_base.png");
+
+    // bande-son : ambiance piano + theme de combat
+    this.load.audio(MUSIC_AMBIENT, ambientTrack.url);
+    this.load.audio(MUSIC_COMBAT, combatTrack.url);
   }
+
 
 
   create() {

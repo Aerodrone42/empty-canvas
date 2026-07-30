@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 
+import { MusicDirector } from "../audio/Music";
 import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat";
+
 import { Profiler } from "../debug/Profiler";
 import { BloodFX } from "../effects/Blood";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
@@ -51,7 +53,10 @@ export class GameScene extends Phaser.Scene {
   private crucified?: CrucifiedProp;
   private gateWall?: Phaser.GameObjects.Rectangle;
   private gateVeil?: Phaser.GameObjects.Rectangle;
+  /** bande-son adaptative (ambiance / combat) */
+  private music?: MusicDirector;
   private roomCleared = false;
+
 
   private exiting = false;
   /** le heros touche le plateau (mis a jour par le collider) */
@@ -78,6 +83,8 @@ export class GameScene extends Phaser.Scene {
 
 
     this.profiler = new Profiler(this);
+    this.music = new MusicDirector(this);
+
     this.blood = new BloodFX(this, FLOOR_Y);
 
     this.buildBackdrop();
@@ -397,7 +404,10 @@ export class GameScene extends Phaser.Scene {
       );
       this.player.setSafeToAbsorb(!threatened);
       this.regenerateFromBlood(!threatened, delta);
+      // bande-son adaptative : theme epique tant qu'une creature menace
+      this.music?.setCombat(threatened);
     });
+
 
     prof.measure("ennemis", () => {
       for (const enemy of this.enemies) {
