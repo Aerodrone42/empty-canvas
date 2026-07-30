@@ -18,6 +18,9 @@ export function PhaserCanvas() {
       ]);
       if (cancelled || !containerRef.current) return;
       gameRef.current = new Phaser.Game(createGameConfig(containerRef.current));
+      // utile pour l'inspection en dev (alignement des sprites, debug physique)
+      (window as unknown as { __PHASER_GAME__?: unknown }).__PHASER_GAME__ =
+        gameRef.current;
     })();
 
     return () => {
