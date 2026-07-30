@@ -28,6 +28,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private invulnUntil = 0;
   private facing = 1;
   private airJumpsUsed = 0;
+  private padJumpPrev = false;
+  private padAttackPrev = false;
+
 
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
