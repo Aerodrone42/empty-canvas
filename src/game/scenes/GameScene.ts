@@ -71,7 +71,7 @@ export class GameScene extends Phaser.Scene {
 
     // suivi horizontal uniquement : au saut, l'image ne doit pas bouger
     const cam = this.cameras.main;
-    cam.startFollow(this.player, true, 0.12, 0, 0, 0);
+    cam.startFollow(this.player, true, 0.2, 0, 0, 0);
     cam.setScroll(cam.scrollX, ROOM_HEIGHT - cam.height);
 
     this.events.on("player-strike", this.resolvePlayerStrike, this);
