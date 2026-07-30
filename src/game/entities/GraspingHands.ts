@@ -120,6 +120,8 @@ export class GraspingHands {
 
   private cancelTell() {
     this.tellUntil = 0;
+    this.tellEvent?.remove();
+    this.tellEvent = undefined;
     this.readyAt = this.scene.time.now + ABORT_COOLDOWN_MS;
     this.scene.tweens.killTweensOf(this.sprites);
     for (const [i, sprite] of this.sprites.entries()) {
