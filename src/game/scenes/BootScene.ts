@@ -28,8 +28,6 @@ export class BootScene extends Phaser.Scene {
     }
 
     // colonne de fin de salle (visceres animes)
-
-    // colonne de fin de salle (visceres animes)
     this.load.image("gate-column-shaft", "/assets/sprites/props/gate_column_shaft.png");
     this.load.image("gate-column-base", "/assets/sprites/props/gate_column_base.png");
 
