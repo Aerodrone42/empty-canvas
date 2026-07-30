@@ -25,6 +25,9 @@ type Metrics = {
 /** hauteur affichee constante, en pixels monde */
 const TARGET_H = 130;
 
+/** largeur de hitbox constante, en pixels monde */
+const BODY_W = 58;
+
 const METRICS: Record<string, Metrics> = {
   "vigile-idle": { charH: 73, charW: 33, footY: [102, 102, 102, 102] },
   "vigile-walk": { charH: 35, charW: 29, footY: [82, 128, 82, 83, 82, 82] },
