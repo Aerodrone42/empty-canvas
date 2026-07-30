@@ -1,30 +1,24 @@
-## Problème
+## Constat
 
-Pendant l'absorption, un anneau rose (`onHeal` dans `GameScene.ts`, émis à chaque tick depuis `Player.ts`) se superpose au héros : lisible mais très moche. Les flaques au sol sont de simples ellipses plates unies, du même registre visuel pauvre.
+Mesure faite dans l'aperçu : le rendu tourne bien à ~60 FPS (16,7 ms par image), donc le problème n'est **plus** graphique. Il vient de la logique de déplacement dans `src/game/entities/Player.ts`.
 
-## Ce qui sera fait
+Deux causes identifiées à la lecture du code :
 
-### 1. Suppression de l'anneau
+1. `alignBody()` est appelé **à chaque frame** (`tick()` ligne 196). Il refait `setScale`, `setOrigin`, `body.setSize()` et `body.setOffset()` 60 fois par seconde. Redimensionner un corps Arcade en pleine collision repositionne le corps et réinitialise son état de contact : le héros « accroche » au sol, les drapeaux `blocked.down` clignotent, d'où les saccades à la marche et les sauts qui ne partent pas.
+2. Aucune tolérance d'entrée sur le saut : le saut n'est pris en compte que si `onGround` est vrai **exactement** à la frame de l'appui. Avec des contacts sol instables (point 1) ou un appui juste avant l'atterrissage, l'appui est perdu — c'est le « parfois ça ne saute pas ».
 
-Dans `src/game/scenes/GameScene.ts`, `onHeal` ne crée plus de cercle avec contour. L'événement `fx-heal` est conservé (même signature, émis depuis `Player.ts` ligne 269) mais délègue à un nouvel effet de siphon.
+## Correctifs prévus
 
-### 2. Sang qui remonte le long du corps
+**Player.ts**
+- Appeler `alignBody()` une seule fois dans le constructeur (le gabarit des sprites est déjà normalisé, l'échelle et la hitbox sont constantes) au lieu de chaque frame. Remettre `setScale(SCALE)` uniquement là où une attaque l'a modifié.
+- Ajouter un **coyote time** (~110 ms) : le héros peut encore sauter juste après avoir quitté le sol.
+- Ajouter un **buffer de saut** (~130 ms) : un appui fait juste avant de toucher le sol déclenche le saut à l'atterrissage.
+- Vérifier que les états verrouillés (attaque, parade, réception) ne bloquent pas le déplacement plus longtemps que prévu, et que la flexion d'élan (`CROUCH_MS`) n'annule pas l'élan horizontal de façon trop agressive (`velocity.x * 0.35` pendant l'accroupissement).
+- Ne plus figer la vitesse horizontale à 0 pendant les frames de récupération d'attaque au sol lorsque le joueur tient une direction (reprise du contrôle plus souple).
 
-Nouvelle méthode `siphon(x, y)` dans `src/game/effects/Blood.ts` :
+**Ressenti de déplacement**
+- Passer le suivi caméra horizontal d'un lerp de 0,12 à ~0,2 dans `GameScene.ts` pour que l'image suive mieux le héros et que l'avancée paraisse franche.
 
-- **Filets ascendants** : émetteur de particules `DROP_KEY` teintées crimson, `gravityY` négatif, position de départ au niveau des pieds, vitesse verticale vers le haut, dispersion horizontale faible (± largeur du corps) et durée de vie calée pour atteindre le torse puis s'estomper — donne l'impression que le sang grimpe le long des jambes et du manteau.
-- **Veines lumineuses** : 2-3 courtes traînées verticales (rectangles fins tweenés de bas en haut, alpha en fondu) pour matérialiser des filaments qui s'enroulent autour du corps.
-- **Lueur d'absorption** : léger pulse de teinte crimson sur le sprite du héros (`setTint` / `clearTint` ou halo `MIST_KEY` très diffus derrière lui, depth inférieur au joueur) au lieu d'un contour net devant lui.
-- **Nourrissage continu** : l'effet est peu coûteux et non cumulatif — un garde-fou empêche de relancer un nouvel émetteur à chaque tick (throttle ~120 ms).
+## Vérification
 
-### 3. Flaques au sol dans le même esprit
-
-Toujours dans `Blood.ts`, `stain()` est retravaillée :
-
-- Chaque flaque devient un petit amas de 3-5 ellipses de tailles et d'opacités différentes (une masse centrale plus sombre + éclaboussures satellites plus claires), légèrement décalées et aplaties — silhouette organique au lieu d'un ovale parfait.
-- Palette resserrée sur les rouges profonds existants (`CRIMSON`), la couche centrale plus sombre pour donner de la profondeur.
-- Le drainage (`drainPool`) fait rétrécir et pâlir l'ensemble de l'amas de façon cohérente, et déclenche quelques gouttelettes qui décollent du sol vers le héros — liaison visuelle directe avec l'effet de siphon.
-
-## Détails techniques
-
-Aucun changement de gameplay, d'équilibrage ni de logique de soin : `ABSORB_COST`, `ABSORB_HEAL`, la durée et le drainage restent identiques. Modifications limitées à `src/game/effects/Blood.ts` et à `onHeal` dans `src/game/scenes/GameScene.ts`. Vérification par capture Playwright pendant une absorption pour contrôler que le héros reste lisible et qu'aucun anneau ne subsiste.
+Test Playwright sur l'aperçu : lancer une partie, maintenir la direction, mesurer le déplacement réel du héros sur 2 s, puis enchaîner 10 sauts et vérifier que chacun décolle. Capture d'écran à l'appui.
