@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat";
 import { Profiler } from "../debug/Profiler";
 import { BloodFX } from "../effects/Blood";
+import { CrucifiedProp } from "../effects/CrucifiedProp";
 import { GateColumn } from "../effects/GateColumn";
 import { Parallax } from "../effects/Parallax";
 import { EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
@@ -14,7 +15,8 @@ import { useGameStore } from "@/store/gameStore";
 
 const ROOM_WIDTH = 2400;
 const ROOM_HEIGHT = 900;
-/** la ligne de sol est calee tout en bas du viewport : plus de bande vide */
+/** supplicie ecorche : decor anime au centre de la cathedrale */
+const CRUCIFIED_X = 1150;
 const FLOOR_Y = 880;
 /** soin par seconde en se reposant dans une flaque de sang */
 const POOL_REGEN_PER_SEC = 6;
@@ -44,6 +46,8 @@ export class GameScene extends Phaser.Scene {
   private backdropKey: BackdropKey = "cathedrale";
   /** colonne de sortie et son verrou physique */
   private gateColumn?: GateColumn;
+  /** supplicie ecorche du fond de la cathedrale */
+  private crucified?: CrucifiedProp;
   private gateWall?: Phaser.GameObjects.Rectangle;
   private gateVeil?: Phaser.GameObjects.Rectangle;
   private roomCleared = false;
@@ -173,6 +177,11 @@ export class GameScene extends Phaser.Scene {
   /** Decor en trois calques de parallaxe, selon la salle courante. */
   private buildBackdrop() {
     this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, ROOM_WIDTH);
+
+    // supplicie ecorche : decor anime propre a la cathedrale
+    if (this.backdropKey === "cathedrale") {
+      this.crucified = new CrucifiedProp(this, CRUCIFIED_X, FLOOR_Y);
+    }
   }
 
   /**
