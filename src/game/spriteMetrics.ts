@@ -53,7 +53,7 @@ export function measureTexture(
   const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
   for (const name of frameNames) {
-    const frame = texture.frames[name] as Phaser.Textures.Frame;
+    const frame = texture.get(name);
     const fx = frame.cutX;
     const fy = frame.cutY;
     const fw = frame.cutWidth;
