@@ -43,10 +43,13 @@ function ensureTextures(scene: Phaser.Scene) {
 const CRIMSON = [0x8e1220, 0xb01f2b, 0xd93b3b, 0x6a0d18];
 
 type Pool = {
-  ellipse: Phaser.GameObjects.Ellipse;
+  /** amas d'ellipses formant une silhouette organique */
+  parts: Phaser.GameObjects.Ellipse[];
+  x: number;
   bornAt: number;
   /** reserve de soin restante dans la flaque */
   charge: number;
+  maxCharge: number;
   width: number;
 };
 
@@ -55,12 +58,15 @@ export class BloodFX {
   private stains: Pool[] = [];
   /** ordonnee du sol utilisee pour les taches persistantes */
   private floorY: number;
+  /** anti-spam de l'effet de siphon */
+  private lastSiphon = 0;
 
   constructor(scene: Phaser.Scene, floorY: number) {
     this.scene = scene;
     this.floorY = floorY;
     ensureTextures(scene);
   }
+
 
   /** Gerbe orientee : dirX = -1 vers la gauche, 1 vers la droite. */
   splatter(x: number, y: number, dirX: number, intensity = 1) {
