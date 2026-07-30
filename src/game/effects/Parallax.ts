@@ -142,13 +142,13 @@ export class Parallax {
       for (let r = 1; r <= rows; r++) {
         const t = r / rows;
         const y = Math.round(bandH * t * t); // resserre en haut
-        const depth = 0.25 + 0.5 * t; // les joints proches sont plus lisibles
+        const depth = 0.35 + 0.65 * t; // les joints proches sont plus lisibles
 
         // creux du joint puis arete eclairee juste au-dessus
-        g.fillStyle(0x000000, depth * 0.8);
-        g.fillRect(0, y, roomWidth, Math.max(1, Math.round(1 + 2.5 * t)));
-        g.fillStyle(this.def.ledge, depth * 0.5);
-        g.fillRect(0, y - Math.max(1, Math.round(2 * t)), roomWidth, Math.max(1, Math.round(1.5 * t)));
+        g.fillStyle(0x000000, Math.min(0.9, depth));
+        g.fillRect(0, y, roomWidth, Math.max(1, Math.round(1 + 3 * t)));
+        g.fillStyle(this.def.ledge, Math.min(0.85, depth * 0.9));
+        g.fillRect(0, y - Math.max(1, Math.round(2 + 2 * t)), roomWidth, Math.max(1, Math.round(1 + 2 * t)));
 
         // joints transversaux de la rangee courante
         const slabW = 90 + 150 * t;
@@ -156,11 +156,12 @@ export class Parallax {
         for (let x = offset; x < roomWidth; x += slabW) {
           const jx = Math.round(x);
           const jw = Math.max(1, Math.round(1 + 2 * t));
-          g.fillStyle(0x000000, depth * 0.7);
+          g.fillStyle(0x000000, Math.min(0.85, depth * 0.85));
           g.fillRect(jx, prevY, jw, y - prevY);
-          g.fillStyle(this.def.ledge, depth * 0.25);
-          g.fillRect(jx + jw, prevY, Math.max(1, Math.round(t)), y - prevY);
+          g.fillStyle(this.def.ledge, depth * 0.45);
+          g.fillRect(jx + jw, prevY, Math.max(1, Math.round(1 + t)), y - prevY);
         }
+
         prevY = y;
       }
 
