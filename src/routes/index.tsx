@@ -10,6 +10,7 @@ import { Options } from "@/components/game/Options";
 import { DeathScreen, PauseMenu } from "@/components/game/PauseMenu";
 import { PhaserCanvas } from "@/components/game/PhaserCanvas";
 import { useGamepadUi } from "@/hooks/useGamepadUi";
+import { useBindingsStore } from "@/store/bindingsStore";
 import { useGameStore } from "@/store/gameStore";
 
 const TITLE = "Sanguine Vigile — Metroidvania d'horreur gothique";
