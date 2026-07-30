@@ -65,6 +65,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private diveStrikeDone = false;
   /** aucun ennemi proche : l'absorption de chair est possible */
   private canAbsorb = false;
+  /** deformation visuelle (flexion des jambes / etirement) */
+  public poseX = 1;
+  public poseY = 1;
+  private poseTween?: Phaser.Tweens.Tween;
+  /** flexion d'elan avant decollage */
+  private crouchUntil = 0;
+  private pendingJump = 0;
+  private wasOnGround = true;
+
 
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
@@ -83,7 +92,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** Echelle et origine fixes (gabarit normalise), hitbox constante. */
   private alignBody() {
-    this.setScale(SCALE);
+    this.setScale(SCALE * this.poseX, SCALE * this.poseY);
     this.setOrigin(0.5, ORIGIN_Y);
 
     const body = this.body as Phaser.Physics.Arcade.Body | null;
@@ -93,6 +102,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setSize(bodyW, bodyH, false);
     body.setOffset((this.width - bodyW) / 2, HERO_BASELINE_Y - bodyH);
   }
+
+  /** Deformation (flexion / etirement) pendant le saut et la reception. */
+  private setPose(sx: number, sy: number, duration = 90) {
+    this.poseTween?.remove();
+    this.poseTween = this.scene.tweens.add({
+      targets: this,
+      poseX: sx,
+      poseY: sy,
+      duration,
+      ease: "Quad.easeOut",
+    });
+  }
+
+  /** Retour progressif au gabarit neutre. */
+  private relaxPose(delta = 1) {
+    if (this.poseTween?.isPlaying()) return;
+    const k = Math.min(1, delta * 0.18);
+    this.poseX += (1 - this.poseX) * k;
+    this.poseY += (1 - this.poseY) * k;
+  }
+
 
   get facingDirection() {
     return this.facing;
@@ -392,25 +422,58 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       body.setVelocityX(0);
     }
 
+    // ---------- saut : flexion d'elan puis detente ----------
+    const CROUCH_MS = 80;
+
     if (jump) {
       if (onGround) {
-        body.setVelocityY(-jumpPower);
+        // le heros plie les jambes avant de decoller
+        this.crouchUntil = time + CROUCH_MS;
+        this.pendingJump = jumpPower;
+        this.setPose(1.14, 0.78, 70);
       } else if (effects.doubleJump && this.airJumpsUsed < 1) {
         this.airJumpsUsed += 1;
         body.setVelocityY(-jumpPower * 0.9);
+        this.setPose(0.86, 1.2, 90);
       }
     }
+
+    if (this.pendingJump > 0) {
+      // pendant l'elan : le heros reste plante au sol
+      body.setVelocityX(body.velocity.x * 0.35);
+      if (time >= this.crouchUntil) {
+        body.setVelocityY(-this.pendingJump);
+        this.pendingJump = 0;
+        this.setPose(0.84, 1.22, 90);
+      }
+    }
+
+    // reception : les jambes amortissent
+    if (onGround && !this.wasOnGround) this.setPose(1.18, 0.76, 70);
+    this.wasOnGround = onGround;
 
     if (!onGround) {
       this.moveState = "air";
       this.play("vigile-idle-anim", true);
+      // etirement vers le haut, tassement a la chute
+      if (!this.poseTween?.isPlaying()) {
+        const vy = Phaser.Math.Clamp(body.velocity.y / 700, -1, 1);
+        this.poseY = 1 - vy * 0.12;
+        this.poseX = 1 + vy * 0.1;
+      }
+    } else if (this.pendingJump > 0) {
+      this.moveState = "idle";
+      this.play("vigile-idle-anim", true);
     } else if (left || right) {
       this.moveState = "run";
       this.play("vigile-walk-anim", true);
+      this.relaxPose();
     } else {
       this.moveState = "idle";
       this.play("vigile-idle-anim", true);
+      this.relaxPose();
     }
+
   }
 
   /** Onde sanglante du Rugissement. */
