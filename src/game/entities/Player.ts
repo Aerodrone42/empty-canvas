@@ -96,6 +96,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   tick(time: number) {
+    this.alignBody();
     const body = this.body as Phaser.Physics.Arcade.Body;
     const onGround = body.blocked.down || body.touching.down;
 
