@@ -1,29 +1,28 @@
-## Objectif
+## Problème
 
-Chaque piège ne montre qu'une seule main. Il en faut une petite grappe (3-4 mains), et surtout une phase d'annonce : le sol tremble et projette des débris de terre juste avant que les mains jaillissent.
+Le passage à la salle suivante existe déjà dans le code (`exitRoom()` dans `GameScene.ts` : fondu au noir puis salle suivante selon `ROOM_ORDER` = cathédrale → corridor → trône → extérieur), mais **plus rien ne l'appelle** depuis la suppression de l'ascenseur. Le héros est donc bloqué dans la première salle.
 
-## Grappe de mains
+## La colonne de fin de salle
 
-Dans `src/game/entities/GraspingHands.ts` : remplacer le sprite unique par 3-4 sprites répartis autour de `x` (décalages ~ -34, -12, +14, +36 px), avec :
-- échelle légèrement variable (0.20 à 0.28) pour un rendu organique,
-- frame de départ décalée et léger retard (30-80 ms) sur le `play`, pour qu'elles ne sortent pas toutes en même temps,
-- `flipX` alterné et profondeurs proches (7) pour éviter l'effet « copié-collé ».
+Une seule colonne gothique, celle de l'image de référence : pierre sombre, base sculptée en arches, et **viscères/veines rouges enroulés en spirale** autour du fût.
 
-Le retrait à la fin des 3 secondes joue `playReverse` sur chaque main avec le même décalage.
+- Elle est plantée en fin de salle (x ≈ 2150), posée au sol.
+- **Le haut n'est jamais visible** : le fût est étiré jusqu'au-dessus du bord haut de l'écran, la colonne sort du cadre. Aucune extrémité flottante dans le vide.
+- Elle est au premier plan : le héros passe derrière elle.
+- **Viscères animés** : les spirales rouges pulsent lentement (respiration, léger gonflement + variation de luminosité), avec de fines gouttes de sang qui perlent et coulent le long de la pierre par intermittence. L'animation s'intensifie quand la salle est nettoyée.
 
-## Phase d'annonce : sol qui bouge
+Asset : une planche de colonne est générée à partir de la référence (fût seul, tuilable verticalement + base sculptée), pour que la hauteur puisse être étirée sans déformer la base.
 
-Nouvelle étape avant la saisie, ~350 ms :
-1. Le héros entre dans le rayon et le piège est prêt → état « éveil ».
-2. Un petit monticule de terre (frame 0 de la planche, alpha faible) apparaît et vibre légèrement en boucle (tween sur x/y de quelques pixels).
-3. Des particules de terre sont projetées vers le haut depuis le point de sortie (texture générée en code : petits carrés bruns, gravité positive, courte durée de vie), plus une secousse de caméra très faible si le héros est proche.
-4. À la fin des 350 ms, les mains jaillissent et la saisie de 3 s démarre comme aujourd'hui.
+## La sortie
 
-Si le héros quitte le rayon pendant l'éveil, le piège s'annule et retourne en cooldown court — le joueur peut donc éviter le piège en réagissant vite.
+- Derrière la colonne, un seuil sombre = le passage vers la salle suivante.
+- **Tant qu'il reste des monstres vivants** : le seuil est obstrué (voile noir/rouge), et un mur invisible arrête le héros au niveau de la colonne.
+- **Quand le dernier monstre meurt** : les viscères de la colonne s'illuminent brièvement, le voile se dissipe, le mur disparaît, et un texte discret s'affiche (« Le passage s'ouvre »).
+- Marcher au-delà de la colonne déclenche alors `exitRoom()` : fondu au noir, puis salle suivante, héros à gauche, vie et Chair conservées.
 
 ## Détails techniques
 
-- Ajout d'une texture `fx-soil` générée une fois (petits fragments bruns), sur le modèle de `fx-dust` dans `Parallax.ts`.
-- L'émetteur de terre est créé une seule fois par piège et déclenché via `explode()` pour ne pas coûter en performances.
-- Aucun changement côté `Player.ts` (la mécanique de blocage 3 s reste identique) ; `GameScene.ts` continue de relayer l'événement de saisie inchangé.
-- Pas de nouvel asset : on réutilise `mains_sol_spritesheet.png`.
+- Nouveau fichier `src/game/effects/GateColumn.ts` : construit la colonne (fût `TileSprite` étiré du sol jusqu'à `y < 0`, base en `Image`), gère les tweens de pulsation des viscères et les gouttes.
+- `GameScene.ts` : compteur d'ennemis vivants mis à jour dans `onEnemyDied`, état `roomCleared`, corps statique `exitGate` dans `this.platforms` retiré à l'ouverture, et test de position dans `update()` appelant `exitRoom()`.
+- Profondeurs : décor < héros < colonne (premier plan) < HUD. `scrollFactor 1` pour rester ancrée au monde.
+- `exitRoom()` reste inchangé ; on ne fait que le déclencher.

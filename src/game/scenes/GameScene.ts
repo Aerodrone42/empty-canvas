@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat";
 import { Profiler } from "../debug/Profiler";
 import { BloodFX } from "../effects/Blood";
+import { GateColumn } from "../effects/GateColumn";
 import { Parallax } from "../effects/Parallax";
 import { EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
 import { GraspingHands } from "../entities/GraspingHands";
@@ -19,9 +20,13 @@ const FLOOR_Y = 880;
 const POOL_REGEN_PER_SEC = 6;
 /** distance en dessous de laquelle une creature empeche de se soigner */
 const SAFE_RADIUS = 300;
+/** position de la colonne de fin de salle */
+const GATE_X = 2150;
+/** au dela de ce point, le heros bascule dans la salle suivante */
+const GATE_EXIT_X = GATE_X + 110;
 
 
-/** enchainement des salles : l'ascenseur mene a la suivante */
+/** enchainement des salles : la colonne mene a la suivante */
 const ROOM_ORDER: BackdropKey[] = ["cathedrale", "corridor", "throne", "exterieur"];
 
 
@@ -37,6 +42,11 @@ export class GameScene extends Phaser.Scene {
   private profiler!: Profiler;
   /** salle courante : determine le decor et la palette */
   private backdropKey: BackdropKey = "cathedrale";
+  /** colonne de sortie et son verrou physique */
+  private gateColumn?: GateColumn;
+  private gateWall?: Phaser.GameObjects.Rectangle;
+  private gateVeil?: Phaser.GameObjects.Rectangle;
+  private roomCleared = false;
 
   private exiting = false;
   /** le heros touche le plateau (mis a jour par le collider) */
@@ -50,10 +60,12 @@ export class GameScene extends Phaser.Scene {
     this.backdropKey = data?.backdrop ?? "cathedrale";
   }
 
+
   create() {
     this.enemies = [];
     this.pickups = [];
     this.exiting = false;
+    this.roomCleared = false;
     this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
     this.cameras.main.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
     this.cameras.main.setBackgroundColor(0x14090b);
@@ -65,6 +77,7 @@ export class GameScene extends Phaser.Scene {
 
     this.buildBackdrop();
     this.buildGeometry();
+    this.buildGate();
 
     this.player = new Player(this, 180, FLOOR_Y);
     this.physics.add.collider(this.player, this.platforms);
@@ -161,6 +174,71 @@ export class GameScene extends Phaser.Scene {
   private buildBackdrop() {
     this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, ROOM_WIDTH);
   }
+
+  /**
+   * Colonne de fin de salle : elle sort du cadre par le haut, ses visceres
+   * respirent, et un seuil obstrue le passage tant qu'il reste des monstres.
+   */
+  private buildGate() {
+    this.gateColumn = new GateColumn(this, GATE_X, FLOOR_Y);
+
+    // seuil sombre derriere la colonne
+    this.gateVeil = this.add
+      .rectangle(GATE_X + 120, FLOOR_Y - 220, 210, 440, 0x120507, 0.92)
+      .setDepth(4)
+      .setScrollFactor(1);
+
+    // verrou physique : le heros bute sur la colonne
+    const wall = this.add.rectangle(GATE_X + 40, FLOOR_Y - 220, 40, 460);
+    wall.setVisible(false);
+    this.physics.add.existing(wall, true);
+    this.platforms.add(wall);
+    this.gateWall = wall;
+  }
+
+  /** Dernier monstre tue : le passage s'ouvre. */
+  private openGate() {
+    if (this.roomCleared) return;
+    this.roomCleared = true;
+    this.gateColumn?.open();
+
+    if (this.gateWall) {
+      this.platforms.remove(this.gateWall, true, true);
+      this.gateWall = undefined;
+    }
+
+    if (this.gateVeil) {
+      const veil = this.gateVeil;
+      this.gateVeil = undefined;
+      this.tweens.add({
+        targets: veil,
+        alpha: 0,
+        duration: 900,
+        onComplete: () => veil.destroy(),
+      });
+    }
+
+    const cam = this.cameras.main;
+    const label = this.add
+      .text(cam.width / 2, 120, "Le passage s'ouvre", {
+        fontFamily: "Georgia, serif",
+        fontSize: "26px",
+        color: "#c2727a",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(60)
+      .setAlpha(0);
+    this.tweens.add({
+      targets: label,
+      alpha: 1,
+      duration: 500,
+      yoyo: true,
+      hold: 1400,
+      onComplete: () => label.destroy(),
+    });
+  }
+
 
   /** Fondu au noir puis passage a la salle suivante. */
   private exitRoom() {
@@ -291,6 +369,14 @@ export class GameScene extends Phaser.Scene {
     prof.measure("sang", () => this.blood.tick(time));
 
     this.enemies = this.enemies.filter((e) => e.active);
+
+    // salle nettoyee : le passage derriere la colonne s'ouvre
+    if (!this.roomCleared && this.enemies.every((e) => e.isDead)) {
+      this.openGate();
+    }
+    if (this.roomCleared && !this.exiting && this.player.x > GATE_EXIT_X) {
+      this.exitRoom();
+    }
 
     // aucune creature vivante a proximite : le soin par absorption est permis
     prof.measure("absorption", () => {
