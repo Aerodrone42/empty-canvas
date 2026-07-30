@@ -77,10 +77,12 @@ export class GameScene extends Phaser.Scene {
     this.spawn(new EcorchePendu(this, 1820, FLOOR_Y, 60));
     this.spawn(new PenitentGreffe(this, 2060, FLOOR_Y));
 
-    // pieges : mains qui jaillissent du sol et agrippent le heros
-    this.hands = [620, 1040, 1420, 1900, 2260].map(
-      (x) => new GraspingHands(this, x, FLOOR_Y),
-    );
+    // pieges : deux mains seulement, placees au hasard dans leur moitie de
+    // salle et redeployees ailleurs apres chaque tentative
+    this.hands = [
+      new GraspingHands(this, 520, 1300, FLOOR_Y),
+      new GraspingHands(this, 1400, 2280, FLOOR_Y),
+    ];
 
     // suivi horizontal uniquement : au saut, l'image ne doit pas bouger
     const cam = this.cameras.main;

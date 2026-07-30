@@ -4,8 +4,11 @@ import { ENEMY_BASELINE_Y, ENEMY_FRAME_H } from "@/game/assets";
 
 /** duree de la saisie : le heros reste bloque 3 secondes */
 const GRAB_MS = 3000;
-/** temps avant qu'un meme piege puisse reattraper */
-const COOLDOWN_MS = 2500;
+/** temps minimum / maximum avant qu'un piege se rearme ailleurs */
+const COOLDOWN_MIN_MS = 7000;
+const COOLDOWN_MAX_MS = 14000;
+/** probabilite qu'un piege arme se declenche vraiment au passage */
+const TRIGGER_CHANCE = 0.5;
 /** annonce : le sol tremble 1 seconde avant que les mains jaillissent */
 const TELL_MS = 1000;
 /** cooldown court quand le heros s'echappe pendant l'annonce */
@@ -27,8 +30,11 @@ export class GraspingHands {
   private readonly sprites: Phaser.GameObjects.Sprite[] = [];
   private readonly soil: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly scene: Phaser.Scene;
-  private readonly x: number;
+  private x: number;
   private readonly floorY: number;
+  /** bornes de la zone dans laquelle le piege se redeploie au hasard */
+  private readonly zoneMin: number;
+  private readonly zoneMax: number;
   private readonly radius: number;
   private grabUntil = 0;
   private readyAt = 0;
@@ -36,11 +42,22 @@ export class GraspingHands {
   /** minuterie de l'annonce : gerbes de terre de plus en plus fortes */
   private tellEvent?: Phaser.Time.TimerEvent;
 
-  constructor(scene: Phaser.Scene, x: number, floorY: number, radius = 90) {
+  constructor(
+    scene: Phaser.Scene,
+    zoneMin: number,
+    zoneMax: number,
+    floorY: number,
+    radius = 90,
+  ) {
     this.scene = scene;
-    this.x = x;
+    this.zoneMin = zoneMin;
+    this.zoneMax = zoneMax;
     this.floorY = floorY;
     this.radius = radius;
+    const x = Phaser.Math.Between(zoneMin, zoneMax);
+    this.x = x;
+    // premier armement decale au hasard : aucun piege ne sort d'entree
+    this.readyAt = Phaser.Math.Between(1500, 6000);
 
     for (const part of CLUSTER) {
       this.sprites.push(
@@ -67,6 +84,25 @@ export class GraspingHands {
         emitting: false,
       })
       .setDepth(6);
+  }
+
+  /** deplace le piege au hasard dans sa zone : jamais deux fois au meme endroit */
+  private relocate() {
+    let next = this.x;
+    for (let i = 0; i < 8 && Math.abs(next - this.x) < 220; i++) {
+      next = Phaser.Math.Between(this.zoneMin, this.zoneMax);
+    }
+    this.x = next;
+    this.soil.setPosition(next, this.floorY - 2);
+    for (const [i, sprite] of this.sprites.entries()) {
+      sprite.setPosition(next + CLUSTER[i].dx, this.floorY + 4).setAlpha(0);
+    }
+  }
+
+  /** delai aleatoire avant le prochain armement */
+  private rearm(time: number) {
+    this.readyAt = time + Phaser.Math.Between(COOLDOWN_MIN_MS, COOLDOWN_MAX_MS);
+    this.relocate();
   }
 
   /** petits fragments de terre generes une seule fois */
@@ -123,6 +159,7 @@ export class GraspingHands {
     this.tellEvent?.remove();
     this.tellEvent = undefined;
     this.readyAt = this.scene.time.now + ABORT_COOLDOWN_MS;
+    this.scene.time.delayedCall(ABORT_COOLDOWN_MS, () => this.relocate());
     this.scene.tweens.killTweensOf(this.sprites);
     for (const [i, sprite] of this.sprites.entries()) {
       sprite.setAlpha(0).setPosition(this.x + CLUSTER[i].dx, this.floorY + 4);
@@ -156,13 +193,13 @@ export class GraspingHands {
     // retrait des mains a la fin de la saisie
     if (this.grabUntil > 0 && time >= this.grabUntil) {
       this.grabUntil = 0;
-      this.readyAt = time + COOLDOWN_MS;
       for (const [i, sprite] of this.sprites.entries()) {
         this.scene.time.delayedCall(CLUSTER[i].delay, () => {
           if (sprite.active) sprite.playReverse("mains-sol-anim", true);
         });
         this.scene.time.delayedCall(360 + CLUSTER[i].delay, () => sprite.setAlpha(0));
       }
+      this.scene.time.delayedCall(700, () => this.rearm(this.scene.time.now));
     }
 
     if (this.grabUntil > 0) return false;
@@ -180,7 +217,11 @@ export class GraspingHands {
       return false;
     }
 
-    if (near && time >= this.readyAt) this.startTell(time);
+    if (near && time >= this.readyAt) {
+      // une fois sur deux le piege reste dormant et repart ailleurs
+      if (Math.random() < TRIGGER_CHANCE) this.startTell(time);
+      else this.rearm(time);
+    }
 
     return false;
   }
