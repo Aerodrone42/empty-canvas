@@ -53,6 +53,9 @@ export class Parallax {
     // --- calque median : les piliers poses sur le sol ----------------
     this.addTiled(this.def.mid, viewW, viewH * 0.78, floorScreenY, -20, SPEEDS[1]);
 
+    // --- tablier de sol : prolonge le dallage jusqu'au bas de l'ecran -
+    this.addApron(viewW, viewH, floorScreenY);
+
     // --- calque proche : cadre fixe, jamais repete -------------------
     this.frame = scene.add
       .image(0, floorScreenY - viewH * 1.04, this.def.near)
@@ -63,6 +66,45 @@ export class Parallax {
 
     this.addAmbience(viewW, viewH, floorScreenY);
   }
+
+  /**
+   * Sous la ligne de sol, les images de decor n'ont plus de matiere.
+   * On y prolonge la bande basse du calque median (le dallage) puis on
+   * l'assombrit en degrade, plutot que de poser un aplat de couleur.
+   */
+  private addApron(viewW: number, viewH: number, floorScreenY: number) {
+    const apronH = Math.max(0, viewH - floorScreenY);
+    if (apronH <= 0) return;
+
+    const key = this.def.mid;
+    const source = this.scene.textures.get(key).getSourceImage();
+    const srcH = source.height || apronH;
+    // meme echelle que le calque median pour que le dallage reste continu
+    const scale = (viewH * 0.78) / srcH;
+
+    const apron = this.scene.add
+      .tileSprite(0, floorScreenY, viewW, apronH, key)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(-19);
+
+    apron.setTileScale(scale, scale);
+    // on affiche la bande la plus basse de l'image (le dallage au sol)
+    apron.tilePositionY = srcH - apronH / scale;
+    this.layers.push({ sprite: apron, speed: SPEEDS[1] });
+
+    // degrade d'assombrissement pour poser les pieds et garder le HUD lisible
+    const steps = 6;
+    for (let i = 0; i < steps; i++) {
+      const h = apronH / steps;
+      this.scene.add
+        .rectangle(0, floorScreenY + i * h, viewW, h + 1, 0x000000, 0.12 + i * 0.13)
+        .setOrigin(0, 0)
+        .setScrollFactor(0)
+        .setDepth(-9);
+    }
+  }
+
 
   /** Cree un calque tuile horizontalement, bas cale sur la ligne de sol. */
   private addTiled(
