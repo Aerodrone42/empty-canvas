@@ -52,7 +52,7 @@ export class GameScene extends Phaser.Scene {
   /** supplicie ecorche du fond de la cathedrale */
   private crucified?: CrucifiedProp;
   private gateWall?: Phaser.GameObjects.Rectangle;
-  private gateVeil?: Phaser.GameObjects.Rectangle;
+  
   /** bande-son adaptative (ambiance / combat) */
   private music?: MusicDirector;
   private roomCleared = false;
@@ -101,7 +101,8 @@ export class GameScene extends Phaser.Scene {
     this.spawn(new PenitentGreffe(this, 2060, FLOOR_Y));
     // pendus places a l'ecart des autres creatures : leur chute doit surprendre
     this.spawnPendu(new EcorchePendu(this, 1400, FLOOR_Y, 60));
-    this.spawnPendu(new EcorchePendu(this, 2450, FLOOR_Y, 60));
+    this.spawnPendu(new EcorchePendu(this, 1900, FLOOR_Y, 60));
+
 
     // pieges : deux mains seulement, placees au hasard dans leur moitie de
     // salle et redeployees ailleurs apres chaque tentative
@@ -216,18 +217,13 @@ export class GameScene extends Phaser.Scene {
   private buildGate() {
     this.gateColumn = new GateColumn(this, GATE_X, FLOOR_Y);
 
-    // seuil sombre derriere la colonne
-    this.gateVeil = this.add
-      .rectangle(GATE_X + 120, FLOOR_Y - 220, 210, 440, 0x120507, 0.92)
-      .setDepth(4)
-      .setScrollFactor(1);
-
-    // verrou physique : le heros bute sur la colonne
+    // verrou physique invisible : le heros bute sur la colonne
     const wall = this.add.rectangle(GATE_X + 40, FLOOR_Y - 220, 40, 460);
     wall.setVisible(false);
     this.physics.add.existing(wall, true);
     this.platforms.add(wall);
     this.gateWall = wall;
+
   }
 
   /** Dernier monstre tue : le passage s'ouvre. */
@@ -241,16 +237,6 @@ export class GameScene extends Phaser.Scene {
       this.gateWall = undefined;
     }
 
-    if (this.gateVeil) {
-      const veil = this.gateVeil;
-      this.gateVeil = undefined;
-      this.tweens.add({
-        targets: veil,
-        alpha: 0,
-        duration: 900,
-        onComplete: () => veil.destroy(),
-      });
-    }
 
     const cam = this.cameras.main;
     const label = this.add
