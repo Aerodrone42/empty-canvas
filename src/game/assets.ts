@@ -14,40 +14,54 @@ export type SheetDef = {
   frameCount: number;
   frameRate: number;
   repeat: number;
+  /** marge entre cellules (les feuilles du heros sont regenerees sans marge) */
+  spacing?: number;
 };
 
 const SPRITES = "/assets/sprites";
 const ENEMIES = `${SPRITES}/enemies`;
+
+/** gabarit commun des feuilles du Vigile Muet, regenerees et normalisees */
+export const HERO_FRAME_W = 192;
+export const HERO_FRAME_H = 144;
+/** hauteur de silhouette dessinee, identique sur toutes les frames */
+export const HERO_CHAR_H = 110;
+/** ligne de pieds dans la cellule */
+export const HERO_BASELINE_Y = 138;
 
 export const SHEETS: SheetDef[] = [
   // --- Vigile Muet (heros) ---
   {
     key: "vigile-idle",
     path: `${SPRITES}/vigile_muet_idle_spritesheet.png`,
-    frameWidth: 57,
-    frameHeight: 128,
+    frameWidth: HERO_FRAME_W,
+    frameHeight: HERO_FRAME_H,
     frameCount: 4,
     frameRate: 5,
     repeat: -1,
+    spacing: 0,
   },
   {
     key: "vigile-walk",
     path: `${SPRITES}/vigile_muet_walk_spritesheet.png`,
-    frameWidth: 47,
-    frameHeight: 128,
-    frameCount: 6,
+    frameWidth: HERO_FRAME_W,
+    frameHeight: HERO_FRAME_H,
+    frameCount: 5,
     frameRate: 10,
     repeat: -1,
+    spacing: 0,
   },
   {
     key: "vigile-attack",
     path: `${SPRITES}/vigile_muet_attack_spritesheet.png`,
-    frameWidth: 43,
-    frameHeight: 128,
+    frameWidth: HERO_FRAME_W,
+    frameHeight: HERO_FRAME_H,
     frameCount: 5,
     frameRate: 14,
     repeat: 0,
+    spacing: 0,
   },
+
 
   // --- Penitent-Greffe (lourd, lent, resistant) ---
   {
