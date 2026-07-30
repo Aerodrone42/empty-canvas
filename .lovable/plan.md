@@ -1,30 +1,25 @@
-## Problème
+## Objectif
 
-Le corridor empile 4 couches mal alignées (fond « perspective » fixe, travées tuilées, dallage tuilé, dégradé de raccord) → rendu brouillon. Et surtout le sol actuel est une texture de pierre vue **de face** : elle se lit comme un mur au lieu d'un plancher. Les statues sont en plus posées en plein milieu de la voie de marche.
+Ajouter dans le corridor un élément de décor animé : une grosse veine charnue qui court sur toute la longueur du couloir, qui gonfle et se rétracte par pulsations, et qui passe **derrière** les statues pleureuses.
 
-## Correctifs
+## Ce qui sera fait
 
-**1. Un seul décor pour le corridor (`src/game/effects/Parallax.ts`)**
-- Supprimer le cas spécial `corridor` : plus de couche `far` fixe à l'écran, plus de tileSprite `mid`, plus de `addFloor()` ni de dégradé de raccord.
-- Le corridor rendu comme les autres salles : une peinture unique répétée horizontalement, ancrée au monde (scrollFactor 1), sol peint inclus dans l'image. Le sol défile donc pile à la vitesse des pas.
-- Nettoyer les assets/chargements devenus inutiles (`corridor_bg_mid`, `corridor_bg_near`, `corridor-floor` dans `BootScene.ts` et `assets.ts`), supprimer les fichiers PNG correspondants.
+**1. Nouvel asset**
+- `public/assets/sprites/props/corridor_vein.png` : une veine horizontale tuilable (bords gauche/droit alignés) en chair sombre, rouge sang veiné, avec ramifications qui plongent dans la pierre. Fond transparent.
 
-**2. Décor de corridor régénéré, avec un vrai sol au sol**
-- Régénérer `corridor_bg_far.png` (1920×1080) dans le style exact de la salle 1 (cathédrale), avec la contrainte clé : **le dallage du bas doit être vu en fuite, pas de face**.
-  - dalles en perspective (trapèzes qui s'élargissent vers le bas de l'image), lignes de joints convergentes, reflets et flaques allongés horizontalement ;
-  - occupe environ le tiers inférieur de l'image, éclairage rasant plus clair près du bord bas, plus sombre vers le mur du fond ;
-  - transition nette mur/sol (plinthe, base des colonnes) pour que l'œil lise immédiatement un plancher ;
-  - bords gauche/droite raccordables pour éviter la couture visible en tuilage.
-- Vérifier après génération que la ligne de sol peinte tombe bien sur `FLOOR_Y` (héros posé dessus, pas flottant ni enfoncé) et ajuster l'ancrage vertical de la peinture si besoin.
+**2. Nouveau fichier `src/game/effects/CorridorVein.ts`**
+- `tileSprite` de la largeur de la salle (2400 px), posé à hauteur de mur (environ un tiers au-dessus de la ligne de sol), origine gauche.
+- Animation de battement : tween en boucle yoyo sur `tileScaleY` / `scaleY` (gonflement ~1.0 → 1.18) plus légère variation d'alpha et de teinte, période irrégulière (~1,6 s) pour un rythme organique de cœur.
+- Deuxième passe décalée en phase (petite veine secondaire plus fine, plus lente et plus sombre) pour éviter l'effet mécanique.
+- Optionnel léger décalage `tilePositionX` très lent pour un flux interne.
 
-**3. Statues hors du chemin (`src/game/scenes/GameScene.ts`)**
-- Réduire à 2 statues au lieu de 3.
-- Les reculer dans le décor : contre le mur du fond, rendues derrière le joueur et les ennemis (depth inférieur), légèrement réduites et posées sur la ligne de sol peinte — plus rien au milieu du passage.
-- `WeepingStatue.ts` accepte une échelle et une profondeur en paramètre.
+**3. Profondeur (l'important)**
+- Fond du corridor : depth `-30`. Statues : depth `-20`.
+- La veine sera placée à depth `-25` : donc **devant le mur peint, derrière les statues** et derrière le héros.
 
-**4. Ambiance allégée**
-- Garder poussières et vignettage, retirer les braises et la densité doublée qui surchargeaient l'écran.
+**4. Branchements**
+- `BootScene.ts` : chargement de `corridor-vein`.
+- `GameScene.ts` : instanciation uniquement quand `backdropKey === "corridor"`, à côté des statues, et appel de la mise à jour dans la boucle si nécessaire (sinon tout est géré par tweens, coût nul par frame).
 
-## Résultat attendu
-
-Un corridor lisible : un fond unique dont le sol se lit clairement comme un plancher en fuite sous les pieds du héros, aucune superposition décalée, et des statues intégrées au décor de fond.
+## Notes techniques
+Pas de particules supplémentaires ni de logique de jeu : purement décoratif, aucun impact sur les collisions, le combat ou les performances (un seul tileSprite + tweens).
