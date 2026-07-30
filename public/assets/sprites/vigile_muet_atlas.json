@@ -1,0 +1,50 @@
+{
+  "frames": {},
+  "meta": {
+    "animations": {
+      "idle": {
+        "frameWidth": 57,
+        "frameHeight": 128,
+        "frameCount": 4,
+        "padding": 4,
+        "file": "vigile_muet_idle_spritesheet.png",
+        "frameKeys": [
+          "idle_01",
+          "idle_02",
+          "idle_03",
+          "idle_04"
+        ]
+      },
+      "walk": {
+        "frameWidth": 47,
+        "frameHeight": 128,
+        "frameCount": 6,
+        "padding": 4,
+        "file": "vigile_muet_walk_spritesheet.png",
+        "frameKeys": [
+          "walk_01",
+          "walk_02",
+          "walk_03",
+          "walk_04",
+          "walk_05",
+          "walk_06"
+        ]
+      },
+      "attack": {
+        "frameWidth": 43,
+        "frameHeight": 128,
+        "frameCount": 5,
+        "padding": 4,
+        "file": "vigile_muet_attack_spritesheet.png",
+        "frameKeys": [
+          "attack_01",
+          "attack_02",
+          "attack_03",
+          "attack_04",
+          "attack_05"
+        ]
+      }
+    },
+    "image": "vigile_muet_atlas.png"
+  }
+}
