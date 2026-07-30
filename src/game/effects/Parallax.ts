@@ -5,19 +5,21 @@ import { BACKDROPS, type BackdropDef, type BackdropKey } from "@/game/assets";
 /**
  * Decor de salle en trois calques de profondeur.
  *
- * Les calques sont des tileSprite plein ecran fixes a la camera
- * (scrollFactor 0) : c'est `tilePositionX` qui defile, a des vitesses
- * differentes, ce qui donne la parallaxe meme quand la salle est bien
- * plus large que l'image source.
+ * Les feuilles fournies n'ont pas le meme role :
+ *  - `far`  : peinture pleine, opaque, tuilable horizontalement ;
+ *  - `mid`  : bande d'architecture posee au sol, fond transparent ;
+ *  - `near` : cadre d'encadrement (rochers / chaines) a fond transparent,
+ *             NON tuilable : il sert de vignette et reste fixe.
  *
- * Les feuilles fournies n'ont pas toutes la meme taille (le calque
- * lointain fait 1672x941, les deux autres 1536x1024) : on normalise donc
- * chaque calque sur la hauteur de salle et on ancre le bas de l'image sur
- * la ligne de sol, sinon l'architecture flotte ou se decale.
+ * Tous les calques sont fixes a la camera (scrollFactor 0) ; c'est
+ * `tilePositionX` qui defile a des vitesses differentes pour les deux
+ * premiers, ce qui donne la parallaxe meme quand la salle est bien plus
+ * large que l'image source. Le bas de chaque image est cale sur la ligne
+ * de sol, sinon l'architecture flotte.
  */
 
 /** vitesses de defilement, du plus lointain au plus proche */
-const SPEEDS = [0.1, 0.3, 0.6] as const;
+const SPEEDS = [0.1, 0.35] as const;
 
 type Layer = {
   sprite: Phaser.GameObjects.TileSprite;
@@ -26,7 +28,7 @@ type Layer = {
 
 export class Parallax {
   private layers: Layer[] = [];
-  private near?: Phaser.GameObjects.TileSprite;
+  private frame?: Phaser.GameObjects.Image;
   readonly def: BackdropDef;
 
   constructor(
@@ -41,43 +43,52 @@ export class Parallax {
     const viewW = cam.width;
     const viewH = cam.height;
 
-    // ligne de sol exprimee en coordonnees ecran (la camera est bloquee
-    // en bas de la salle la plupart du temps)
+    // ligne de sol exprimee en coordonnees ecran : la camera est bloquee
+    // en bas de la salle la plupart du temps
     const floorScreenY = floorY - Math.max(0, roomHeight - viewH);
 
-    const keys = [this.def.far, this.def.mid, this.def.near];
+    // --- calque lointain : la peinture, plein cadre ------------------
+    this.addTiled(this.def.far, viewW, viewH * 1.12, floorScreenY, -30, SPEEDS[0]);
 
-    keys.forEach((textureKey, i) => {
-      const source = scene.textures.get(textureKey).getSourceImage();
-      const srcH = source.height || viewH;
+    // --- calque median : les piliers poses sur le sol ----------------
+    this.addTiled(this.def.mid, viewW, viewH * 0.78, floorScreenY, -20, SPEEDS[1]);
 
-      // chaque calque est normalise sur la hauteur du viewport : les
-      // feuilles n'ont pas toutes la meme taille native. Le calque proche
-      // est legerement agrandi pour renforcer la profondeur.
-      const zoom = i === 2 ? 1.12 : i === 1 ? 1.05 : 1;
-      const drawH = viewH * zoom;
-      const scale = drawH / srcH;
+    // --- calque proche : cadre fixe, jamais repete -------------------
+    this.frame = scene.add
+      .image(0, floorScreenY - viewH * 1.04, this.def.near)
+      .setOrigin(0, 0)
+      .setDisplaySize(viewW, viewH * 1.04)
+      .setScrollFactor(0)
+      .setDepth(-8);
 
-      const sprite = scene.add
-        .tileSprite(0, floorScreenY - drawH, viewW, drawH, textureKey)
-        .setOrigin(0, 0)
-        .setScrollFactor(0)
-        .setDepth(-30 + i * 10);
-
-      sprite.setTileScale(scale, scale);
-
-      this.layers.push({ sprite, speed: SPEEDS[i] });
-    });
-
-
-
-    this.near = this.layers[2]?.sprite;
-
-    this.addAmbience(viewW, viewH);
+    this.addAmbience(viewW, viewH, floorScreenY);
   }
 
-  /** Voile colore, vignette, poussieres et vacillement de cierges. */
-  private addAmbience(viewW: number, viewH: number) {
+  /** Cree un calque tuile horizontalement, bas cale sur la ligne de sol. */
+  private addTiled(
+    textureKey: string,
+    viewW: number,
+    drawH: number,
+    floorScreenY: number,
+    depth: number,
+    speed: number,
+  ) {
+    const source = this.scene.textures.get(textureKey).getSourceImage();
+    const srcH = source.height || drawH;
+    const scale = drawH / srcH;
+
+    const sprite = this.scene.add
+      .tileSprite(0, floorScreenY - drawH, viewW, drawH, textureKey)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth);
+
+    sprite.setTileScale(scale, scale);
+    this.layers.push({ sprite, speed });
+  }
+
+  /** Voile colore, poussieres et vacillement de cierges. */
+  private addAmbience(viewW: number, viewH: number, floorScreenY: number) {
     const scene = this.scene;
 
     // voile d'ambiance par dessus les calques, sous les personnages
@@ -87,25 +98,13 @@ export class Parallax {
       .setScrollFactor(0)
       .setDepth(-5);
 
-    // vignette : quatre degrades assombrissant les bords
-    const vignette = scene.add.graphics().setScrollFactor(0).setDepth(-4);
-    const edge = Math.round(viewH * 0.28);
-    vignette.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.75, 0.75, 0, 0);
-    vignette.fillRect(0, 0, viewW, edge);
-    vignette.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0, 0, 0.85, 0.85);
-    vignette.fillRect(0, viewH - edge, viewW, edge);
-    vignette.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.7, 0, 0.7, 0);
-    vignette.fillRect(0, 0, edge, viewH);
-    vignette.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0, 0.7, 0, 0.7);
-    vignette.fillRect(viewW - edge, 0, edge, viewH);
-
     this.ensureDustTexture();
 
     // cendres et poussieres flottantes, a mi-profondeur
     const dust = scene.add
       .particles(0, 0, "fx-dust", {
         x: { min: 0, max: viewW },
-        y: { min: 0, max: viewH },
+        y: { min: 0, max: floorScreenY },
         lifespan: { min: 4000, max: 9000 },
         speedY: { min: -14, max: 10 },
         speedX: { min: -12, max: 12 },
@@ -119,19 +118,13 @@ export class Parallax {
       .setScrollFactor(0.35)
       .setDepth(-6);
 
-    // fondu d'entree/sortie des particules
-    dust.addEmitZone({
-      type: "random",
-      source: new Phaser.Geom.Rectangle(0, 0, viewW, viewH),
-      quantity: 1,
-    });
     dust.setParticleAlpha({ start: 0.5, end: 0 });
 
-    // vacillement des cierges sur le calque proche
-    if (this.near) {
+    // vacillement des cierges sur le cadre proche
+    if (this.frame) {
       scene.tweens.add({
-        targets: this.near,
-        alpha: { from: 1, to: 0.86 },
+        targets: this.frame,
+        alpha: { from: 1, to: 0.88 },
         duration: 1700,
         yoyo: true,
         repeat: -1,
