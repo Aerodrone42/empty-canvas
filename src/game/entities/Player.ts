@@ -73,6 +73,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private crouchUntil = 0;
   private pendingJump = 0;
   private wasOnGround = true;
+  /** derniere frame ou le heros touchait le sol (coyote time) */
+  private lastGroundedAt = -Infinity;
+  /** dernier appui de saut non consomme (buffer) */
+  private jumpBufferedAt = -Infinity;
   /** fin de l'animation de reception */
   private landUntil = 0;
 
@@ -193,7 +197,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
 
   tick(time: number) {
-    this.alignBody();
     const store = useGameStore.getState();
     const effects = store.effects;
     const body = this.body as Phaser.Physics.Arcade.Body;
@@ -284,10 +287,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.clearTint();
         this.setScale(SCALE);
       } else {
-        if (onGround) body.setVelocityX(0);
+        // le joueur garde un peu de controle : l'avancee n'est jamais bloquee net
+        if (onGround) {
+          if (left) body.setVelocityX(-speed * 0.35);
+          else if (right) body.setVelocityX(speed * 0.35);
+          else body.setVelocityX(0);
+        }
         return;
       }
     }
+
 
     // ---------- esquive ----------
     if (this.actions.justDown("dodge") && time >= this.dodgeReadyAt) {
@@ -415,17 +424,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // ---------- saut : flexion d'elan puis detente ----------
-    const CROUCH_MS = 90;
+    const CROUCH_MS = 70;
     const LAND_MS = 130;
+    /** tolerance apres avoir quitte le sol */
+    const COYOTE_MS = 110;
+    /** tolerance avant de toucher le sol */
+    const BUFFER_MS = 130;
 
-    if (jump) {
-      if (onGround) {
+    if (onGround) this.lastGroundedAt = time;
+    if (jump) this.jumpBufferedAt = time;
+
+    const wantsJump = time - this.jumpBufferedAt <= BUFFER_MS;
+    const coyoteOk = time - this.lastGroundedAt <= COYOTE_MS;
+
+    if (wantsJump && this.pendingJump <= 0) {
+      if (coyoteOk) {
         // le heros plie les jambes avant de decoller
+        this.jumpBufferedAt = -Infinity;
+        this.lastGroundedAt = -Infinity;
         this.crouchUntil = time + CROUCH_MS;
         this.pendingJump = jumpPower;
         this.landUntil = 0;
         this.play("vigile-crouch", true);
-      } else if (effects.doubleJump && this.airJumpsUsed < 1) {
+      } else if (jump && effects.doubleJump && this.airJumpsUsed < 1) {
+        this.jumpBufferedAt = -Infinity;
         this.airJumpsUsed += 1;
         body.setVelocityY(-jumpPower * 0.9);
         this.play("vigile-crouch", true);
@@ -433,13 +455,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.pendingJump > 0) {
-      // pendant l'elan : le heros reste plante au sol
-      body.setVelocityX(body.velocity.x * 0.35);
+      // l'elan est bref : on garde l'inertie horizontale du joueur
       if (time >= this.crouchUntil) {
         body.setVelocityY(-this.pendingJump);
         this.pendingJump = 0;
       }
     }
+
 
     // reception : les jambes amortissent
     if (onGround && !this.wasOnGround) {
