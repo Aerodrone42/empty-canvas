@@ -52,7 +52,7 @@ export class GameScene extends Phaser.Scene {
   /** supplicie ecorche du fond de la cathedrale */
   private crucified?: CrucifiedProp;
   private gateWall?: Phaser.GameObjects.Rectangle;
-  private gateVeil?: Phaser.GameObjects.Rectangle;
+  
   /** bande-son adaptative (ambiance / combat) */
   private music?: MusicDirector;
   private roomCleared = false;
