@@ -186,6 +186,7 @@ export class GraspingHands {
   }
 
   destroy() {
+    this.tellEvent?.remove();
     this.scene.tweens.killTweensOf(this.sprites);
     for (const sprite of this.sprites) sprite.destroy();
     this.soil.destroy();
