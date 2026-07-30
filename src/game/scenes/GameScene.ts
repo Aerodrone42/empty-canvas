@@ -6,6 +6,7 @@ import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat"
 import { Profiler } from "../debug/Profiler";
 import { BloodFX } from "../effects/Blood";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
+import { WeepingStatue } from "../effects/WeepingStatue";
 import { GateColumn } from "../effects/GateColumn";
 import { Parallax } from "../effects/Parallax";
 import { EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
@@ -51,6 +52,7 @@ export class GameScene extends Phaser.Scene {
   private gateColumn?: GateColumn;
   /** supplicie ecorche du fond de la cathedrale */
   private crucified?: CrucifiedProp;
+  private statues: WeepingStatue[] = [];
   private gateWall?: Phaser.GameObjects.Rectangle;
   
   /** bande-son adaptative (ambiance / combat) */
@@ -236,6 +238,13 @@ export class GameScene extends Phaser.Scene {
     // supplicie ecorche : uniquement dans la cathedrale
     if (this.backdropKey === "cathedrale") {
       this.crucified = new CrucifiedProp(this, CRUCIFIED_X, FLOOR_Y);
+    } else if (this.backdropKey === "corridor") {
+      // statues de pleureuses qui saignent des yeux quand le heros approche
+      this.statues = [
+        new WeepingStatue(this, 640, FLOOR_Y),
+        new WeepingStatue(this, 1480, FLOOR_Y),
+        new WeepingStatue(this, 2320, FLOOR_Y),
+      ];
     }
   }
 
@@ -416,6 +425,7 @@ export class GameScene extends Phaser.Scene {
       }
     });
     prof.measure("sang", () => this.blood.tick(time));
+    for (const statue of this.statues) statue.update(this.player.x);
 
     this.enemies = this.enemies.filter((e) => e.active);
 
