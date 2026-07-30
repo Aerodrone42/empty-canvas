@@ -96,10 +96,31 @@ export class Parallax {
     this.addAmbience(viewW, viewH, floorScreenY, key === "corridor");
   }
 
+  /**
+   * Dallage du couloir : bande de pierre ancree au monde, posee sur la ligne
+   * de sol jouable, avec un degrade sombre en haut pour fondre la jonction
+   * avec le fond peint.
+   */
+  private addFloor(floorY: number, roomHeight: number, roomWidth: number) {
+    const scene = this.scene;
+    const top = floorY - 110;
+    const height = roomHeight - top + 40;
 
+    const src = scene.textures.get("corridor-floor").getSourceImage();
+    const scale = height / (src.height || 1);
 
+    scene.add
+      .tileSprite(0, top, roomWidth, height, "corridor-floor")
+      .setOrigin(0, 0)
+      .setScrollFactor(1)
+      .setDepth(-10)
+      .setTileScale(scale, scale);
 
-
+    // fondu du haut du dallage vers l'obscurite du fond
+    const blend = scene.add.graphics().setScrollFactor(0).setDepth(-9);
+    blend.fillGradientStyle(0x0a0506, 0x0a0506, 0x0a0506, 0x0a0506, 0.9, 0.9, 0, 0);
+    blend.fillRect(0, top - scene.cameras.main.scrollY - 10, scene.cameras.main.width, 70);
+  }
 
 
   /** Voile colore, poussieres flottantes, braises et vignettage. */
