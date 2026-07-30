@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 
+import { frameMetrics } from "@/game/spriteMetrics";
 import { useGameStore } from "@/store/gameStore";
 
 export type EnemyStats = {
