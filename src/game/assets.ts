@@ -61,6 +61,17 @@ export const SHEETS: SheetDef[] = [
     repeat: 0,
     spacing: 0,
   },
+  {
+    key: "vigile-jump",
+    path: `${SPRITES}/vigile_muet_jump_spritesheet.png`,
+    frameWidth: HERO_FRAME_W,
+    frameHeight: HERO_FRAME_H,
+    frameCount: 6,
+    frameRate: 12,
+    repeat: 0,
+    spacing: 0,
+  },
+
 
 
   // --- Penitent-Greffe (lourd, lent, resistant) ---
