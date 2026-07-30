@@ -196,6 +196,7 @@ export class GameScene extends Phaser.Scene {
       source?.stun(PARRY.stun);
       this.player.rumble(0.4, 120);
       this.cameras.main.flash(90, 240, 220, 160);
+      this.blood.sparks(this.player.x + this.player.facingDirection * 30, this.player.y - 70);
       return;
     }
     this.player.receiveDamage(amount, this.time.now);
@@ -212,8 +213,23 @@ export class GameScene extends Phaser.Scene {
     this.player.tick(time);
 
     this.enemies = this.enemies.filter((e) => e.active);
+
+    // aucune creature vivante a proximite : le soin par absorption est permis
+    const threatened = this.enemies.some(
+      (e) =>
+        !e.isDead &&
+        Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y) < SAFE_RADIUS,
+    );
+    this.player.setSafeToAbsorb(!threatened);
+
     for (const enemy of this.enemies) {
       enemy.think(this.player.x, this.player.y, time);
     }
+
+    this.pickups = this.pickups.filter((p) => p.active);
+    for (const pickup of this.pickups) {
+      pickup.tick(this.player.x, this.player.y, time);
+    }
   }
 }
+
