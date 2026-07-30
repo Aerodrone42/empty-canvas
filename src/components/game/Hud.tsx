@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { SPECIAL_COST } from "@/game/combat";
 import { keyLabel, useBindingsStore } from "@/store/bindingsStore";
-import { useGameStore } from "@/store/gameStore";
+import { ABSORB_COST, ABSORB_HEAL, useGameStore } from "@/store/gameStore";
 
 export function Hud() {
   const health = useGameStore((s) => s.health);
@@ -15,47 +15,90 @@ export function Hud() {
   const effects = useGameStore((s) => s.effects);
   const dodgeReadyAt = useGameStore((s) => s.dodgeReadyAt);
   const dodgeCooldownMs = useGameStore((s) => s.dodgeCooldownMs);
+  const absorbing = useGameStore((s) => s.absorbing);
+  const absorbProgress = useGameStore((s) => s.absorbProgress);
   const bindings = useBindingsStore((s) => s.bindings);
 
   const dodgePct = useDodgeCharge(dodgeReadyAt, dodgeCooldownMs);
   const specialCost = Math.round(SPECIAL_COST * effects.specialCostMult);
   const specialReady = flesh >= specialCost;
+  const healthPct = (health / maxHealth) * 100;
+  const critical = healthPct <= 30;
 
   return (
-    <div className="pointer-events-none absolute top-0 left-0 z-10 flex flex-col gap-2 p-5">
-      <Gauge
-        label="Vitalité"
-        value={health}
-        max={maxHealth}
-        barClass="bg-primary"
-        width="w-56"
+    <>
+      {/* vignette sanglante quand la vitalité est basse */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-500"
+        style={{
+          opacity: critical ? 0.55 + (30 - healthPct) / 100 : 0,
+          background:
+            "radial-gradient(ellipse at center, transparent 40%, rgba(120,8,20,0.55) 78%, rgba(80,4,12,0.9) 100%)",
+          animation: critical ? "pulse 1.6s ease-in-out infinite" : undefined,
+        }}
       />
-      <Gauge label="Chair" value={flesh} max={maxFlesh} barClass="bg-accent" width="w-40" />
-      <Gauge
-        label="Esquive"
-        value={dodgePct}
-        max={100}
-        barClass={dodgePct >= 100 ? "bg-bone" : "bg-muted-foreground"}
-        width="w-28"
-      />
-      <p className="mt-1 font-display text-[0.6rem] tracking-[0.35em] text-muted-foreground uppercase">
-        Absous · {kills} — Parades · {parries} — Greffes · {mutations.length}
-      </p>
-      <p
-        className={`font-display text-[0.55rem] tracking-[0.3em] uppercase ${
-          specialReady ? "text-primary" : "text-muted-foreground/50"
-        }`}
-      >
-        {keyLabel(bindings.special.key)} · Rugissement ({specialCost} chair)
-      </p>
-      <p className="font-display text-[0.55rem] tracking-[0.3em] text-muted-foreground/60 uppercase">
-        {keyLabel(bindings.attack.key)} frappe / maintenir = lourd ·{" "}
-        {keyLabel(bindings.dodge.key)} esquive · {keyLabel(bindings.parry.key)} parade ·{" "}
-        {keyLabel(bindings.flesh.key)} autel
-      </p>
-    </div>
+
+      {absorbing && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 flex justify-center">
+          <div className="w-56 text-center">
+            <p className="font-display text-[0.6rem] tracking-[0.4em] text-primary uppercase">
+              Absorption
+            </p>
+            <div className="mt-1 h-1.5 border border-primary/50 bg-card/80">
+              <div
+                className="h-full bg-primary transition-[width] duration-100"
+                style={{ width: `${Math.round(absorbProgress * 100)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="pointer-events-none absolute top-0 left-0 z-10 flex flex-col gap-2 p-5">
+        <Gauge
+          label="Vitalité"
+          value={health}
+          max={maxHealth}
+          barClass={critical ? "bg-destructive animate-pulse" : "bg-primary"}
+          width="w-56"
+        />
+        <Gauge label="Chair" value={flesh} max={maxFlesh} barClass="bg-accent" width="w-40" />
+        <Gauge
+          label="Esquive"
+          value={dodgePct}
+          max={100}
+          barClass={dodgePct >= 100 ? "bg-bone" : "bg-muted-foreground"}
+          width="w-28"
+        />
+        <p className="mt-1 font-display text-[0.6rem] tracking-[0.35em] text-muted-foreground uppercase">
+          Absous · {kills} — Parades · {parries} — Greffes · {mutations.length}
+        </p>
+        <p
+          className={`font-display text-[0.55rem] tracking-[0.3em] uppercase ${
+            specialReady ? "text-primary" : "text-muted-foreground/50"
+          }`}
+        >
+          {keyLabel(bindings.special.key)} · Rugissement ({specialCost} chair)
+        </p>
+        <p
+          className={`font-display text-[0.55rem] tracking-[0.3em] uppercase ${
+            flesh >= ABSORB_COST ? "text-accent" : "text-muted-foreground/50"
+          }`}
+        >
+          Maintenir {keyLabel(bindings.parry.key)} hors combat · Absorber ({ABSORB_COST} chair →{" "}
+          {ABSORB_HEAL} PV)
+        </p>
+        <p className="font-display text-[0.55rem] tracking-[0.3em] text-muted-foreground/60 uppercase">
+          {keyLabel(bindings.attack.key)} frappe / maintenir = lourd ·{" "}
+          {keyLabel(bindings.dodge.key)} esquive · {keyLabel(bindings.parry.key)} parade ·{" "}
+          {keyLabel(bindings.flesh.key)} autel
+        </p>
+      </div>
+    </>
   );
 }
+
 
 /** Recharge de l'esquive, en pourcentage. */
 function useDodgeCharge(readyAt: number, cooldown: number) {
