@@ -347,6 +347,8 @@ export class GameScene extends Phaser.Scene {
 
     this.player.tick(time);
     this.blood.tick(time);
+    this.updateLift(delta);
+
 
 
     this.enemies = this.enemies.filter((e) => e.active);
