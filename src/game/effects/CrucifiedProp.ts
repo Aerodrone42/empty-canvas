@@ -21,8 +21,8 @@ export class CrucifiedProp {
     const tex = scene.textures.get("crucifie-idle").getSourceImage();
     const scale = PROP_H / tex.height;
 
-    // pose derriere la balustrade : legerement au dessus de la ligne de sol
-    const baseY = floorY + 4;
+    // pose derriere la balustrade : legerement relevee par rapport au sol
+    const baseY = floorY - 12;
 
     this.sprite = scene.add
       .sprite(x, baseY, "crucifie-idle")
