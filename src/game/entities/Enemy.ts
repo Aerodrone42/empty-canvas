@@ -51,9 +51,21 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     );
   }
 
+  /** Les frames d'une meme creature n'ont pas la meme largeur : on recentre. */
+  protected alignBody() {
+    const body = this.body as Phaser.Physics.Arcade.Body | null;
+    if (!body) return;
+    body.setSize(this.stats.bodyWidth, this.stats.bodyHeight);
+    body.setOffset(
+      (this.width - this.stats.bodyWidth) / 2,
+      this.height - this.stats.bodyHeight,
+    );
+  }
+
   get isDead() {
     return this.dying;
   }
+
 
   takeHit(amount: number) {
     if (this.dying) return;
