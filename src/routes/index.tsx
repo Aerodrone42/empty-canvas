@@ -36,7 +36,10 @@ function Index() {
   const [hydrated, setHydrated] = useState(false);
 
   useGamepadUi();
-  useEffect(() => setHydrated(true), []);
+  useEffect(() => {
+    setHydrated(true);
+    useBindingsStore.getState().hydrate();
+  }, []);
 
   if (!hydrated) {
     return (
