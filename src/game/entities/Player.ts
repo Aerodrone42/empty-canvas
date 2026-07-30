@@ -73,6 +73,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private crouchUntil = 0;
   private pendingJump = 0;
   private wasOnGround = true;
+  /** derniere frame ou le heros touchait le sol (coyote time) */
+  private lastGroundedAt = -Infinity;
+  /** dernier appui de saut non consomme (buffer) */
+  private jumpBufferedAt = -Infinity;
   /** fin de l'animation de reception */
   private landUntil = 0;
 
