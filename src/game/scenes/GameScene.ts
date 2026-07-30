@@ -83,6 +83,8 @@ export class GameScene extends Phaser.Scene {
 
 
     this.profiler = new Profiler(this);
+    this.music = new MusicDirector(this);
+
     this.blood = new BloodFX(this, FLOOR_Y);
 
     this.buildBackdrop();
