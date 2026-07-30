@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 
+import { MusicDirector } from "../audio/Music";
 import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat";
+
 import { Profiler } from "../debug/Profiler";
 import { BloodFX } from "../effects/Blood";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
