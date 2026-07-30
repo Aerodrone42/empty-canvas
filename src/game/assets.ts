@@ -228,6 +228,18 @@ export const SHEETS: SheetDef[] = [
     repeat: 0,
     spacing: 0,
   },
+
+  // --- Mains du sol (piege : agrippent et ralentissent le heros) ---
+  {
+    key: "mains-sol",
+    path: `${ENEMIES}/mains_sol_spritesheet.png`,
+    frameWidth: ENEMY_FRAME_W,
+    frameHeight: ENEMY_FRAME_H,
+    frameCount: 8,
+    frameRate: 16,
+    repeat: 0,
+    spacing: 0,
+  },
 ];
 
 
