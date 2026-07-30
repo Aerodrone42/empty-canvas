@@ -101,7 +101,8 @@ export class GameScene extends Phaser.Scene {
     this.spawn(new PenitentGreffe(this, 2060, FLOOR_Y));
     // pendus places a l'ecart des autres creatures : leur chute doit surprendre
     this.spawnPendu(new EcorchePendu(this, 1400, FLOOR_Y, 60));
-    this.spawnPendu(new EcorchePendu(this, 2450, FLOOR_Y, 60));
+    this.spawnPendu(new EcorchePendu(this, 1900, FLOOR_Y, 60));
+
 
     // pieges : deux mains seulement, placees au hasard dans leur moitie de
     // salle et redeployees ailleurs apres chaque tentative
