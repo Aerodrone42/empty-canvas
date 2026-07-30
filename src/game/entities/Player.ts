@@ -310,7 +310,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
 
     // ---------- esquive ----------
-    if (this.actions.justDown("dodge") && time >= this.dodgeReadyAt) {
+    // agrippe par les mains du sol : l'esquive est impossible, il faut
+    // se degager en marchant ou frapper.
+    if (this.actions.justDown("dodge") && snared) {
+      this.setTint(0x8a2230);
+      this.scene.time.delayedCall(120, () => {
+        if (this.active) this.clearTint();
+      });
+      this.scene.events.emit("fx-blood", this.x, this.y - 12, this.facing, 0.5);
+    }
+    if (this.actions.justDown("dodge") && !snared && time >= this.dodgeReadyAt) {
       const distance = DODGE.distance * effects.dodgeDistanceMult;
       this.dodgeReadyAt = time + DODGE.cooldown;
       useGameStore.getState().setDodgeCooldown(DODGE.cooldown);

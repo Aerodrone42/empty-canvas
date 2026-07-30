@@ -23,7 +23,7 @@ export class GraspingHands {
     this.sprite = scene.add
       .sprite(x, floorY + 6, "mains-sol", 0)
       .setOrigin(0.5, ENEMY_BASELINE_Y / ENEMY_FRAME_H)
-      .setScale(1.05)
+      .setScale(1.35)
       .setDepth(7)
       .setAlpha(0);
   }
