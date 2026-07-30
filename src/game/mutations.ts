@@ -158,6 +158,38 @@ export const MUTATIONS: Mutation[] = [
     description: "L'humérus s'allonge d'une paume de trop.",
     effects: { bonusReach: 55, damageMult: 1.25 },
   },
+
+  // --- Greffes de combat ---
+  {
+    id: "ten-roulade",
+    name: "Genoux Inversés",
+    branch: "Tendon",
+    tier: 2,
+    cost: 30,
+    requires: "ten-jarret",
+    description: "La roulade porte deux fois plus loin.",
+    effects: { dodgeDistanceMult: 1.7 },
+  },
+  {
+    id: "os-parade",
+    name: "Avant-bras Ossifié",
+    branch: "Ossuaire",
+    tier: 2,
+    cost: 34,
+    requires: "os-carapace",
+    description: "L'os encaisse : la fenêtre de parade s'élargit.",
+    effects: { parryWindowBonus: 120 },
+  },
+  {
+    id: "san-rugissement",
+    name: "Gorge Béante",
+    branch: "Sanie",
+    tier: 3,
+    cost: 58,
+    requires: "san-langue",
+    description: "Le Rugissement coûte moins de Chair et porte plus loin.",
+    effects: { specialCostMult: 0.6, specialRadiusBonus: 90 },
+  },
 ];
 
 export const BRANCHES: Array<Mutation["branch"]> = ["Ossuaire", "Tendon", "Sanie"];

@@ -81,6 +81,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       maxHealth: BASE_MAX_HEALTH,
       flesh: 0,
       kills: 0,
+      parries: 0,
       hasSave: true,
       mutations: [],
       effects: BASE_EFFECTS,
