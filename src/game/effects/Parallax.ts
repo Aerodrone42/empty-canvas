@@ -30,7 +30,7 @@ const FLOOR_SPLIT = 0.85;
 
 export class Parallax {
   private sky?: Phaser.GameObjects.TileSprite;
-  private ground?: Phaser.GameObjects.TileSprite;
+  
   private skyOffset = 0;
   readonly def: BackdropDef;
 
@@ -75,22 +75,36 @@ export class Parallax {
     this.skyOffset = Phaser.Math.Between(0, srcW);
     this.sky.tilePositionX = this.skyOffset;
 
-    // --- dallage : defile exactement a la vitesse du heros ------------
-    // le calque reste large comme le viewport (pas de surcout de rendu),
-    // mais son motif est pilote par scrollX a la vitesse 1 : visuellement
-    // c'est equivalent a un sol ancre au monde.
+    // --- dallage : VRAI sol ancre au monde ----------------------------
+    // On ne fait plus glisser un motif sous les pieds : la bande basse de
+    // la peinture est cuite UNE fois sur toute la largeur de la salle dans
+    // une seule texture (copies alternativement retournees pour casser la
+    // repetition), puis posee en scrollFactor 1. Le sol ne bouge plus :
+    // c'est la camera qui se deplace au-dessus. Un seul objet a l'ecran.
     const groundScreenTop = skyTop + skyH;
     const groundH = Math.max(viewH - groundScreenTop, (srcH - splitY) * scale);
+    const groundWorldY = groundScreenTop + camTop;
+    const bandW = Math.max(2, srcW * scale);
 
-    this.ground = scene.add
-      .tileSprite(0, groundScreenTop, viewW, groundH, this.def.far, "ground")
+    const rt = scene.add
+      .renderTexture(0, groundWorldY, roomWidth, groundH)
       .setOrigin(0, 0)
-      .setScrollFactor(0)
+      .setScrollFactor(1)
       .setDepth(-20);
-    this.ground.setTileScale(scale, scale);
 
-    // ombre douce sur la ligne de raccord : masque la coupure entre les
-    // deux calques quand ils defilent a des vitesses differentes
+    const stamp = scene.make.image({ x: 0, y: 0 }, false);
+    stamp.setTexture(this.def.far, "ground");
+    stamp.setOrigin(0, 0).setScale(scale);
+
+    const tiles = Math.ceil(roomWidth / bandW) + 1;
+    for (let i = 0; i < tiles; i++) {
+      stamp.setFlipX(i % 2 === 1);
+      rt.draw(stamp, i * bandW, 0);
+    }
+    stamp.destroy();
+
+    // ombre douce sur la ligne de raccord : masque la coupure entre le
+    // fond (qui defile lentement) et le sol (fixe dans le monde)
     const seam = scene.add
       .rectangle(0, groundScreenTop - 6, viewW, 22, 0x000000)
       .setOrigin(0, 0)
@@ -100,41 +114,75 @@ export class Parallax {
     seam.setBlendMode(Phaser.BlendModes.MULTIPLY);
 
 
-    this.addFloorMarks(roomWidth, floorY, camTop);
+    this.addFloorMarks(roomWidth, floorY, groundWorldY);
     this.addAmbience(viewW, viewH, floorScreenY);
   }
 
+
   /**
-   * Reperes de progression : traces sombres posees au sol, ancrees au monde.
-   * Sans elles l'oeil n'a aucun point fixe pour percevoir la distance
-   * parcourue. Tout est cuit dans UNE seule texture puis affiche en un seul
-   * objet : aucun surcout de rendu (une vingtaine de formes separees
-   * multiplierait les changements de pipeline).
+   * Geometrie fixe du sol : joints de dallage en perspective + traces et
+   * debris. Ce sont ces reperes immobiles qui donnent la sensation de
+   * marcher sur un sol solide plutot que sur un tapis roulant.
+   * Tout est cuit dans UNE seule texture affichee par UN seul objet.
    */
-  private addFloorMarks(roomWidth: number, floorY: number, camTop: number) {
+  private addFloorMarks(roomWidth: number, floorY: number, groundTop: number) {
     const scene = this.scene;
-    const key = `floor-marks-${this.def.far}`;
-    const bandH = 48;
+    const bandH = Math.max(48, Math.round(floorY - groundTop));
+    const key = `floor-marks-${this.def.far}-${bandH}`;
 
     if (!scene.textures.exists(key)) {
       const rng = new Phaser.Math.RandomDataGenerator([this.def.far]);
-      const count = Math.round(roomWidth / 180);
       const g = scene.make.graphics({ x: 0, y: 0 }, false);
 
+      // --- joints de dallage : rangees de plus en plus espacees vers le
+      // bas (compression perspective), et joints transversaux decales
+      // d'une rangee a l'autre comme un vrai appareillage de dalles.
+      const rows = 7;
+      let prevY = 0;
+      for (let r = 1; r <= rows; r++) {
+        const t = r / rows;
+        const y = Math.round(bandH * t * t); // resserre en haut
+        const depth = 0.35 + 0.65 * t; // les joints proches sont plus lisibles
+
+        // creux du joint puis arete eclairee juste au-dessus
+        g.fillStyle(0x000000, Math.min(0.9, depth));
+        g.fillRect(0, y, roomWidth, Math.max(1, Math.round(1 + 3 * t)));
+        g.fillStyle(this.def.ledge, Math.min(0.85, depth * 0.9));
+        g.fillRect(0, y - Math.max(1, Math.round(2 + 2 * t)), roomWidth, Math.max(1, Math.round(1 + 2 * t)));
+
+        // joints transversaux de la rangee courante
+        const slabW = 90 + 150 * t;
+        const offset = (r % 2 === 0 ? slabW / 2 : 0) + rng.between(-14, 14);
+        for (let x = offset; x < roomWidth; x += slabW) {
+          const jx = Math.round(x);
+          const jw = Math.max(1, Math.round(1 + 2 * t));
+          g.fillStyle(0x000000, Math.min(0.85, depth * 0.85));
+          g.fillRect(jx, prevY, jw, y - prevY);
+          g.fillStyle(this.def.ledge, depth * 0.45);
+          g.fillRect(jx + jw, prevY, Math.max(1, Math.round(1 + t)), y - prevY);
+        }
+
+        prevY = y;
+      }
+
+      // --- traces, fissures et debris poses sur les dalles
+      const count = Math.round(roomWidth / 110);
       for (let i = 0; i < count; i++) {
         const x = 60 + (i + rng.frac() * 0.6) * (roomWidth / count);
-        const y = bandH - rng.between(2, 16);
-        const w = rng.between(40, 130);
-        const h = Math.max(4, w * rng.realInRange(0.09, 0.16));
+        const y = bandH - rng.between(2, Math.max(6, Math.min(bandH - 6, bandH * 0.7)));
+        const near = y / bandH; // plus bas = plus proche = plus contraste
+        const w = rng.between(40, 130) * (0.5 + near);
+        const h = Math.max(3, w * rng.realInRange(0.09, 0.16));
 
-        g.fillStyle(0x000000, rng.realInRange(0.18, 0.34));
+        g.fillStyle(0x000000, rng.realInRange(0.22, 0.42) * (0.5 + near));
         g.fillEllipse(x, y, w, h);
 
-        if (rng.frac() > 0.6) {
-          g.fillStyle(this.def.ledge, 0.5);
-          g.fillEllipse(x + rng.between(-40, 40), y - rng.between(4, 14), w * 0.35, h * 0.6);
+        if (rng.frac() > 0.5) {
+          g.fillStyle(this.def.ledge, 0.5 * (0.5 + near));
+          g.fillEllipse(x + rng.between(-40, 40), y - rng.between(4, 14), w * 0.3, h * 0.55);
         }
       }
+
 
       g.generateTexture(key, roomWidth, bandH);
       g.destroy();
@@ -145,9 +193,8 @@ export class Parallax {
       .setOrigin(0, 0)
       .setScrollFactor(1)
       .setDepth(-18);
-
-    void camTop;
   }
+
 
   /** Voile colore et poussieres flottantes. */
   private addAmbience(viewW: number, viewH: number, floorScreenY: number) {
@@ -191,15 +238,14 @@ export class Parallax {
     g.destroy();
   }
 
-  /** A appeler dans update() : lie le defilement des calques a la camera. */
+  /**
+   * A appeler dans update() : seul le fond lointain defile.
+   * Le sol est ancre au monde, il n'a plus aucun calcul par frame.
+   */
   update() {
+    if (!this.sky) return;
     const scrollX = this.scene.cameras.main.scrollX;
-    if (this.sky) {
-      this.sky.tilePositionX = this.skyOffset + (scrollX * SKY_SPEED) / this.sky.tileScaleX;
-    }
-    if (this.ground) {
-      // vitesse 1 : le dallage defile exactement comme le monde
-      this.ground.tilePositionX = scrollX / this.ground.tileScaleX;
-    }
+    this.sky.tilePositionX = this.skyOffset + (scrollX * SKY_SPEED) / this.sky.tileScaleX;
   }
+
 }
