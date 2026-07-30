@@ -169,6 +169,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.stateUntil = time + duration;
   }
 
+  /** Interrompt l'absorption de chair en cours. */
+  private cancelAbsorb() {
+    if (this.moveState !== "absorb") return;
+    this.moveState = "idle";
+    this.clearTint();
+    useGameStore.getState().setAbsorb(false, 0);
+  }
+
+
   tick(time: number) {
     this.alignBody();
     const store = useGameStore.getState();
