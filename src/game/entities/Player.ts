@@ -418,17 +418,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // ---------- saut : flexion d'elan puis detente ----------
-    const CROUCH_MS = 90;
+    const CROUCH_MS = 70;
     const LAND_MS = 130;
+    /** tolerance apres avoir quitte le sol */
+    const COYOTE_MS = 110;
+    /** tolerance avant de toucher le sol */
+    const BUFFER_MS = 130;
 
-    if (jump) {
-      if (onGround) {
+    if (onGround) this.lastGroundedAt = time;
+    if (jump) this.jumpBufferedAt = time;
+
+    const wantsJump = time - this.jumpBufferedAt <= BUFFER_MS;
+    const coyoteOk = time - this.lastGroundedAt <= COYOTE_MS;
+
+    if (wantsJump && this.pendingJump <= 0) {
+      if (coyoteOk) {
         // le heros plie les jambes avant de decoller
+        this.jumpBufferedAt = -Infinity;
+        this.lastGroundedAt = -Infinity;
         this.crouchUntil = time + CROUCH_MS;
         this.pendingJump = jumpPower;
         this.landUntil = 0;
         this.play("vigile-crouch", true);
-      } else if (effects.doubleJump && this.airJumpsUsed < 1) {
+      } else if (jump && effects.doubleJump && this.airJumpsUsed < 1) {
+        this.jumpBufferedAt = -Infinity;
         this.airJumpsUsed += 1;
         body.setVelocityY(-jumpPower * 0.9);
         this.play("vigile-crouch", true);
@@ -436,13 +449,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.pendingJump > 0) {
-      // pendant l'elan : le heros reste plante au sol
-      body.setVelocityX(body.velocity.x * 0.35);
+      // l'elan est bref : on garde l'inertie horizontale du joueur
       if (time >= this.crouchUntil) {
         body.setVelocityY(-this.pendingJump);
         this.pendingJump = 0;
       }
     }
+
 
     // reception : les jambes amortissent
     if (onGround && !this.wasOnGround) {
