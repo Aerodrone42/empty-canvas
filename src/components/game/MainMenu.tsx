@@ -1,9 +1,12 @@
+import { keyLabel, useBindingsStore } from "@/store/bindingsStore";
 import { useGameStore } from "@/store/gameStore";
 
 export function MainMenu() {
   const startNewRun = useGameStore((s) => s.startNewRun);
   const continueRun = useGameStore((s) => s.continueRun);
+  const openOptions = useGameStore((s) => s.openOptions);
   const hasSave = useGameStore((s) => s.hasSave);
+  const bindings = useBindingsStore((s) => s.bindings);
 
   return (
     <div className="vignette flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
@@ -22,11 +25,13 @@ export function MainMenu() {
         <MenuButton onClick={continueRun} disabled={!hasSave}>
           Continuer
         </MenuButton>
-        <MenuButton disabled>Options</MenuButton>
+        <MenuButton onClick={openOptions}>Options</MenuButton>
       </div>
 
       <p className="mt-12 max-w-md text-sm text-muted-foreground">
-        Q / D pour marcher · Espace pour sauter · E pour frapper · Échap pour la pause
+        {keyLabel(bindings.left.key)} / {keyLabel(bindings.right.key)} pour marcher ·{" "}
+        {keyLabel(bindings.jump.key)} pour sauter · {keyLabel(bindings.attack.key)} pour
+        frapper · {keyLabel(bindings.pause.key)} pour la pause
       </p>
     </div>
   );

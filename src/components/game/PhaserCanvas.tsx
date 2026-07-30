@@ -33,25 +33,33 @@ export function PhaserCanvas() {
   }, []);
 
   useEffect(() => {
+    useBindingsStore.getState().hydrate();
+    const uninstall = installKeyboardTracking();
+
     const onKey = (event: KeyboardEvent) => {
       const { phase, pause, resume, openFleshPath, closeFleshPath } = useGameStore.getState();
+      const bindings = useBindingsStore.getState().bindings;
 
-      if (event.key === "Escape") {
+      if (event.code === bindings.pause.key || event.code === "Escape") {
         if (phase === "playing") pause();
         else if (phase === "paused") resume();
         else if (phase === "flesh") closeFleshPath();
         return;
       }
 
-      if (event.key.toLowerCase() === "f") {
+      if (event.code === bindings.flesh.key) {
         event.preventDefault();
         if (phase === "playing") openFleshPath();
         else if (phase === "flesh") closeFleshPath();
       }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      uninstall();
+    };
   }, []);
+
 
 
   return (
