@@ -32,6 +32,11 @@ export type GameState = {
   /** horodatage (Date.now) de fin de recharge de l'esquive */
   dodgeReadyAt: number;
   dodgeCooldownMs: number;
+  /** absorption de chair en cours : progression 0 → 1 */
+  absorbProgress: number;
+  absorbing: boolean;
+  /** l'autel n'offre son soin complet qu'une fois par salle */
+  altarHealUsed: boolean;
 
   enter: () => void;
   startNewRun: () => void;
@@ -51,11 +56,18 @@ export type GameState = {
   registerKill: () => void;
   registerParry: () => void;
   setDodgeCooldown: (durationMs: number) => void;
+  setAbsorb: (absorbing: boolean, progress: number) => void;
+  consumeFleshForHealth: () => boolean;
   unlockMutation: (id: string) => void;
 };
 
 const BASE_MAX_HEALTH = 100;
 const MAX_FLESH = 250;
+
+/** cout en chair et soin rendu par une absorption */
+export const ABSORB_COST = 25;
+export const ABSORB_HEAL = 20;
+export const ABSORB_DURATION = 900;
 
 export const useGameStore = create<GameState>((set, get) => ({
   phase: "warning",
@@ -71,6 +83,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   optionsReturnPhase: "menu",
   dodgeReadyAt: 0,
   dodgeCooldownMs: 700,
+  absorbProgress: 0,
+  absorbing: false,
+  altarHealUsed: false,
 
   enter: () => set({ phase: "menu" }),
 
@@ -85,6 +100,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       hasSave: true,
       mutations: [],
       effects: BASE_EFFECTS,
+      absorbing: false,
+      absorbProgress: 0,
+      altarHealUsed: false,
     }),
 
   continueRun: () => set({ phase: get().hasSave ? "playing" : "menu" }),
@@ -93,7 +111,14 @@ export const useGameStore = create<GameState>((set, get) => ({
   resume: () =>
     set((s) => (s.phase === "paused" || s.phase === "flesh" ? { phase: "playing" } : s)),
   openFleshPath: () =>
-    set((s) => (s.phase === "playing" || s.phase === "paused" ? { phase: "flesh" } : s)),
+    set((s) => {
+      if (s.phase !== "playing" && s.phase !== "paused") return s;
+      // premiere visite de l'autel : soin complet
+      if (!s.altarHealUsed) {
+        return { phase: "flesh" as Phase, altarHealUsed: true, health: s.maxHealth };
+      }
+      return { phase: "flesh" as Phase };
+    }),
   closeFleshPath: () => set((s) => (s.phase === "flesh" ? { phase: "playing" } : s)),
   openOptions: () =>
     set((s) =>
@@ -133,6 +158,21 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setDodgeCooldown: (durationMs) =>
     set({ dodgeCooldownMs: durationMs, dodgeReadyAt: Date.now() + durationMs }),
+
+  setAbsorb: (absorbing, progress) => set({ absorbing, absorbProgress: progress }),
+
+  consumeFleshForHealth: () => {
+    const s = get();
+    if (s.flesh < ABSORB_COST || s.health >= s.maxHealth) return false;
+    set({
+      flesh: s.flesh - ABSORB_COST,
+      health: Math.min(s.maxHealth, s.health + ABSORB_HEAL),
+      absorbing: false,
+      absorbProgress: 0,
+    });
+    return true;
+  },
+
 
 
 
