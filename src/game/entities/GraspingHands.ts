@@ -77,21 +77,40 @@ export class GraspingHands {
     g.destroy();
   }
 
-  /** phase d'annonce : monticule qui vibre + gerbe de terre */
+  /** phase d'annonce : monticule qui vibre + gerbe de terre montante */
   private startTell(time: number) {
     this.tellUntil = time + TELL_MS;
-    this.soil.explode(14, this.x, this.floorY - 2);
+    this.soil.explode(4, this.x, this.floorY - 2);
+
+    // la terre bouge de plus en plus fort pendant la seconde d'annonce
+    let step = 0;
+    this.tellEvent?.remove();
+    this.tellEvent = this.scene.time.addEvent({
+      delay: 110,
+      repeat: Math.floor(TELL_MS / 110) - 1,
+      callback: () => {
+        step += 1;
+        const ratio = Math.min(1, (step * 110) / TELL_MS);
+        const spread = 30 + ratio * 30;
+        this.soil.explode(
+          2 + Math.round(ratio * 8),
+          this.x + Phaser.Math.Between(-spread, spread),
+          this.floorY - 2,
+        );
+      },
+    });
 
     for (const [i, sprite] of this.sprites.entries()) {
       const base = this.x + CLUSTER[i].dx;
-      sprite.setFrame(0).setAlpha(0.35).setPosition(base, this.floorY + 4);
+      sprite.setFrame(0).setAlpha(0.3).setPosition(base, this.floorY + 4);
       this.scene.tweens.add({
         targets: sprite,
-        x: { from: base - 2, to: base + 2 },
-        y: { from: this.floorY + 5, to: this.floorY + 3 },
-        duration: 60,
+        x: { from: base - 3, to: base + 3 },
+        y: { from: this.floorY + 6, to: this.floorY + 2 },
+        alpha: { from: 0.3, to: 0.7 },
+        duration: 90,
         yoyo: true,
-        repeat: Math.ceil(TELL_MS / 120),
+        repeat: Math.ceil(TELL_MS / 180),
         onComplete: () => sprite.setPosition(base, this.floorY + 4),
       });
     }
