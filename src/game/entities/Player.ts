@@ -65,7 +65,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private diveStrikeDone = false;
   /** aucun ennemi proche : l'absorption de chair est possible */
   private canAbsorb = false;
-  private absorbStartedAt = 0;
 
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
@@ -294,7 +293,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       if (canHeal && !left && !right) {
         this.beginState("absorb", time, ABSORB_DURATION);
-        this.absorbStartedAt = time;
         body.setVelocityX(0);
         this.setTint(0xff6b7d);
         useGameStore.getState().setAbsorb(true, 0);
