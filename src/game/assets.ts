@@ -123,3 +123,61 @@ export const SHEETS: SheetDef[] = [
 ];
 
 export const FRAME_SPACING = 4;
+
+/* ------------------------------------------------------------------ */
+/* Decors du Chapitre 1 : 4 scenes x 3 calques de parallaxe            */
+/* ------------------------------------------------------------------ */
+
+const BACKGROUNDS = `${SPRITES}/backgrounds`;
+
+export type BackdropKey = "cathedrale" | "corridor" | "throne" | "exterieur";
+
+export type BackdropDef = {
+  /** cles de texture Phaser */
+  far: string;
+  mid: string;
+  near: string;
+  /** chemins des images */
+  paths: [string, string, string];
+  /** voile d'ambiance applique par dessus les calques */
+  tint: number;
+  tintAlpha: number;
+  /** couleur du sol dessine en code, assortie a la scene */
+  ground: number;
+  ledge: number;
+  /** couleur des poussieres flottantes */
+  dust: number;
+};
+
+function backdrop(
+  name: BackdropKey,
+  tint: number,
+  tintAlpha: number,
+  ground: number,
+  ledge: number,
+  dust: number,
+): BackdropDef {
+  return {
+    far: `${name}-far`,
+    mid: `${name}-mid`,
+    near: `${name}-near`,
+    paths: [
+      `${BACKGROUNDS}/${name}_bg_far.png`,
+      `${BACKGROUNDS}/${name}_bg_mid.png`,
+      `${BACKGROUNDS}/${name}_bg_near.png`,
+    ],
+    tint,
+    tintAlpha,
+    ground,
+    ledge,
+    dust,
+  };
+}
+
+export const BACKDROPS: Record<BackdropKey, BackdropDef> = {
+  cathedrale: backdrop("cathedrale", 0x2a0d12, 0.28, 0x2a181b, 0x3a2226, 0xd8b877),
+  corridor: backdrop("corridor", 0x36070d, 0.34, 0x24100f, 0x351b1a, 0xc98a7a),
+  throne: backdrop("throne", 0x40060f, 0.38, 0x2c0f14, 0x40191f, 0xff8a9a),
+  exterieur: backdrop("exterieur", 0x1b1410, 0.22, 0x2e2620, 0x3f342a, 0xcfc0a0),
+};
+
