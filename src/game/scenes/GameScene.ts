@@ -52,6 +52,7 @@ export class GameScene extends Phaser.Scene {
   private gateColumn?: GateColumn;
   /** supplicie ecorche du fond de la cathedrale */
   private crucified?: CrucifiedProp;
+  private statues: WeepingStatue[] = [];
   private gateWall?: Phaser.GameObjects.Rectangle;
   
   /** bande-son adaptative (ambiance / combat) */
