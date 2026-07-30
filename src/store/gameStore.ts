@@ -60,6 +60,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   hasSave: false,
   mutations: [],
   effects: BASE_EFFECTS,
+  optionsReturnPhase: "menu",
 
   enter: () => set({ phase: "menu" }),
 
