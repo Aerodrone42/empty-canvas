@@ -12,7 +12,10 @@ import { useGameStore } from "@/store/gameStore";
 
 const ROOM_WIDTH = 2400;
 const ROOM_HEIGHT = 900;
-const FLOOR_Y = 780;
+/** la ligne de sol est calee tout en bas du viewport : plus de bande vide */
+const FLOOR_Y = 880;
+/** soin par seconde en se reposant dans une flaque de sang */
+const POOL_REGEN_PER_SEC = 6;
 /** distance en dessous de laquelle une creature empeche de se soigner */
 const SAFE_RADIUS = 300;
 
@@ -56,7 +59,10 @@ export class GameScene extends Phaser.Scene {
     this.spawn(new SuppliantRampant(this, 1600, FLOOR_Y));
     this.spawn(new PenitentGreffe(this, 2060, FLOOR_Y));
 
-    this.cameras.main.startFollow(this.player, true, 0.1, 0.1, 0, 120);
+    // suivi horizontal uniquement : au saut, l'image ne doit pas bouger
+    const cam = this.cameras.main;
+    cam.startFollow(this.player, true, 0.12, 0, 0, 0);
+    cam.setScroll(cam.scrollX, ROOM_HEIGHT - cam.height);
 
     this.events.on("player-strike", this.resolvePlayerStrike, this);
     this.events.on("enemy-strike", this.resolveEnemyStrike, this);
@@ -131,7 +137,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Decor en trois calques de parallaxe, selon la salle courante. */
   private buildBackdrop() {
-    this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT);
+    this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, ROOM_WIDTH);
     this.lighting = new Lighting(this, ROOM_WIDTH, FLOOR_Y);
   }
 
@@ -153,6 +159,30 @@ export class GameScene extends Phaser.Scene {
     this.platforms.refresh();
   }
 
+
+  /**
+   * Se tenir au sol dans une flaque de sang fraiche, hors combat, rend
+   * lentement de la vitalite ; la flaque se vide au fur et a mesure.
+   */
+  private regenerateFromBlood(safe: boolean, delta: number) {
+    if (!safe) return;
+    const body = this.player.body as Phaser.Physics.Arcade.Body | null;
+    if (!body || !(body.blocked.down || body.touching.down)) return;
+
+    const store = useGameStore.getState();
+    if (store.health >= store.maxHealth) return;
+
+    const pool = this.blood.poolAt(this.player.x);
+    if (!pool) return;
+
+    const healed = this.blood.drainPool(pool, (POOL_REGEN_PER_SEC * delta) / 1000);
+    if (healed <= 0) return;
+    store.heal(healed);
+
+    if (Math.random() < 0.08) {
+      this.blood.sparks(this.player.x, this.player.y - 40);
+    }
+  }
 
   private resolvePlayerStrike(strike: Strike, damageScale = 1) {
     const effects = useGameStore.getState().effects;
@@ -203,6 +233,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.isPaused = false;
 
     this.player.tick(time);
+    this.blood.tick(time);
 
 
     this.enemies = this.enemies.filter((e) => e.active);
@@ -214,6 +245,7 @@ export class GameScene extends Phaser.Scene {
         Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y) < SAFE_RADIUS,
     );
     this.player.setSafeToAbsorb(!threatened);
+    this.regenerateFromBlood(!threatened, delta);
 
     for (const enemy of this.enemies) {
       enemy.think(this.player.x, this.player.y, time);
