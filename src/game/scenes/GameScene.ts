@@ -199,6 +199,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time: number) {
+    this.parallax.update();
+
     const phase = useGameStore.getState().phase;
     if (phase !== "playing") {
       this.physics.world.isPaused = true;
@@ -207,6 +209,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.isPaused = false;
 
     this.player.tick(time);
+
 
     this.enemies = this.enemies.filter((e) => e.active);
 
