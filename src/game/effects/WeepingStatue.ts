@@ -22,27 +22,29 @@ export class WeepingStatue {
   private weeping = false;
   private trailAmount = 0;
 
-  constructor(scene: Phaser.Scene, x: number, floorY: number) {
+  constructor(scene: Phaser.Scene, x: number, floorY: number, sizeFactor = 1) {
     this.scene = scene;
     this.x = x;
 
     const tex = scene.textures.get("statue-pleureuse").getSourceImage();
-    const scale = STATUE_H / tex.height;
-    const baseY = floorY - 6;
+    const height = STATUE_H * sizeFactor;
+    const scale = height / tex.height;
+    // legerement remontee : la statue est adossee au mur du fond
+    const baseY = floorY - 6 - 40 * sizeFactor;
 
     this.sprite = scene.add
       .image(x, baseY, "statue-pleureuse")
       .setOrigin(0.5, 1)
       .setScale(scale)
-      .setDepth(-5);
+      .setDepth(-20);
 
     // les yeux se situent dans la capuche, tout en haut du corps
-    this.eyesY = baseY - STATUE_H * 0.905;
+    this.eyesY = baseY - height * 0.905;
 
     this.ensureTearTexture();
 
     // trainees de sang qui descendent sur le visage et la robe
-    this.trails = scene.add.graphics().setDepth(-5);
+    this.trails = scene.add.graphics().setDepth(-20);
 
     this.tears = scene.add
       .particles(x, this.eyesY, "fx-tear", {
@@ -61,7 +63,7 @@ export class WeepingStatue {
           quantity: 1,
         },
       })
-      .setDepth(-5);
+      .setDepth(-20);
     this.tears.stop();
   }
 
