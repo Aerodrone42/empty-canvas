@@ -64,10 +64,13 @@ export const useGameStore = create<GameState>((set, get) => ({
   flesh: 0,
   maxFlesh: MAX_FLESH,
   kills: 0,
+  parries: 0,
   hasSave: false,
   mutations: [],
   effects: BASE_EFFECTS,
   optionsReturnPhase: "menu",
+  dodgeReadyAt: 0,
+  dodgeCooldownMs: 700,
 
   enter: () => set({ phase: "menu" }),
 
