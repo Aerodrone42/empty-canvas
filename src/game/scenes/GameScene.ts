@@ -51,7 +51,10 @@ export class GameScene extends Phaser.Scene {
   private crucified?: CrucifiedProp;
   private gateWall?: Phaser.GameObjects.Rectangle;
   private gateVeil?: Phaser.GameObjects.Rectangle;
+  /** bande-son adaptative (ambiance / combat) */
+  private music?: MusicDirector;
   private roomCleared = false;
+
 
   private exiting = false;
   /** le heros touche le plateau (mis a jour par le collider) */
