@@ -2,6 +2,7 @@ import Phaser from "phaser";
 
 import { PARRY, type Strike } from "../combat";
 import { BloodFX } from "../effects/Blood";
+import { Lighting } from "../effects/Lighting";
 import { Parallax } from "../effects/Parallax";
 import { Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
 import { Pickup } from "../entities/Pickup";
@@ -21,6 +22,7 @@ export class GameScene extends Phaser.Scene {
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
   private blood!: BloodFX;
   private parallax!: Parallax;
+  private lighting!: Lighting;
   private pickups: Pickup[] = [];
   /** salle courante : determine le decor et la palette */
   private backdropKey: BackdropKey = "cathedrale";
@@ -130,6 +132,7 @@ export class GameScene extends Phaser.Scene {
   /** Decor en trois calques de parallaxe, selon la salle courante. */
   private buildBackdrop() {
     this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT);
+    this.lighting = new Lighting(this, ROOM_WIDTH, FLOOR_Y);
   }
 
   private buildGeometry() {
@@ -188,8 +191,9 @@ export class GameScene extends Phaser.Scene {
     this.player.receiveDamage(amount, this.time.now);
   }
 
-  update(time: number) {
+  update(time: number, delta: number) {
     this.parallax.update();
+    this.lighting.update(delta, this.player.x, this.player.y);
 
     const phase = useGameStore.getState().phase;
     if (phase !== "playing") {
