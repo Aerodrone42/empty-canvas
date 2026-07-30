@@ -49,6 +49,8 @@ export class GameScene extends Phaser.Scene {
   private liftBaseY = FLOOR_Y - 40;
   private liftTopY = FLOOR_Y - 40 - LIFT_TRAVEL;
   private exiting = false;
+  /** le heros touche le plateau (mis a jour par le collider) */
+  private liftContact = false;
 
 
   constructor() {
