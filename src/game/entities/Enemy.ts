@@ -158,9 +158,9 @@ export class PenitentGreffe extends Enemy {
       detectRange: 320,
       attackRange: 90,
       attackCooldown: 1700,
-      scale: 1,
-      bodyWidth: 54,
-      bodyHeight: 118,
+      scale: 1.15,
+      bodyWidth: 60,
+      bodyHeight: 128,
       fleshReward: 14,
       animPrefix: "penitent",
     });
