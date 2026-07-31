@@ -157,6 +157,38 @@ export const SHEETS: SheetDef[] = [
     spacing: 0,
   },
 
+  // --- Bourreau (libere par la machine d'ecartelement du corridor) ---
+  {
+    key: "bourreau-idle",
+    path: `${ENEMIES}/bourreau_idle_spritesheet.png`,
+    frameWidth: ENEMY_FRAME_W,
+    frameHeight: ENEMY_FRAME_H,
+    frameCount: 4,
+    frameRate: 4,
+    repeat: -1,
+    spacing: 0,
+  },
+  {
+    key: "bourreau-walk",
+    path: `${ENEMIES}/bourreau_walk_spritesheet.png`,
+    frameWidth: ENEMY_FRAME_W,
+    frameHeight: ENEMY_FRAME_H,
+    frameCount: 4,
+    frameRate: 8,
+    repeat: -1,
+    spacing: 0,
+  },
+  {
+    key: "bourreau-attack",
+    path: `${ENEMIES}/bourreau_attack_spritesheet.png`,
+    frameWidth: ENEMY_FRAME_W,
+    frameHeight: ENEMY_FRAME_H,
+    frameCount: 5,
+    frameRate: 10,
+    repeat: 0,
+    spacing: 0,
+  },
+
   // --- Ecorche-Pendu (tombe du plafond, onde de sang, explose a la mort) ---
   {
     key: "ecorche-hang",
