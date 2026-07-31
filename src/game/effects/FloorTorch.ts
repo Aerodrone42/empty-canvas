@@ -6,7 +6,10 @@ import Phaser from "phaser";
  * aucun overlap : le heros et les ennemis traversent la torchere sans effet.
  */
 
-export const TEX_TORCH = "floor-torch";
+/** socle en fer forge : image fixe, ne bouge jamais */
+export const TEX_TORCH = "floor-torch-base";
+/** flamme seule : sprite anime pose sur la vasque */
+export const TEX_TORCH_FLAME = "floor-torch-flame";
 /** boucle de repos : idle -> faible -> moyenne -> vacillement */
 export const ANIM_TORCH_IDLE = "floor-torch-idle";
 /** sursaut : forte -> embrasement -> intensification -> tourbillon -> souffle -> etincelles */
@@ -15,12 +18,15 @@ export const ANIM_TORCH_FLARE = "floor-torch-flare";
 const TEX_GLOW = "floor-torch-glow";
 const TEX_SMOKE = "floor-torch-smoke";
 
-/** dimensions d'une frame source */
-const FRAME_W = 113;
-const FRAME_H = 300;
-/** position du foyer (vasque) dans la frame source */
-const FIRE_X = 0.5;
-const FIRE_Y = 88 / FRAME_H;
+/** dimensions du socle */
+const BASE_W = 150;
+const BASE_H = 274;
+/** dimensions d'une frame de flamme (calee sur le haut du socle) */
+export const FLAME_W = 150;
+export const FLAME_H = 112;
+/** position du foyer (levre de la vasque) dans le socle */
+const FIRE_Y = 100 / BASE_H;
+
 
 
 /** Textures radiales generees une seule fois, partagees par toutes les torches. */
