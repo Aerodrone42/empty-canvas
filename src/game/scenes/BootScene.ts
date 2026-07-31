@@ -44,6 +44,12 @@ export class BootScene extends Phaser.Scene {
     // grosse veine animee du corridor (decor de fond)
     this.load.image("corridor-vein", "/assets/sprites/props/corridor_vein.png");
 
+    this.load.spritesheet(
+      "wall-torch",
+      "/assets/sprites/props/wall_torch_spritesheet.png",
+      { frameWidth: 128, frameHeight: 176, spacing: 0 },
+    );
+
     // vie de fond : rats au ras du sol, chauves-souris en hauteur
     this.load.spritesheet(
       "ambient-rat",
@@ -85,6 +91,14 @@ export class BootScene extends Phaser.Scene {
         repeat: sheet.repeat,
       });
     }
+
+    // Torcheres murales : boucle de flamme.
+    this.anims.create({
+      key: "wall-torch-burn",
+      frames: this.anims.generateFrameNumbers("wall-torch", { start: 0, end: 5 }),
+      frameRate: 10,
+      repeat: -1,
+    });
 
     // Vie de fond : rats et chauves-souris.
     this.anims.create({
