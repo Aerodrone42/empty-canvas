@@ -86,6 +86,20 @@ export class BootScene extends Phaser.Scene {
       });
     }
 
+    // Vie de fond : rats et chauves-souris.
+    this.anims.create({
+      key: "ambient-rat-run",
+      frames: this.anims.generateFrameNumbers("ambient-rat", { start: 0, end: 5 }),
+      frameRate: 12,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: "ambient-bat-fly",
+      frames: this.anims.generateFrameNumbers("ambient-bat", { start: 0, end: 5 }),
+      frameRate: 14,
+      repeat: -1,
+    });
+
     // Saut du Vigile : la feuille est decoupee en trois phases.
     this.anims.create({
       key: "vigile-crouch",

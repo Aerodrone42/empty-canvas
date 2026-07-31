@@ -4,6 +4,7 @@ import { MusicDirector } from "../audio/Music";
 import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat";
 
 import { Profiler } from "../debug/Profiler";
+import { AmbientCritters } from "../effects/AmbientCritters";
 import { BloodFX } from "../effects/Blood";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
 import { CorridorVein } from "../effects/CorridorVein";
@@ -66,6 +67,8 @@ export class GameScene extends Phaser.Scene {
   private blobs: FleshBlob[] = [];
   /** machine d'ecartellement du corridor */
   private wheel?: TortureRack;
+  /** rats et chauves-souris : vie de fond purement decorative */
+  private critters?: AmbientCritters;
   private gateWall?: Phaser.GameObjects.Rectangle;
 
   
@@ -96,6 +99,8 @@ export class GameScene extends Phaser.Scene {
     this.blobs = [];
     this.wheel?.destroy();
     this.wheel = undefined;
+    this.critters?.destroy();
+    this.critters = undefined;
 
     this.exiting = false;
     this.roomCleared = false;
@@ -255,6 +260,15 @@ export class GameScene extends Phaser.Scene {
   /** Decor en trois calques de parallaxe, selon la salle courante. */
   private buildBackdrop() {
     this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, ROOM_WIDTH);
+
+    // vie de fond : dosage rats / chauves-souris selon le volume de la salle
+    const mix =
+      this.backdropKey === "corridor"
+        ? { rats: 5, bats: 2, ratBias: 0.75 }
+        : this.backdropKey === "cathedrale"
+          ? { rats: 2, bats: 4, ratBias: 0.3 }
+          : { rats: 3, bats: 3, ratBias: 0.5 };
+    this.critters = new AmbientCritters(this, FLOOR_Y, ROOM_WIDTH, mix);
 
     // supplicie ecorche : uniquement dans la cathedrale
     if (this.backdropKey === "cathedrale") {
@@ -470,6 +484,7 @@ export class GameScene extends Phaser.Scene {
     for (const statue of this.statues) statue.update(this.player.x);
     for (const blob of this.blobs) blob.tick(time);
     this.wheel?.tick(this.player.x, time);
+    this.critters?.tick(time, delta);
 
 
     this.enemies = this.enemies.filter((e) => e.active);
