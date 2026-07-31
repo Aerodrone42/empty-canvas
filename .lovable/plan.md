@@ -1,32 +1,19 @@
-## Objectif
+## Problème
 
-Ajouter le blob de chair (sprite fourni) comme élément de décor animé dans la salle 2 (corridor) : plusieurs exemplaires placés aléatoirement le long de la jonction sol/mur, chacun jouant son animation par à-coups aléatoires.
+Chaque case du spritesheet `public/assets/sprites/props/flesh_blob_spritesheet.png` est coupée net en bas et sur les côtés : la flaque de chair est tronquée par un bord horizontal droit sur toute la largeur, ce qui donne cette « dalle » rectangulaire visible au sol dans le corridor.
 
-## Préparation de l'asset
+## Correctif
 
-Le fichier envoyé fait 1920x823 avec 8 poses alignées sur une seule rangée, entourées de beaucoup de vide blanc.
+1. **Retouche du spritesheet (Python/PIL)** — traiter chaque frame indépendamment :
+   - éroder les coins bas-gauche / bas-droit avec un masque elliptique doux, pour que la flaque se termine en pointe organique au lieu d'un angle droit ;
+   - ajouter un dégradé d'alpha sur les ~18 dernières lignes de pixels (fondu vers 0), avec un léger bruit horizontal pour éviter une ligne parfaitement droite ;
+   - conserver la grille (même largeur/hauteur de cellule, même alignement bas) pour ne rien casser côté animation.
 
-- Détourer le fond blanc (transparence), rogner la bande utile, découper en 8 cellules de largeur égale et régénérer une spritesheet normalisée (cellule ~240x180, ligne de base des blobs alignée en bas de cellule).
-- Sortie : `public/assets/sprites/props/flesh_blob_spritesheet.png` + entrée dans `src/game/assets.ts` (clé, frameWidth, frameHeight, frameCount = 8).
+2. **Ombre de contact** dans `src/game/effects/FleshBlob.ts` — ajouter une ellipse sombre très diffuse (mode `MULTIPLY`, alpha faible) sous le blob, légèrement plus large que lui, afin d'ancrer la masse au sol et de masquer la limite basse restante. Elle suit la pulsation du blob.
 
-## Nouveau composant `src/game/effects/FleshBlob.ts`
+3. **Vérification** — relancer le script Playwright existant sur la salle corridor et comparer la capture : plus aucun bord droit visible sous les amas.
 
-- Charge la spritesheet, crée l'animation `blob-pulse` (8 frames, ~10 fps, aller-retour `yoyo` pour un cycle gonflement/rétraction fluide).
-- Un blob = un sprite posé sur la ligne sol/mur, origine bas-centre, `depth` juste devant le décor de fond mais derrière le joueur.
-- État repos : frame 0 figée, légère teinte sombre pour se fondre dans le mur.
-- Réveil aléatoire : chaque blob tire un délai aléatoire (ex. 3–9 s) ; à l'échéance il joue 1 à 2 cycles d'animation, avec un léger tremblement/variation de teinte, puis retourne au repos et retire un nouveau délai.
-- Variation d'aspect par instance : échelle aléatoire (~0.55–0.9), `flipX` aléatoire, décalage de phase, pour éviter l'effet clone.
-- Méthode `tick(time)` appelée depuis la boucle de la scène, `destroy()` au changement de salle.
+## Détails techniques
 
-## Placement dans la scène
-
-Dans `GameScene.ts`, section `backdropKey === "corridor"` (là où sont déjà créées la veine et les statues) :
-
-- Générer 4 à 6 blobs à des abscisses aléatoires réparties sur la largeur de la salle, avec un espacement minimal pour éviter les chevauchements, et en évitant les zones sensibles (spawn du joueur, colonne de sortie).
-- Ordonnée = jonction sol/mur, c'est-à-dire la ligne de plinthe visible sur la capture (légèrement au-dessus de `FLOOR_Y`, calée sur le même repère que la base des statues) — exactement là où sont les cercles rouges de l'annotation.
-- Les blobs restent purement décoratifs : aucune collision, aucun impact sur le gameplay ni sur la condition de nettoyage de la salle.
-- Appel de `tick()` dans `update()` et nettoyage dans la transition de salle.
-
-## Vérification
-
-Capture Playwright de la salle 2 pour contrôler l'ancrage sur la ligne sol/mur, la taille relative et la visibilité des blobs dans l'ambiance sombre, puis ajustement de l'échelle/opacité si nécessaire.
+- Le spritesheet fait 8 frames ; le traitement s'applique frame par frame pour éviter les bavures entre cellules.
+- Aucun changement de dimension de cellule → `BootScene.ts` et l'animation restent inchangés.
