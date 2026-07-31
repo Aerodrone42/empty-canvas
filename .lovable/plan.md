@@ -1,35 +1,33 @@
-## Petites créatures d'ambiance : rats et chauves-souris
+# Torches murales animées
 
-Ajout d'une vie de fond purement décorative dans les salles, sans aucune interaction avec le combat.
+Ajouter des torchères le long des murs des deux salles : flamme animée, halo de lumière qui fluctue, fine fumée qui monte. Purement décoratif — aucune collision, aucun impact sur le gameplay ni sur le HUD.
 
-### Assets à générer
-- `public/assets/sprites/props/ambient_rat_spritesheet.png` — 6 frames de course de profil (cellules 64×32), pixel art, palette charbon / brun sale, yeux rouges, queue qui fouette.
-- `public/assets/sprites/props/ambient_bat_spritesheet.png` — 6 frames de battement d'ailes de profil (cellules 64×48), membrane rouge sombre translucide, corps noir.
+## Rendu visé
 
-Les deux feuilles seront produites en une seule bande horizontale sans marge, cohérentes avec le style des sprites existants (blob de chair, statue).
+- Torche fixée au mur du fond, à environ 2/3 de hauteur, avec support en fer forgé et coupe de braises.
+- Flamme en boucle (spritesheet), légèrement désynchronisée d'une torche à l'autre pour éviter l'effet « clones ».
+- Halo : disque lumineux additif ambré dont le rayon et l'opacité oscillent en continu, avec de brefs sursauts aléatoires (courant d'air).
+- Fumée : quelques particules sombres semi-transparentes qui montent, s'élargissent et s'effacent au-dessus de la flamme.
+- Quelques braises orange qui montent occasionnellement.
 
-### Nouveau fichier `src/game/effects/AmbientCritters.ts`
-Une classe `AmbientCritters` sur le même modèle que `FleshBlob` / `CorridorVein` :
+## Placement
 
-- **Pool recyclé** : 4 rats + 3 chauves-souris préinstanciés, invisibles au repos. Aucun objet créé/détruit en cours de jeu (pas de pression GC, important vu les ralentissements déjà rencontrés).
-- **Rats** : apparaissent hors champ à gauche ou à droite de la caméra, courent le long de la ligne sol/mur (`floorY - 10`, depth `-3`, donc derrière le héros), vitesse 220–320 px/s, avec de brèves pauses aléatoires (arrêt, tête qui bouge, reprise) puis sortie de l'écran. Petite ombre de contact ovale qui suit.
-- **Chauves-souris** : traversent la partie haute de l'écran (entre `floorY - 620` et `floorY - 380`), depth `-4`, trajectoire sinusoïdale (oscillation verticale via tween sur un offset), vitesse 260–380 px/s, légère variation d'échelle pour simuler la profondeur, alpha 0.75.
-- **Cadence** : un `TimerEvent` déclenche un passage toutes les 3–9 s aléatoirement, avec parfois un petit groupe de 2–3 chauves-souris décalées. Les passages sont suspendus si la caméra ne bouge pas depuis longtemps (évite l'effet de défilé).
-- **Aucune physique** : positions mises à jour par tween/`tick(delta)`, pas de corps Arcade, donc aucune collision possible avec le héros ou les ennemis.
-- **`destroy()`** qui nettoie tweens, timers et sprites, appelé au changement de salle.
+- Cathédrale : 4 torches réparties le long du mur, en évitant le crucifié et la colonne de sortie.
+- Corridor : 5 à 6 torches espacées régulièrement, placées derrière et la veine, cohérentes avec la perspective (légèrement plus petites vers le point de fuite).
+- Profondeur : derrière le héros et les ennemis, devant le fond peint.
 
-### Chargement
-- Ajout des deux spritesheets dans `BootScene.preload()`.
-- Ajout des deux animations (`ambient-rat-run` 12 fps boucle, `ambient-bat-fly` 14 fps boucle) dans `BootScene.create()`.
+## Détails techniques
 
-### Intégration dans `GameScene.ts`
-- Champ `private critters?: AmbientCritters`.
-- Instanciation dans `buildBackdrop()` pour toutes les salles, avec un dosage par décor :
-  - cathédrale : chauves-souris majoritaires (grands volumes) ;
-  - corridor : rats majoritaires (couloir bas et étroit) ;
-  - trône / extérieur : mélange équilibré.
-- Appel de `this.critters?.tick(time, delta)` dans `update()`.
-- Nettoyage dans la réinitialisation de `create()` et au `SHUTDOWN`, comme pour `blobs` et `wheel`.
+- Nouvel asset `public/assets/sprites/props/wall_torch_spritesheet.png` : torche + flamme, boucle de 6 frames, généré puis assemblé au format spritesheet.
+- Chargement et animation `wall-torch-burn` déclarés dans `src/game/scenes/BootScene.ts`.
+- Nouveau `src/game/effects/WallTorch.ts` :
+  - classe `WallTorch` (sprite + halo + émetteurs), méthode `tick(time)` pour la fluctuation, `destroy()` pour le nettoyage.
+  - helper `placeTorches(scene, floorY, roomWidth, backdropKey)` qui retourne le tableau des torches placées.
+  - halo via `Phaser.GameObjects.Image` en `ADD` avec une texture radiale générée une seule fois, pas de light pipeline (le rendu reste compatible avec le HUD et la lisibilité du héros).
+  - fumée et braises via un seul `ParticleEmitter` par torche, à faible débit, pour rester léger.
+- Branchement dans `src/game/scenes/GameScene.ts` : instanciation dans `buildBackdrop()`, appel dans la boucle `update`, libération dans le nettoyage de salle (au même endroit que `critters` / `vein`).
+- Aucun corps physique, aucun overlap : le héros et les ennemis traversent les torches sans effet.
 
-### Vérification
-Contrôle visuel : les rats passent bien derrière le héros au ras du sol, les chauves-souris traversent le haut sans jamais recouvrir le HUD, aucune créature ne bloque ou ne touche le joueur, et le compteur du profiler (F3) ne montre pas de chute de framerate.
+## Vérification
+
+Chargement du jeu sans erreur console, puis capture d'écran des deux salles pour valider l'intensité de la lueur et la lisibilité du personnage.
