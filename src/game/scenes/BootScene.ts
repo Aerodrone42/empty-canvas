@@ -45,9 +45,9 @@ export class BootScene extends Phaser.Scene {
     this.load.image("corridor-vein", "/assets/sprites/props/corridor_vein.png");
 
     this.load.spritesheet(
-      "wall-torch",
-      "/assets/sprites/props/wall_torch_spritesheet.png",
-      { frameWidth: 128, frameHeight: 176, spacing: 0 },
+      "floor-torch",
+      "/assets/sprites/props/floor_torch_spritesheet.png",
+      { frameWidth: 112, frameHeight: 240, spacing: 0 },
     );
 
     // vie de fond : rats au ras du sol, chauves-souris en hauteur
@@ -92,10 +92,10 @@ export class BootScene extends Phaser.Scene {
       });
     }
 
-    // Torcheres murales : boucle de flamme.
+    // Torcheres sur pied : boucle de flamme.
     this.anims.create({
-      key: "wall-torch-burn",
-      frames: this.anims.generateFrameNumbers("wall-torch", { start: 0, end: 5 }),
+      key: "floor-torch-burn",
+      frames: this.anims.generateFrameNumbers("floor-torch", { start: 0, end: 5 }),
       frameRate: 10,
       repeat: -1,
     });

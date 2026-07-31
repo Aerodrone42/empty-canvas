@@ -5,7 +5,7 @@ import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat"
 
 import { Profiler } from "../debug/Profiler";
 import { AmbientCritters } from "../effects/AmbientCritters";
-import { placeTorches, type WallTorch } from "../effects/WallTorch";
+import { placeTorches, type FloorTorch } from "../effects/FloorTorch";
 import { BloodFX } from "../effects/Blood";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
 import { CorridorVein } from "../effects/CorridorVein";
@@ -70,8 +70,8 @@ export class GameScene extends Phaser.Scene {
   private wheel?: TortureRack;
   /** rats et chauves-souris : vie de fond purement decorative */
   private critters?: AmbientCritters;
-  /** torcheres murales : decor pur, aucune interaction */
-  private torches: WallTorch[] = [];
+  /** torcheres sur pied : decor pur, aucune interaction */
+  private torches: FloorTorch[] = [];
   private gateWall?: Phaser.GameObjects.Rectangle;
 
   
@@ -275,7 +275,7 @@ export class GameScene extends Phaser.Scene {
           : { rats: 3, bats: 3, ratBias: 0.5 };
     this.critters = new AmbientCritters(this, FLOOR_Y, ROOM_WIDTH, mix);
 
-    // torcheres murales : flamme, lueur fluctuante et fumee legere
+    // torcheres sur pied : flamme, lueur fluctuante et fumee legere
     this.torches = placeTorches(this, FLOOR_Y, ROOM_WIDTH, this.backdropKey);
 
     // supplicie ecorche : uniquement dans la cathedrale
