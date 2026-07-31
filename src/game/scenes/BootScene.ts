@@ -44,11 +44,14 @@ export class BootScene extends Phaser.Scene {
     // grosse veine animee du corridor (decor de fond)
     this.load.image("corridor-vein", "/assets/sprites/props/corridor_vein.png");
 
+    // torchere sur pied : socle fixe + planche de flamme animee
+    this.load.image("floor-torch-base", "/assets/sprites/props/floor_torch_base.png");
     this.load.spritesheet(
-      "floor-torch",
-      "/assets/sprites/props/floor_torch_spritesheet.png",
-      { frameWidth: 113, frameHeight: 300, spacing: 0 },
+      "floor-torch-flame",
+      "/assets/sprites/props/floor_torch_flame_spritesheet.png",
+      { frameWidth: 150, frameHeight: 112, spacing: 0 },
     );
+
 
     // vie de fond : rats au ras du sol, chauves-souris en hauteur
     this.load.spritesheet(
