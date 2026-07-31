@@ -195,13 +195,15 @@ export class AmbientCritters {
     c.nextPause = this.scene.time.now + Phaser.Math.Between(400, 1400);
 
     const scaleVar = Phaser.Math.FloatBetween(0.8, 1.1);
+    const ratScale = (RAT_H * scaleVar) / (c.sprite.frame.height || RAT_H);
     c.sprite
       .setPosition(toRight ? left : right, c.baseY)
       .setFlipX(!toRight)
-      .setScale(c.sprite.scaleX < 0 ? c.sprite.scaleX : Math.abs(c.sprite.scaleX))
+      .setScale(ratScale)
       .setVisible(true);
-    c.sprite.setScale(Math.abs(c.sprite.scaleY) * 0 + (RAT_H * scaleVar) / (c.sprite.height || RAT_H));
     c.sprite.play(ANIM_RAT);
+    c.shadow?.setScale(scaleVar);
+
 
     c.shadow?.setPosition(c.sprite.x, c.baseY + 2).setVisible(true);
   }
