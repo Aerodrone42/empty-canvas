@@ -226,7 +226,7 @@ export class AmbientCritters {
     c.freq = Phaser.Math.FloatBetween(0.0016, 0.0032);
     c.phase = Math.random() * Math.PI * 2;
 
-    const base = BAT_W / (c.sprite.width || BAT_W);
+    const base = BAT_W / (c.sprite.frame.width || BAT_W);
     c.sprite
       .setPosition(toRight ? left : right, c.baseY)
       .setFlipX(!toRight)
