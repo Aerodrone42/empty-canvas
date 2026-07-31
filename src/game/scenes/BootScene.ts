@@ -47,7 +47,7 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet(
       "floor-torch",
       "/assets/sprites/props/floor_torch_spritesheet.png",
-      { frameWidth: 112, frameHeight: 240, spacing: 0 },
+      { frameWidth: 98, frameHeight: 260, spacing: 0 },
     );
 
     // vie de fond : rats au ras du sol, chauves-souris en hauteur
@@ -92,12 +92,22 @@ export class BootScene extends Phaser.Scene {
       });
     }
 
-    // Torcheres sur pied : boucle de flamme.
+    // Torcheres sur pied : respiration de repos + sursaut d'embrasement.
     this.anims.create({
-      key: "floor-torch-burn",
-      frames: this.anims.generateFrameNumbers("floor-torch", { start: 0, end: 5 }),
-      frameRate: 10,
+      key: "floor-torch-idle",
+      frames: this.anims.generateFrameNumbers("floor-torch", {
+        frames: [0, 1, 2, 4, 2, 1, 0, 4],
+      }),
+      frameRate: 9,
       repeat: -1,
+    });
+    this.anims.create({
+      key: "floor-torch-flare",
+      frames: this.anims.generateFrameNumbers("floor-torch", {
+        frames: [3, 5, 6, 7, 8, 9, 6, 3, 2],
+      }),
+      frameRate: 11,
+      repeat: 0,
     });
 
     // Vie de fond : rats et chauves-souris.
