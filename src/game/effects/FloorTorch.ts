@@ -123,9 +123,15 @@ export class FloorTorch {
     if (this.destroyed) return;
 
     if (time >= this.nextGust) {
-      this.nextGust = time + Phaser.Math.Between(1400, 4200);
-      this.gust = Phaser.Math.FloatBetween(0.14, 0.3);
+      this.nextGust = time + Phaser.Math.Between(2600, 6400);
+      this.gust = Phaser.Math.FloatBetween(0.16, 0.34);
+      // la flamme s'embrase en meme temps que le halo
+      if (this.sprite.anims.getName() !== ANIM_TORCH_FLARE) {
+        this.sprite.play(ANIM_TORCH_FLARE);
+        this.sprite.anims.msPerFrame = Phaser.Math.Between(84, 118);
+      }
     }
+
     if (this.gust > 0) this.gust = Math.max(0, this.gust - 0.006);
 
     const flicker =
