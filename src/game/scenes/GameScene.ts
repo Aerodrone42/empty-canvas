@@ -11,7 +11,9 @@ import { scatterFleshBlobs, type FleshBlob } from "../effects/FleshBlob";
 import { WeepingStatue } from "../effects/WeepingStatue";
 import { GateColumn } from "../effects/GateColumn";
 import { Parallax } from "../effects/Parallax";
-import { EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
+import { TortureWheel } from "../effects/TortureWheel";
+import { Bourreau, EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
+
 import { GraspingHands } from "../entities/GraspingHands";
 import { Pickup } from "../entities/Pickup";
 import { Player } from "../entities/Player";
@@ -32,6 +34,9 @@ const SAFE_RADIUS = 300;
 const GATE_X = 2150;
 /** au dela de ce point, le heros bascule dans la salle suivante */
 const GATE_EXIT_X = GATE_X + 110;
+/** machine d'ecartellement du corridor */
+const TORTURE_WHEEL_X = 1320;
+
 
 
 /** enchainement des salles : la colonne mene a la suivante */
@@ -59,7 +64,10 @@ export class GameScene extends Phaser.Scene {
   private statues: WeepingStatue[] = [];
   /** amas de chair decoratifs colles au mur du corridor */
   private blobs: FleshBlob[] = [];
+  /** machine d'ecartellement du corridor */
+  private wheel?: TortureWheel;
   private gateWall?: Phaser.GameObjects.Rectangle;
+
   
   /** bande-son adaptative (ambiance / combat) */
   private music?: MusicDirector;
@@ -86,6 +94,9 @@ export class GameScene extends Phaser.Scene {
     this.vein = undefined;
     for (const blob of this.blobs) blob.destroy();
     this.blobs = [];
+    this.wheel?.destroy();
+    this.wheel = undefined;
+
     this.exiting = false;
     this.roomCleared = false;
     this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
@@ -266,7 +277,17 @@ export class GameScene extends Phaser.Scene {
         new WeepingStatue(this, 700, FLOOR_Y, 0.72, 110),
         new WeepingStatue(this, 2050, FLOOR_Y, 0.72, 110),
       ];
+
+      // machine d'ecartellement : deux bourreaux achevent un supplicie,
+      // puis se retournent contre le heros
+      this.wheel = new TortureWheel(this, TORTURE_WHEEL_X, FLOOR_Y, (spots) => {
+        for (const spot of spots) {
+          this.spawn(new Bourreau(this, spot.x, spot.y));
+        }
+        this.cameras.main.shake(180, 0.006);
+      });
     }
+
   }
 
   /**
@@ -448,6 +469,8 @@ export class GameScene extends Phaser.Scene {
     prof.measure("sang", () => this.blood.tick(time));
     for (const statue of this.statues) statue.update(this.player.x);
     for (const blob of this.blobs) blob.tick(time);
+    this.wheel?.tick(this.player.x, time);
+
 
     this.enemies = this.enemies.filter((e) => e.active);
 

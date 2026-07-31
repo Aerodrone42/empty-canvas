@@ -428,4 +428,26 @@ export class EcorchePendu extends Enemy {
   }
 }
 
+/**
+ * Bourreau : liberé par la machine d'ecartellement une fois le supplice
+ * acheve. Plus rapide que le Penitent, moins massif, frappe au crochet.
+ */
+export class Bourreau extends Enemy {
+  constructor(scene: Phaser.Scene, x: number, y: number) {
+    super(scene, x, y, {
+      health: 44,
+      speed: 46,
+      chaseSpeed: 104,
+      damage: 13,
+      detectRange: 900,
+      attackRange: 78,
+      attackCooldown: 1200,
+      scale: 1.2,
+      bodyWidth: 48,
+      bodyHeight: 116,
+      fleshReward: 16,
+      animPrefix: "bourreau",
+    });
+  }
+}
 
