@@ -98,7 +98,7 @@ export class BootScene extends Phaser.Scene {
     // Torcheres sur pied : respiration de repos + sursaut d'embrasement.
     this.anims.create({
       key: "floor-torch-idle",
-      frames: this.anims.generateFrameNumbers("floor-torch", {
+      frames: this.anims.generateFrameNumbers("floor-torch-flame", {
         frames: [0, 1, 2, 4, 2, 1, 0, 4],
       }),
       frameRate: 9,
@@ -106,12 +106,13 @@ export class BootScene extends Phaser.Scene {
     });
     this.anims.create({
       key: "floor-torch-flare",
-      frames: this.anims.generateFrameNumbers("floor-torch", {
+      frames: this.anims.generateFrameNumbers("floor-torch-flame", {
         frames: [3, 5, 6, 7, 8, 9, 6, 3, 2],
       }),
       frameRate: 11,
       repeat: 0,
     });
+
 
     // Vie de fond : rats et chauves-souris.
     this.anims.create({
