@@ -2,33 +2,35 @@ import Phaser from "phaser";
 
 /**
  * Chevalet d'ecartellement (Streckbett) vu de face, plaque contre le mur du
- * corridor : bati massif de bois et de fer, deux treuils, un supplicie sangle
- * sur la table et deux bourreaux monstrueux qui tirent chacun de leur cote.
+ * corridor : bati de bois et de fer, un supplicie sangle sur la table et deux
+ * bourreaux qui tirent chacun de leur cote.
  *
- * Sequence : repos -> preparation -> effort -> dechirement -> les bourreaux
- * lachent les manivelles et deviennent de vrais ennemis.
+ * L'ecartellement se joue par crans : chaque cran fait avancer la frame du
+ * supplicie, tend les chaines et secoue la machine, pour que l'oeil suive.
  */
 
 const TEX_RACK = "torture-rack";
 const TEX_VICTIM = "torture-rack-victim";
-const TEX_VICTIM_TORN = "torture-rack-victim-torn";
 const TEX_CRANK = "bourreau-crank";
 
 /** largeur affichee du bati */
-const RACK_W = 620;
+const RACK_W = 420;
 /** distance de declenchement */
-const TRIGGER_RANGE = 560;
+const TRIGGER_RANGE = 520;
+/** duree d'un cran */
+const STEP_MS = 450;
 
 type Phase = "idle" | "effort" | "done";
 
 export class TortureRack {
   private readonly scene: Phaser.Scene;
   private readonly rack: Phaser.GameObjects.Image;
-  private readonly victim: Phaser.GameObjects.Image;
+  private readonly victim: Phaser.GameObjects.Sprite;
   private readonly torturers: Phaser.GameObjects.Image[] = [];
   private readonly x: number;
   private readonly floorY: number;
   private readonly rackH: number;
+  private readonly victimScale: number;
   private phase: Phase = "idle";
   private nextTwitchAt = 0;
   private destroyed = false;
@@ -47,7 +49,7 @@ export class TortureRack {
     const scale = RACK_W / (src.width || 1);
     this.rackH = (src.height || 1) * scale;
 
-    // bati massif, pose au sol contre le mur
+    // bati pose au sol contre le mur
     this.rack = scene.add
       .image(x, floorY, TEX_RACK)
       .setOrigin(0.5, 1)
@@ -55,21 +57,22 @@ export class TortureRack {
       .setTint(0x8d7570)
       .setDepth(-4);
 
-    // supplicie sangle sur la table
-    const vs = scene.textures.get(TEX_VICTIM).getSourceImage();
+    // supplicie sangle sur la table : largeur ~ 0.55 du bati
+    const frame = scene.textures.get(TEX_VICTIM).get(0);
+    this.victimScale = (RACK_W * 0.55) / (frame.width || 1);
     this.victim = scene.add
-      .image(x, floorY - this.rackH * 0.44, TEX_VICTIM)
+      .sprite(x, floorY - this.rackH * 0.46, TEX_VICTIM, 0)
       .setOrigin(0.5, 0.5)
-      .setScale((RACK_W * 0.62) / (vs.width || 1))
-      .setTint(0xa06a66)
+      .setScale(this.victimScale)
+      .setTint(0xa8807a)
       .setDepth(-3);
 
     // les deux bourreaux, arc-boutes sur les treuils
     for (const side of [-1, 1] as const) {
       const t = scene.add
-        .image(x + side * RACK_W * 0.52, floorY + 6, TEX_CRANK)
+        .image(x + side * RACK_W * 0.54, floorY + 4, TEX_CRANK)
         .setOrigin(0.5, 1)
-        .setScale(1.45)
+        .setScale(1.15)
         .setFlipX(side < 0)
         .setTint(0x9a8884)
         .setDepth(-2);
@@ -85,7 +88,7 @@ export class TortureRack {
 
     this.scene.tweens.add({
       targets: this.victim,
-      scaleX: this.victim.scaleX * 1.03,
+      scaleX: this.victimScale * 1.02,
       duration: 320,
       yoyo: true,
       ease: "Sine.easeInOut",
@@ -95,52 +98,114 @@ export class TortureRack {
       const dir = i === 0 ? -1 : 1;
       this.scene.tweens.add({
         targets: t,
-        x: t.x + dir * 7,
+        x: t.x + dir * 5,
         duration: 300,
         yoyo: true,
         ease: "Sine.easeInOut",
       });
     }
 
-    this.scene.events.emit("fx-blood", this.x, this.floorY - this.rackH * 0.34, 0, 0.5);
+    this.scene.events.emit("fx-blood", this.x, this.floorY - this.rackH * 0.34, 0, 0.4);
   }
 
-  /** effort final : la machine se tend, le corps cede */
-  private finale() {
-    this.phase = "effort";
-    const baseScaleX = this.victim.scaleX;
+  /** un cran de treuil : frame suivante, chaines tendues, secousse */
+  private crank(step: number, frame: number, stretch: number) {
+    if (this.destroyed) return;
 
+    this.victim.setFrame(frame);
     this.scene.tweens.add({
       targets: this.victim,
-      scaleX: baseScaleX * 1.26,
-      duration: 900,
-      ease: "Cubic.easeIn",
-      onUpdate: () => this.scene.cameras.main.shake(40, 0.0018),
-      onComplete: () => {
-        if (this.destroyed) return;
-        // dechirement
-        this.victim.setTexture(TEX_VICTIM_TORN);
-        this.victim.setScale(baseScaleX * 1.3, baseScaleX * 1.02);
-        this.scene.cameras.main.shake(300, 0.012);
-        const vy = this.floorY - this.rackH * 0.4;
-        this.scene.events.emit("fx-gore", this.x, vy, 2.6);
-        this.scene.events.emit("fx-blood", this.x, vy, 1, 2.8);
-        this.scene.events.emit("fx-blood", this.x - 60, vy, -1, 1.8);
-        this.scene.events.emit("fx-blood", this.x + 60, vy, 1, 1.8);
-      },
+      scaleX: this.victimScale * stretch,
+      duration: 220,
+      ease: "Cubic.easeOut",
     });
 
     for (const [i, t] of this.torturers.entries()) {
       const dir = i === 0 ? -1 : 1;
       this.scene.tweens.add({
         targets: t,
-        x: t.x + dir * 30,
-        duration: 900,
-        ease: "Cubic.easeIn",
+        x: t.x + dir * 6,
+        angle: dir * 3,
+        duration: 200,
+        yoyo: true,
+        ease: "Sine.easeInOut",
       });
     }
 
-    this.scene.time.delayedCall(1500, () => this.release());
+    this.scene.cameras.main.shake(140, 0.003 + step * 0.001);
+    this.scene.events.emit(
+      "fx-blood",
+      this.x + Phaser.Math.Between(-50, 50),
+      this.floorY - this.rackH * 0.4,
+      0,
+      0.6 + step * 0.3,
+    );
+  }
+
+  /** effort final : trois crans, puis la rupture */
+  private finale() {
+    this.phase = "effort";
+    const vy = this.floorY - this.rackH * 0.44;
+
+    // approche : les bourreaux se calent, les chaines se tendent
+    for (const [i, t] of this.torturers.entries()) {
+      const dir = i === 0 ? -1 : 1;
+      this.scene.tweens.add({
+        targets: t,
+        x: t.x + dir * 10,
+        duration: 320,
+        ease: "Sine.easeOut",
+      });
+    }
+
+    const steps: { frame: number; stretch: number }[] = [
+      { frame: 1, stretch: 1.04 },
+      { frame: 2, stretch: 1.1 },
+      { frame: 3, stretch: 1.18 },
+    ];
+
+    steps.forEach((s, i) => {
+      this.scene.time.delayedCall(400 + i * STEP_MS, () =>
+        this.crank(i, s.frame, s.stretch),
+      );
+    });
+
+    // rupture
+    this.scene.time.delayedCall(400 + steps.length * STEP_MS, () => {
+      if (this.destroyed) return;
+      this.victim.setFrame(4);
+      this.scene.cameras.main.shake(320, 0.013);
+      this.scene.events.emit("fx-gore", this.x, vy, 2.6);
+      this.scene.events.emit("fx-blood", this.x, vy, 1, 2.8);
+      this.scene.events.emit("fx-blood", this.x - 50, vy, -1, 1.8);
+      this.scene.events.emit("fx-blood", this.x + 50, vy, 1, 1.8);
+
+      // le corps rompu retombe, la machine vibre encore
+      this.scene.time.delayedCall(260, () => {
+        if (this.destroyed) return;
+        this.victim.setFrame(5);
+        this.scene.tweens.add({
+          targets: this.victim,
+          scaleX: this.victimScale * 1.12,
+          duration: 300,
+          ease: "Quad.easeOut",
+        });
+        for (const t of this.torturers) {
+          this.scene.tweens.add({
+            targets: t,
+            x: t.x + Phaser.Math.Between(-4, 4),
+            duration: 90,
+            yoyo: true,
+            repeat: 4,
+          });
+        }
+        this.scene.events.emit("fx-blood", this.x, vy + 20, 0, 1.4);
+      });
+    });
+
+    this.scene.time.delayedCall(400 + steps.length * STEP_MS + 1200, () =>
+      this.release(),
+    );
   }
 
   /** les bourreaux lachent les manivelles : la scene prend le relais */

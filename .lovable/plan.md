@@ -1,49 +1,43 @@
-## Problème
+## Problème constaté (capture)
 
-La machine actuelle est une roue verticale avec une victime maigre (lisible comme un squelette) et deux bourreaux humains standard. Ce n'est pas la direction demandée.
+1. Le chevalet occupe presque tout l'écran : le bâti fait ~620 px de large mais le supplicié rendu par-dessus déborde bien au-delà, il est plus haut que le héros entier.
+2. Le supplicié est mal dessiné : anatomie difforme, tête surdimensionnée, couleurs plates, il ne ressemble pas au reste du pixel art.
+3. L'écartèlement ne se lit pas : le corps est simplement étiré en `scaleX` puis remplacé d'un coup par une texture déchirée. Aucune progression visible, pas de tension de chaînes, pas de rotation de roues.
 
-## Nouvelle direction
+## Correctifs
 
-Un **chevalet d'écartèlement horizontal** (type Streckbett), collé contre le mur du fond du corridor, pas au milieu de la pièce.
+### 1. Échelle du dispositif
+- `RACK_W` : 620 → **420 px**, soit une machine de la hauteur d'environ 1,5 héros, plaquée au mur.
+- Supplicié recalé en proportion du bâti (largeur ≈ 0,55 × bâti) et posé exactement sur la ligne de table, plus au-dessus.
+- Bourreaux repositionnés aux extrémités du nouveau gabarit, échelle réduite pour rester massifs sans écraser le décor.
 
-```text
-[ROUE G]===== table de bois =====[ROUE D]
- bourreau            victime            bourreau
-   massif        écartelée à plat        massif
-```
-
-## Assets à régénérer
-
-Tous les anciens fichiers de torture sont remplacés (roue verticale + victime verticale supprimées).
-
-1. `torture_rack_frame.png` — chevalet vu de face/trois-quarts : poutres massives noircies, deux grandes roues à rochet aux extrémités, chaînes, leviers, câbles tendus, flaque de sang et cordes au sol, traces de lutte. Format large (≈1600x600).
-2. `torture_victim_rack_spritesheet.png` — humain **charnu** (pas squelettique), allongé sur la table, poignets et chevilles enchaînés. 8 frames : convulsions → tension → étirement extrême → déchirement → corps rompu.
-3. Bourreaux monstrueux, nouveau gabarit élargi (cellule 288x224, ligne de pieds y=214) pour supporter la carrure :
-  - `bourreau_idle_spritesheet.png` (4 f) — respiration lourde, épaules énormes
-  - `bourreau_crank_spritesheet.png` (6 f) — tirée sur la roue, effort, corps arc-bouté
-  - `bourreau_walk_spritesheet.png` (6 f)
-  - `bourreau_attack_spritesheet.png` (5 f) — coup de masse à deux bras
-  - Design : très grand, bras surdéveloppés, masque de bourreau dechiré, peau sale et corrompue, silhouette quasi bestiale.
-
-## Séquence d'animation
+### 2. Nouveau supplicié
+Régénération d'un **spritesheet 6 frames** `torture_rack_victim_spritesheet.png` (au lieu des deux images fixes intact/déchiré) : homme charnu vu de dessus/trois-quarts, sanglé aux poignets et chevilles, pixel art cohérent avec les ennemis existants, palette bordeaux/chair sale.
 
 ```text
-[idle]        les deux bourreaux respirent, la table grince
-   | héros < 560 px
-[préparation] chacun saisit sa roue, chaînes qui se tendent
-[effort]      les roues tournent par crans, la victime s'étire, cris
-[impact]      déchirement : gerbe de sang qui gicle, 
-[retour]      la machine vibre encore, les chaînes oscillent, sang qui goutte
-   | ~1 s
-[éveil]       les deux bourreaux lâchent les roues et attaquent le héros
+f0 repos    f1 tension  f2 étirement  f3 craquement  f4 déchirure  f5 corps rompu
 ```
+
+Suppression de `torture_rack_victim_intact.png` et `torture_rack_victim_torn.png`.
+
+### 3. Écartèlement lisible
+Séquence retravaillée dans `TortureRack.ts`, jouée par crans plutôt qu'en une seule interpolation :
+
+```text
+[approche]  les bourreaux se calent, chaînes qui se tendent, grincement
+[cran 1]    roues +1 cran, frame f1, secousse courte, cri
+[cran 2]    roues +1 cran, frame f2, corps allongé de ~8 %
+[cran 3]    roues +1 cran, frame f3, tremblement caméra continu
+[rupture]   frame f4 → f5, gerbe de sang, gros shake, chaînes qui claquent
+[retour]    la machine vibre, le sang goutte, puis les bourreaux lâchent
+```
+
+- Chaque cran dure ~450 ms avec un temps mort, pour que l'œil suive.
+- L'allongement total reste modeste (≈ 20 %) mais accompagné du changement de frame : c'est le dessin qui porte l'effet, pas le `scaleX`.
+- Ajout d'un léger zoom/recentrage caméra pendant la séquence pour attirer le regard.
 
 ## Détails techniques
 
-- `src/game/effects/TortureWheel.ts` → renommé `TortureRack.ts`, réécrit : bâti horizontal ancré contre le mur (`depth -4`), roues gauche/droite en sprites indépendants tournant par crans pendant l'effort, victime allongée avec `scaleX` croissant lors de l'étirement, bourreaux jouant `bourreau-crank` puis `bourreau-idle` avant libération.
-- Machine plaquée au mur : `y = FLOOR_Y - 40` avec les bourreaux en avant du bâti mais en retrait du couloir de marche du héros.
-- `src/game/assets.ts` : nouvelles constantes `BOURREAU_FRAME_W/H/BASELINE_Y` (288/224/214) et les 4 feuilles bourreau ; suppression des anciennes entrées 224x176.
-- `src/game/scenes/BootScene.ts` : chargement de `torture_rack_frame.png`, des deux roues et de la nouvelle feuille victime.
-- `src/game/entities/Enemy.ts` : `Bourreau` conserve ses stats mais passe sur le nouveau gabarit (échelle et hitbox élargies, portée de frappe augmentée).
-- `src/game/scenes/GameScene.ts` : `TORTURE_RACK_X` recalé pour que le chevalet occupe la niche du mur entre les statues (700 et 2050) sans gêner la colonne de sortie ; `tick()` inchangé, callback de libération identique.
-- Suppression des fichiers `torture_wheel_machine.png` et `torture_victim_spritesheet.png`.
+- `src/game/scenes/BootScene.ts` : remplacer les deux `load.image` victime par un `load.spritesheet` sur le nouveau fichier.
+- `src/game/effects/TortureRack.ts` : `RACK_W = 420`, victime en `Sprite` avec `setFrame()`, machine d'états à crans (`Phaser.Time.TimelineEvent` ou `delayedCall` chaînés), tension de chaînes via petits décalages `x` des bourreaux à chaque cran.
+- `src/game/scenes/GameScene.ts` : inchangé hormis vérification que `TORTURE_RACK_X = 1320` reste dégagé avec la machine plus étroite.
