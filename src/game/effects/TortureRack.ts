@@ -35,7 +35,11 @@ export class TortureRack {
   private readonly victim: Phaser.GameObjects.Sprite;
   private readonly torturers: Phaser.GameObjects.Image[] = [];
   private readonly x: number;
+  /** ligne du mur (la machine y est plaquee) */
   private readonly floorY: number;
+  /** vraie ligne de sol jouable, ou descendent les bourreaux */
+  private readonly groundY: number;
+
   private readonly rackH: number;
   private readonly victimScale: number;
   private phase: Phase = "idle";
