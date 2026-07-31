@@ -41,7 +41,7 @@ export class FleshBlob {
       .setScale(scale)
       .setTint(TINT_REST)
       .setAlpha(1)
-      .setDepth(-3);
+      .setDepth(-2);
 
     if (Math.random() < 0.5) this.sprite.setFlipX(true);
 
