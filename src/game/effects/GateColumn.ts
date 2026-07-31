@@ -148,7 +148,7 @@ export class GateColumn {
 
     // respiration lente des visceres
     scene.tweens.add({
-      targets: [this.glowShaft, this.glowBase],
+      targets: [this.glowShaft, this.glowBase, ...this.flareGlow],
       alpha: { from: 0.08, to: 0.3 },
       duration: 2200,
       yoyo: true,
