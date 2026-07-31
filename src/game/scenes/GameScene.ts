@@ -83,7 +83,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   init(data?: { backdrop?: BackdropKey }) {
-    this.backdropKey = data?.backdrop ?? "corridor";
+    this.backdropKey = data?.backdrop ?? "cathedrale";
   }
 
 
