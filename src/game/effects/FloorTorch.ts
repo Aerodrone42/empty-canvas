@@ -7,17 +7,21 @@ import Phaser from "phaser";
  */
 
 export const TEX_TORCH = "floor-torch";
-export const ANIM_TORCH = "floor-torch-burn";
+/** boucle de repos : idle -> faible -> moyenne -> vacillement */
+export const ANIM_TORCH_IDLE = "floor-torch-idle";
+/** sursaut : forte -> embrasement -> intensification -> tourbillon -> souffle -> etincelles */
+export const ANIM_TORCH_FLARE = "floor-torch-flare";
 
 const TEX_GLOW = "floor-torch-glow";
 const TEX_SMOKE = "floor-torch-smoke";
 
 /** dimensions d'une frame source */
-const FRAME_W = 112;
-const FRAME_H = 240;
+const FRAME_W = 98;
+const FRAME_H = 260;
 /** position du foyer (vasque) dans la frame source */
 const FIRE_X = 0.5;
-const FIRE_Y = 88 / FRAME_H;
+const FIRE_Y = 78 / FRAME_H;
+
 
 /** Textures radiales generees une seule fois, partagees par toutes les torches. */
 function ensureTextures(scene: Phaser.Scene) {
