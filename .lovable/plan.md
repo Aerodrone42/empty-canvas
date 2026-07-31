@@ -1,26 +1,32 @@
-## Problème
+## Objectif
 
-Sur la capture, à l'endroit des flèches, on voit une marche nette : le fût s'arrête et la base commence avec une largeur différente, sans transition.
+Ajouter le blob de chair (sprite fourni) comme élément de décor animé dans la salle 2 (corridor) : plusieurs exemplaires placés aléatoirement le long de la jonction sol/mur, chacun jouant son animation par à-coups aléatoires.
 
-Dans `src/game/effects/GateColumn.ts` :
-- le fût fait `SHAFT_W = 112` px de large, la base `BASE_W = 150` px : la différence de 38 px crée une arête franche au raccord ;
-- le fût est un `TileSprite` : son motif se coupe brutalement en bas (`shaftBottom = baseTopY + 24`), sans correspondance avec le haut sculpté de la base ;
-- la base est dessinée **par-dessus** le fût (depth 21 vs 20), donc la coupe est visible comme un bord horizontal net.
+## Préparation de l'asset
 
-## Correction (uniquement `src/game/effects/GateColumn.ts`)
+Le fichier envoyé fait 1920x823 avec 8 poses alignées sur une seule rangée, entourées de beaucoup de vide blanc.
 
-1. **Chapiteau de transition** : insérer un court tronçon de fût évasé entre le fût droit et la base — un second `TileSprite` (ou une copie du fût) de ~70 px de haut, dont le `scaleX` passe progressivement de la largeur du fût à celle de la base, pour que l'élargissement soit graduel au lieu d'une marche.
+- Détourer le fond blanc (transparence), rogner la bande utile, découper en 8 cellules de largeur égale et régénérer une spritesheet normalisée (cellule ~240x180, ligne de base des blobs alignée en bas de cellule).
+- Sortie : `public/assets/sprites/props/flesh_blob_spritesheet.png` + entrée dans `src/game/assets.ts` (clé, frameWidth, frameHeight, frameCount = 8).
 
-2. **Recouvrement accru** : faire descendre le fût plus profondément dans la base (chevauchement porté de 24 px à ~60 px) pour que la coupe du motif tombe derrière la partie sculptée pleine de la base, jamais à l'air libre.
+## Nouveau composant `src/game/effects/FleshBlob.ts`
 
-3. **Adoucissement du bord** : ajouter un dégradé sombre (rectangle ou image tintée en `MULTIPLY`, alpha faible) sur ~40 px à la jonction, pour fondre les deux textures et éliminer la ligne visible.
+- Charge la spritesheet, crée l'animation `blob-pulse` (8 frames, ~10 fps, aller-retour `yoyo` pour un cycle gonflement/rétraction fluide).
+- Un blob = un sprite posé sur la ligne sol/mur, origine bas-centre, `depth` juste devant le décor de fond mais derrière le joueur.
+- État repos : frame 0 figée, légère teinte sombre pour se fondre dans le mur.
+- Réveil aléatoire : chaque blob tire un délai aléatoire (ex. 3–9 s) ; à l'échéance il joue 1 à 2 cycles d'animation, avec un léger tremblement/variation de teinte, puis retourne au repos et retire un nouveau délai.
+- Variation d'aspect par instance : échelle aléatoire (~0.55–0.9), `flipX` aléatoire, décalage de phase, pour éviter l'effet clone.
+- Méthode `tick(time)` appelée depuis la boucle de la scène, `destroy()` au changement de salle.
 
-4. **Alignement du décalage de texture** : caler `tilePositionY` du fût pour que le motif de pierre se termine sur une rangée complète au niveau du raccord, et appliquer le même calage au calque rouge `glowShaft` afin que les viscères restent continus sur la jonction.
+## Placement dans la scène
 
-5. **Viscères continus** : prolonger le calque de veines du fût jusque sur le haut de la base pour que la spirale rouge traverse la jonction sans interruption (comme sur l'image de référence).
+Dans `GameScene.ts`, section `backdropKey === "corridor"` (là où sont déjà créées la veine et les statues) :
 
-## Détails techniques
+- Générer 4 à 6 blobs à des abscisses aléatoires réparties sur la largeur de la salle, avec un espacement minimal pour éviter les chevauchements, et en évitant les zones sensibles (spawn du joueur, colonne de sortie).
+- Ordonnée = jonction sol/mur, c'est-à-dire la ligne de plinthe visible sur la capture (légèrement au-dessus de `FLOOR_Y`, calée sur le même repère que la base des statues) — exactement là où sont les cercles rouges de l'annotation.
+- Les blobs restent purement décoratifs : aucune collision, aucun impact sur le gameplay ni sur la condition de nettoyage de la salle.
+- Appel de `tick()` dans `update()` et nettoyage dans la transition de salle.
 
-- Fichier touché : `src/game/effects/GateColumn.ts` uniquement.
-- Aucun changement d'asset, de position `x`, de `floorY`, ni de profondeurs globales (20-23) ; le nouveau tronçon s'insère entre les depths existants.
-- Le système de gouttes (`fx-drip`) et la logique `open()` restent inchangés.
+## Vérification
+
+Capture Playwright de la salle 2 pour contrôler l'ancrage sur la ligne sol/mur, la taille relative et la visibilité des blobs dans l'ambiance sombre, puis ajustement de l'échelle/opacité si nécessaire.
