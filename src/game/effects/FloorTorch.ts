@@ -16,11 +16,11 @@ const TEX_GLOW = "floor-torch-glow";
 const TEX_SMOKE = "floor-torch-smoke";
 
 /** dimensions d'une frame source */
-const FRAME_W = 98;
-const FRAME_H = 260;
+const FRAME_W = 113;
+const FRAME_H = 300;
 /** position du foyer (vasque) dans la frame source */
 const FIRE_X = 0.5;
-const FIRE_Y = 78 / FRAME_H;
+const FIRE_Y = 88 / FRAME_H;
 
 
 /** Textures radiales generees une seule fois, partagees par toutes les torches. */
@@ -171,7 +171,7 @@ export function placeTorches(
     for (let i = 0; i < count; i++) {
       const x = 260 + (i * (roomWidth - 520)) / (count - 1);
       const t = 1 - Math.min(1, Math.abs(x - mid) / mid);
-      const scale = 0.72 - t * 0.32;
+      const scale = 0.82 - t * 0.34;
       // le pied suit la ligne de sol qui remonte vers le point de fuite
       const y = floorY - t * 46;
       torches.push(new FloorTorch(scene, x, y, scale, -6));
@@ -181,7 +181,7 @@ export function placeTorches(
 
   // cathedrale : quatre torcheres reparties, loin du crucifie et de la sortie
   for (const x of [340, 1080, 1720, 2380]) {
-    torches.push(new FloorTorch(scene, x, floorY + Phaser.Math.Between(-3, 3), 0.82, -6));
+    torches.push(new FloorTorch(scene, x, floorY + Phaser.Math.Between(-3, 3), 0.95, -6));
   }
   return torches;
 }

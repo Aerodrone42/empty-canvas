@@ -47,7 +47,7 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet(
       "floor-torch",
       "/assets/sprites/props/floor_torch_spritesheet.png",
-      { frameWidth: 98, frameHeight: 260, spacing: 0 },
+      { frameWidth: 113, frameHeight: 300, spacing: 0 },
     );
 
     // vie de fond : rats au ras du sol, chauves-souris en hauteur
