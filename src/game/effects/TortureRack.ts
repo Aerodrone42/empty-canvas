@@ -227,7 +227,12 @@ export class TortureRack {
     if (this.destroyed || this.phase === "done") return;
     this.phase = "done";
 
-    const spots = this.torturers.map((t) => ({ x: t.x, y: this.floorY }));
+    // ils descendent de la plinthe et reviennent sur le plan de jeu
+    const spots = this.torturers.map((t) => ({
+      x: Phaser.Math.Clamp(t.x, this.x - 200, this.x + 200),
+      y: this.groundY,
+    }));
+
     for (const t of this.torturers) {
       this.scene.tweens.killTweensOf(t);
       t.destroy();
