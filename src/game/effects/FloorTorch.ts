@@ -85,9 +85,14 @@ export class FloorTorch {
       .setScale(scale)
       .setDepth(depth);
     // desynchronisation : deux torches ne brulent jamais en phase
-    this.sprite.play(ANIM_TORCH);
+    this.sprite.play(ANIM_TORCH_IDLE);
     this.sprite.anims.setProgress(Math.random());
-    this.sprite.anims.msPerFrame = Phaser.Math.Between(88, 124);
+    this.sprite.anims.msPerFrame = Phaser.Math.Between(96, 140);
+    // au retour d'un sursaut, on reprend la respiration de repos
+    this.sprite.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIM_TORCH_FLARE, () => {
+      if (!this.destroyed) this.sprite.play(ANIM_TORCH_IDLE);
+    });
+
 
     const fx = x + (FIRE_X - 0.5) * FRAME_W * scale;
     const fy = groundY - (1 - FIRE_Y) * FRAME_H * scale;
