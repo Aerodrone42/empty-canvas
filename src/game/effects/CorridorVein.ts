@@ -80,14 +80,14 @@ export class CorridorVein {
         delay,
         tweens: [
           {
-            scaleY: scale * 1.22,
+            scaleY: scale * 1.14,
             alpha: 1,
             duration: 180,
             ease: "Quad.easeOut",
             onStart: () => band.setTint(TINT_PEAK),
           },
           {
-            scaleY: scale * 0.88,
+            scaleY: scale * 0.92,
             alpha: 0.85,
             duration: 700,
             ease: "Sine.easeInOut",
