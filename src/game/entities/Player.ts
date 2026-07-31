@@ -485,11 +485,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.pendingJump = jumpPower;
         this.landUntil = 0;
         this.play("vigile-crouch", true);
-      } else if (jump && effects.doubleJump && this.airJumpsUsed < 1) {
+      } else if (jump && this.airJumpsUsed < (effects.doubleJump ? 2 : 1)) {
+        // second saut : acquis de base, la mutation en offre un troisieme
         this.jumpBufferedAt = -Infinity;
         this.airJumpsUsed += 1;
         body.setVelocityY(-jumpPower * 0.9);
-        this.play("vigile-crouch", true);
+        this.play("vigile-jump", true);
+        this.scene.events.emit("fx-sparks", this.x, this.y + 30);
       }
     }
 
