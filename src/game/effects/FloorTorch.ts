@@ -7,17 +7,21 @@ import Phaser from "phaser";
  */
 
 export const TEX_TORCH = "floor-torch";
-export const ANIM_TORCH = "floor-torch-burn";
+/** boucle de repos : idle -> faible -> moyenne -> vacillement */
+export const ANIM_TORCH_IDLE = "floor-torch-idle";
+/** sursaut : forte -> embrasement -> intensification -> tourbillon -> souffle -> etincelles */
+export const ANIM_TORCH_FLARE = "floor-torch-flare";
 
 const TEX_GLOW = "floor-torch-glow";
 const TEX_SMOKE = "floor-torch-smoke";
 
 /** dimensions d'une frame source */
-const FRAME_W = 112;
-const FRAME_H = 240;
+const FRAME_W = 113;
+const FRAME_H = 300;
 /** position du foyer (vasque) dans la frame source */
 const FIRE_X = 0.5;
 const FIRE_Y = 88 / FRAME_H;
+
 
 /** Textures radiales generees une seule fois, partagees par toutes les torches. */
 function ensureTextures(scene: Phaser.Scene) {
@@ -81,9 +85,14 @@ export class FloorTorch {
       .setScale(scale)
       .setDepth(depth);
     // desynchronisation : deux torches ne brulent jamais en phase
-    this.sprite.play(ANIM_TORCH);
+    this.sprite.play(ANIM_TORCH_IDLE);
     this.sprite.anims.setProgress(Math.random());
-    this.sprite.anims.msPerFrame = Phaser.Math.Between(88, 124);
+    this.sprite.anims.msPerFrame = Phaser.Math.Between(96, 140);
+    // au retour d'un sursaut, on reprend la respiration de repos
+    this.sprite.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIM_TORCH_FLARE, () => {
+      if (!this.destroyed) this.sprite.play(ANIM_TORCH_IDLE);
+    });
+
 
     const fx = x + (FIRE_X - 0.5) * FRAME_W * scale;
     const fy = groundY - (1 - FIRE_Y) * FRAME_H * scale;
@@ -114,9 +123,15 @@ export class FloorTorch {
     if (this.destroyed) return;
 
     if (time >= this.nextGust) {
-      this.nextGust = time + Phaser.Math.Between(1400, 4200);
-      this.gust = Phaser.Math.FloatBetween(0.14, 0.3);
+      this.nextGust = time + Phaser.Math.Between(2600, 6400);
+      this.gust = Phaser.Math.FloatBetween(0.16, 0.34);
+      // la flamme s'embrase en meme temps que le halo
+      if (this.sprite.anims.getName() !== ANIM_TORCH_FLARE) {
+        this.sprite.play(ANIM_TORCH_FLARE);
+        this.sprite.anims.msPerFrame = Phaser.Math.Between(84, 118);
+      }
     }
+
     if (this.gust > 0) this.gust = Math.max(0, this.gust - 0.006);
 
     const flicker =
@@ -156,7 +171,7 @@ export function placeTorches(
     for (let i = 0; i < count; i++) {
       const x = 260 + (i * (roomWidth - 520)) / (count - 1);
       const t = 1 - Math.min(1, Math.abs(x - mid) / mid);
-      const scale = 0.8 - t * 0.34;
+      const scale = 0.82 - t * 0.34;
       // le pied suit la ligne de sol qui remonte vers le point de fuite
       const y = floorY - t * 46;
       torches.push(new FloorTorch(scene, x, y, scale, -6));
@@ -166,7 +181,7 @@ export function placeTorches(
 
   // cathedrale : quatre torcheres reparties, loin du crucifie et de la sortie
   for (const x of [340, 1080, 1720, 2380]) {
-    torches.push(new FloorTorch(scene, x, floorY + Phaser.Math.Between(-3, 3), 0.9, -6));
+    torches.push(new FloorTorch(scene, x, floorY + Phaser.Math.Between(-3, 3), 0.95, -6));
   }
   return torches;
 }
