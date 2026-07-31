@@ -46,13 +46,10 @@ export class BootScene extends Phaser.Scene {
 
     // chevalet d'ecartellement du corridor : bati, supplicie et bourreaux
     this.load.image("torture-rack", "/assets/sprites/props/torture_rack_frame.png");
-    this.load.image(
+    this.load.spritesheet(
       "torture-rack-victim",
-      "/assets/sprites/props/torture_rack_victim_intact.png",
-    );
-    this.load.image(
-      "torture-rack-victim-torn",
-      "/assets/sprites/props/torture_rack_victim_torn.png",
+      "/assets/sprites/props/torture_rack_victim_spritesheet.png",
+      { frameWidth: 512, frameHeight: 256, spacing: 0 },
     );
     this.load.image("bourreau-crank", "/assets/sprites/enemies/bourreau_crank.png");
 
