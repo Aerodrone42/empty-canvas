@@ -14,11 +14,18 @@ const TEX_VICTIM = "torture-rack-victim";
 const TEX_CRANK = "bourreau-crank";
 
 /** largeur affichee du bati */
-const RACK_W = 420;
+const RACK_W = 340;
+/** hauteur de la plinthe du mur : la machine est plaquee contre le fond */
+const WALL_LIFT = 100;
+/** longueur du supplicie a l'ecran (homme d'environ 1,75 m) */
+const VICTIM_LEN = 150;
+/** largeur dessinee du corps dans une cellule de 512 px */
+const VICTIM_ART_W = 330;
 /** distance de declenchement */
 const TRIGGER_RANGE = 520;
 /** duree d'un cran */
 const STEP_MS = 450;
+
 
 type Phase = "idle" | "effort" | "done";
 
