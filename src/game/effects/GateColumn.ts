@@ -199,7 +199,7 @@ export class GateColumn {
     if (this.opened) return;
     this.opened = true;
     this.scene.tweens.add({
-      targets: [this.glowShaft, this.glowBase],
+      targets: [this.glowShaft, this.glowBase, ...this.flareGlow],
       alpha: 0.85,
       duration: 260,
       yoyo: true,
@@ -209,11 +209,22 @@ export class GateColumn {
   }
 
   destroy() {
-    this.scene.tweens.killTweensOf([this.shaft, this.glowShaft, this.glowBase]);
+    this.scene.tweens.killTweensOf([
+      this.shaft,
+      this.glowShaft,
+      this.glowBase,
+      ...this.flareGlow,
+    ]);
     this.shaft.destroy();
     this.base.destroy();
     this.glowShaft.destroy();
     this.glowBase.destroy();
+    for (const s of this.flare) s.destroy();
+    for (const s of this.flareGlow) s.destroy();
+    for (const s of this.seam) s.destroy();
+    this.flare.length = 0;
+    this.flareGlow.length = 0;
+    this.seam.length = 0;
     this.drips.destroy();
   }
 }
