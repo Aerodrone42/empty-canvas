@@ -203,7 +203,7 @@ export function placeTorches(
   }
 
   // cathedrale : quatre torcheres reparties, loin du crucifie et de la sortie
-  for (const x of [340, 1080, 1720, 2380]) {
+  for (const x of [180, 1080, 1720, 2380]) {
     torches.push(new FloorTorch(scene, x, floorY + Phaser.Math.Between(-3, 3), 0.95, -6));
   }
   return torches;
