@@ -44,11 +44,14 @@ export class BootScene extends Phaser.Scene {
     // grosse veine animee du corridor (decor de fond)
     this.load.image("corridor-vein", "/assets/sprites/props/corridor_vein.png");
 
+    // torchere sur pied : socle fixe + planche de flamme animee
+    this.load.image("floor-torch-base", "/assets/sprites/props/floor_torch_base.png");
     this.load.spritesheet(
-      "floor-torch",
-      "/assets/sprites/props/floor_torch_spritesheet.png",
-      { frameWidth: 113, frameHeight: 300, spacing: 0 },
+      "floor-torch-flame",
+      "/assets/sprites/props/floor_torch_flame_spritesheet.png",
+      { frameWidth: 150, frameHeight: 112, spacing: 0 },
     );
+
 
     // vie de fond : rats au ras du sol, chauves-souris en hauteur
     this.load.spritesheet(
@@ -95,7 +98,7 @@ export class BootScene extends Phaser.Scene {
     // Torcheres sur pied : respiration de repos + sursaut d'embrasement.
     this.anims.create({
       key: "floor-torch-idle",
-      frames: this.anims.generateFrameNumbers("floor-torch", {
+      frames: this.anims.generateFrameNumbers("floor-torch-flame", {
         frames: [0, 1, 2, 4, 2, 1, 0, 4],
       }),
       frameRate: 9,
@@ -103,12 +106,13 @@ export class BootScene extends Phaser.Scene {
     });
     this.anims.create({
       key: "floor-torch-flare",
-      frames: this.anims.generateFrameNumbers("floor-torch", {
+      frames: this.anims.generateFrameNumbers("floor-torch-flame", {
         frames: [3, 5, 6, 7, 8, 9, 6, 3, 2],
       }),
       frameRate: 11,
       repeat: 0,
     });
+
 
     // Vie de fond : rats et chauves-souris.
     this.anims.create({
