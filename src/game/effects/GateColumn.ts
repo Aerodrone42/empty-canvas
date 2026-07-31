@@ -16,11 +16,22 @@ const SHAFT_W = 112;
 const TOP_Y = -260;
 /** la base mord un peu dans le sol : plus de vide sous la colonne */
 const BASE_SINK = 34;
+/** hauteur du raccord evase entre le fut et la base */
+const FLARE_H = 72;
+/** nombre de tranches qui composent l'evasement */
+const FLARE_SLICES = 6;
+/** enfoncement du fut dans la base (masque la coupe du motif) */
+const SHAFT_OVERLAP = 60;
 
 export class GateColumn {
   private readonly scene: Phaser.Scene;
   private readonly base: Phaser.GameObjects.Image;
   private readonly shaft: Phaser.GameObjects.TileSprite;
+  /** tranches qui forment l'evasement fut -> base */
+  private readonly flare: Phaser.GameObjects.TileSprite[] = [];
+  private readonly flareGlow: Phaser.GameObjects.TileSprite[] = [];
+  /** fondu sombre qui masque la ligne de jonction */
+  private readonly seam: Phaser.GameObjects.Rectangle[] = [];
   /** calques rouges superposes : la pulsation des visceres */
   private readonly glowBase: Phaser.GameObjects.Image;
   private readonly glowShaft: Phaser.GameObjects.TileSprite;
@@ -39,10 +50,14 @@ export class GateColumn {
     const baseTopY = groundY - baseTex.height * baseScale;
 
     const shaftTex = scene.textures.get("gate-column-shaft").getSourceImage();
+    const srcH = shaftTex.height || 1;
     const tileScale = SHAFT_W / shaftTex.width;
-    // le fut demarre un peu dans la base pour masquer la jointure
-    const shaftBottom = baseTopY + 24;
+    // le fut plonge profondement dans la base : la coupe du motif
+    // tombe derriere la partie sculptee, jamais a l'air libre
+    const shaftBottom = baseTopY + SHAFT_OVERLAP;
     const shaftH = shaftBottom - TOP_Y;
+    // le motif se termine sur une rangee complete au niveau du raccord
+    const tileY = (shaftH / tileScale) % srcH;
 
     this.shaft = scene.add
       .tileSprite(x, shaftBottom, SHAFT_W, shaftH, "gate-column-shaft")
@@ -50,6 +65,7 @@ export class GateColumn {
       .setTileScale(tileScale, tileScale)
       .setScrollFactor(1)
       .setDepth(20);
+    this.shaft.tilePositionY = tileY;
 
     this.base = scene.add
       .image(x, groundY, "gate-column-base")
@@ -68,6 +84,7 @@ export class GateColumn {
       .setTint(0x8e1220)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0.12);
+    this.glowShaft.tilePositionY = tileY;
 
     this.glowBase = scene.add
       .image(x, groundY, "gate-column-base")
@@ -79,9 +96,59 @@ export class GateColumn {
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0.12);
 
+    // --- raccord evase : la largeur passe progressivement du fut a la base
+    const flareBottom = baseTopY + 14;
+    const sliceH = FLARE_H / FLARE_SLICES;
+    const flareMaxW = BASE_W * 0.94;
+    for (let i = 0; i < FLARE_SLICES; i++) {
+      // i = 0 en haut (largeur du fut) -> i = n-1 en bas (largeur de la base)
+      const tTop = i / FLARE_SLICES;
+      const t = tTop * tTop; // evasement en courbe, pas lineaire
+      const w = SHAFT_W + (flareMaxW - SHAFT_W) * t;
+      const bottom = flareBottom - (FLARE_SLICES - 1 - i) * sliceH;
+      // +1 px de recouvrement vertical pour eviter les liseres entre tranches
+      const h = sliceH + 1;
+
+      const slice = scene.add
+        .tileSprite(x, bottom, w, h, "gate-column-shaft")
+        .setOrigin(0.5, 1)
+        .setTileScale(tileScale, tileScale)
+        .setScrollFactor(1)
+        .setDepth(20.5);
+      slice.tilePositionY = (bottom - TOP_Y) / tileScale % srcH;
+      this.flare.push(slice);
+
+      const sliceGlow = scene.add
+        .tileSprite(x, bottom, w, h, "gate-column-shaft")
+        .setOrigin(0.5, 1)
+        .setTileScale(tileScale, tileScale)
+        .setScrollFactor(1)
+        .setDepth(22.5)
+        .setTint(0x8e1220)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setAlpha(0.12);
+      sliceGlow.tilePositionY = slice.tilePositionY;
+      this.flareGlow.push(sliceGlow);
+    }
+
+    // fondu sombre progressif sur la jonction : la ligne disparait
+    for (let i = 0; i < 8; i++) {
+      const h = 6;
+      const yy = flareBottom - FLARE_H * 0.35 + i * h;
+      const shade = scene.add
+        .rectangle(x, yy, flareMaxW, h + 1, 0x0b0608)
+        .setOrigin(0.5, 0)
+        .setScrollFactor(1)
+        .setDepth(21.5)
+        .setBlendMode(Phaser.BlendModes.MULTIPLY)
+        .setAlpha(0.1 + i * 0.035);
+      this.seam.push(shade);
+    }
+
+
     // respiration lente des visceres
     scene.tweens.add({
-      targets: [this.glowShaft, this.glowBase],
+      targets: [this.glowShaft, this.glowBase, ...this.flareGlow],
       alpha: { from: 0.08, to: 0.3 },
       duration: 2200,
       yoyo: true,
@@ -132,7 +199,7 @@ export class GateColumn {
     if (this.opened) return;
     this.opened = true;
     this.scene.tweens.add({
-      targets: [this.glowShaft, this.glowBase],
+      targets: [this.glowShaft, this.glowBase, ...this.flareGlow],
       alpha: 0.85,
       duration: 260,
       yoyo: true,
@@ -142,11 +209,22 @@ export class GateColumn {
   }
 
   destroy() {
-    this.scene.tweens.killTweensOf([this.shaft, this.glowShaft, this.glowBase]);
+    this.scene.tweens.killTweensOf([
+      this.shaft,
+      this.glowShaft,
+      this.glowBase,
+      ...this.flareGlow,
+    ]);
     this.shaft.destroy();
     this.base.destroy();
     this.glowShaft.destroy();
     this.glowBase.destroy();
+    for (const s of this.flare) s.destroy();
+    for (const s of this.flareGlow) s.destroy();
+    for (const s of this.seam) s.destroy();
+    this.flare.length = 0;
+    this.flareGlow.length = 0;
+    this.seam.length = 0;
     this.drips.destroy();
   }
 }

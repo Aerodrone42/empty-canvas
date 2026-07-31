@@ -1,25 +1,26 @@
 ## Problème
 
-La veine est découpée en 3 tronçons (`SEGMENTS = 3`) dans `src/game/effects/CorridorVein.ts`. Chaque tronçon :
-- démarre avec un décalage de texture arbitraire (`tilePositionX = i * 137`), donc le motif ne se raccorde pas d'un tronçon à l'autre ;
-- est animé avec un retard de phase (`delay = i * 220`), donc les hauteurs (`scaleY`) diffèrent au moment du raccord.
+Sur la capture, à l'endroit des flèches, on voit une marche nette : le fût s'arrête et la base commence avec une largeur différente, sans transition.
 
-Résultat : une marche nette au point de jonction, exactement là où c'est entouré sur la capture.
+Dans `src/game/effects/GateColumn.ts` :
+- le fût fait `SHAFT_W = 112` px de large, la base `BASE_W = 150` px : la différence de 38 px crée une arête franche au raccord ;
+- le fût est un `TileSprite` : son motif se coupe brutalement en bas (`shaftBottom = baseTopY + 24`), sans correspondance avec le haut sculpté de la base ;
+- la base est dessinée **par-dessus** le fût (depth 21 vs 20), donc la coupe est visible comme un bord horizontal net.
 
-## Correction
+## Correction (uniquement `src/game/effects/GateColumn.ts`)
 
-Dans `src/game/effects/CorridorVein.ts` uniquement :
+1. **Chapiteau de transition** : insérer un court tronçon de fût évasé entre le fût droit et la base — un second `TileSprite` (ou une copie du fût) de ~70 px de haut, dont le `scaleX` passe progressivement de la largeur du fût à celle de la base, pour que l'élargissement soit graduel au lieu d'une marche.
 
-1. **Continuité de la texture** : calculer le décalage de chaque tronçon à partir de sa position réelle (`tilePositionX = i * segW / scale`) au lieu d'une valeur arbitraire, pour que le motif se poursuive sans couture. Le tween de flux interne applique le même déplacement à tous les tronçons, avec la même durée et le même démarrage, pour rester synchrone.
+2. **Recouvrement accru** : faire descendre le fût plus profondément dans la base (chevauchement porté de 24 px à ~60 px) pour que la coupe du motif tombe derrière la partie sculptée pleine de la base, jamais à l'air libre.
 
-2. **Suppression de la marche verticale** : le décalage de phase entre tronçons est ce qui crée la rupture de hauteur. Deux options combinées :
-   - réduire fortement le retard (de 220 ms à ~90 ms) et l'amplitude du battement aux extrémités ;
-   - faire se **chevaucher** les tronçons de quelques pixels (largeur + ~12 px) pour que la transition soit masquée.
+3. **Adoucissement du bord** : ajouter un dégradé sombre (rectangle ou image tintée en `MULTIPLY`, alpha faible) sur ~40 px à la jonction, pour fondre les deux textures et éliminer la ligne visible.
 
-3. **Origine verticale cohérente** : garder `origin(0, 0.5)` sur tous les tronçons et une teinte identique au même instant, pour que la variation de hauteur reste centrée sur la même ligne.
+4. **Alignement du décalage de texture** : caler `tilePositionY` du fût pour que le motif de pierre se termine sur une rangée complète au niveau du raccord, et appliquer le même calage au calque rouge `glowShaft` afin que les viscères restent continus sur la jonction.
+
+5. **Viscères continus** : prolonger le calque de veines du fût jusque sur le haut de la base pour que la spirale rouge traverse la jonction sans interruption (comme sur l'image de référence).
 
 ## Détails techniques
 
-- Fichier touché : `src/game/effects/CorridorVein.ts`.
-- Aucun changement d'asset, de position (`floorY - 430`), de profondeur (`-4`) ni de teinte.
-- Le saignement (pool de gouttes) reste inchangé.
+- Fichier touché : `src/game/effects/GateColumn.ts` uniquement.
+- Aucun changement d'asset, de position `x`, de `floorY`, ni de profondeurs globales (20-23) ; le nouveau tronçon s'insère entre les depths existants.
+- Le système de gouttes (`fx-drip`) et la logique `open()` restent inchangés.
