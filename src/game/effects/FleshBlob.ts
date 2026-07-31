@@ -13,10 +13,10 @@ const ANIM_KEY = "flesh-blob-pulse";
 const TEX_KEY = "flesh-blob";
 
 /** hauteur affichee de reference (avant variation d'echelle) */
-const BLOB_H = 96;
+const BLOB_H = 118;
 
-const TINT_REST = 0x5a2a2e;
-const TINT_WAKE = 0xa04a4e;
+const TINT_REST = 0x8f3c3e;
+const TINT_WAKE = 0xd05a5e;
 
 export class FleshBlob {
   private readonly scene: Phaser.Scene;
@@ -40,7 +40,7 @@ export class FleshBlob {
       .setOrigin(0.5, 1)
       .setScale(scale)
       .setTint(TINT_REST)
-      .setAlpha(0.92)
+      .setAlpha(1)
       .setDepth(-3);
 
     if (Math.random() < 0.5) this.sprite.setFlipX(true);
