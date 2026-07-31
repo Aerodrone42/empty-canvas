@@ -1,38 +1,49 @@
-## Objectif
+## Problème
 
-Ajouter dans le corridor (salle 2) une **machine d'écartèlement vue de face** : une roue à chevalet, un supplicié écartelé au centre, et **deux bourreaux** qui tirent sur les cordes. Quand le héros s'approche, l'écartèlement s'achève (la victime se déchire), puis **les deux bourreaux lâchent les cordes et deviennent des ennemis jouables** qui attaquent le héros.
+La machine actuelle est une roue verticale avec une victime maigre (lisible comme un squelette) et deux bourreaux humains standard. Ce n'est pas la direction demandée.
 
-## Assets à générer
+## Nouvelle direction
 
-1. `torture_wheel_machine.png` — décor statique de face : bâti de bois massif, grande roue à rayons, cordes tendues, taches de sang, style pixel art cohérent avec les décors gothiques existants (fond transparent).
-2. `victime_ecartelee_spritesheet.png` — la victime seule, ancrée au centre de la roue : cycle de convulsions + phase finale de déchirement (≈6 frames).
-3. Bourreau : trois feuilles sur le gabarit ennemi normalisé (cellule 224x176, ligne de pieds y=168, comme le Pénitent) :
-   - `bourreau_idle_spritesheet.png` (4 frames — en position de traction sur la corde puis debout)
-   - `bourreau_walk_spritesheet.png` (6 frames)
-   - `bourreau_attack_spritesheet.png` (5 frames — coup de masse/crochet)
-
-## Comportement
+Un **chevalet d'écartèlement horizontal** (type Streckbett), collé contre le mur du fond du corridor, pas au milieu de la pièce.
 
 ```text
-[repos]  roue qui grince, victime qui convulse, bourreaux qui tirent en boucle
-   |  héros < 520 px
-[final]  traction violente, la victime se déchire (gerbe de sang, secousse caméra)
-   |  ~1,2 s
-[éveil]  les deux bourreaux se détachent du décor et deviennent des ennemis
+[ROUE G]===== table de bois =====[ROUE D]
+ bourreau            victime            bourreau
+   massif        écartelée à plat        massif
 ```
 
-- La machine reste en place ensuite (roue immobile, victime démembrée), les cordes pendent.
-- Le déclenchement n'a lieu qu'une fois par salle.
-- Les deux bourreaux comptent comme ennemis : tant qu'ils sont vivants, la colonne de sortie reste verrouillée.
+## Assets à régénérer
+
+Tous les anciens fichiers de torture sont remplacés (roue verticale + victime verticale supprimées).
+
+1. `torture_rack_frame.png` — chevalet vu de face/trois-quarts : poutres massives noircies, deux grandes roues à rochet aux extrémités, chaînes, leviers, câbles tendus, flaque de sang et cordes au sol, traces de lutte. Format large (≈1600x600).
+2. `torture_victim_rack_spritesheet.png` — humain **charnu** (pas squelettique), allongé sur la table, poignets et chevilles enchaînés. 8 frames : convulsions → tension → étirement extrême → déchirement → corps rompu.
+3. Bourreaux monstrueux, nouveau gabarit élargi (cellule 288x224, ligne de pieds y=214) pour supporter la carrure :
+  - `bourreau_idle_spritesheet.png` (4 f) — respiration lourde, épaules énormes
+  - `bourreau_crank_spritesheet.png` (6 f) — tirée sur la roue, effort, corps arc-bouté
+  - `bourreau_walk_spritesheet.png` (6 f)
+  - `bourreau_attack_spritesheet.png` (5 f) — coup de masse à deux bras
+  - Design : très grand, bras surdéveloppés, masque de bourreau dechiré, peau sale et corrompue, silhouette quasi bestiale.
+
+## Séquence d'animation
+
+```text
+[idle]        les deux bourreaux respirent, la table grince
+   | héros < 560 px
+[préparation] chacun saisit sa roue, chaînes qui se tendent
+[effort]      les roues tournent par crans, la victime s'étire, cris
+[impact]      déchirement : gerbe de sang qui gicle, 
+[retour]      la machine vibre encore, les chaînes oscillent, sang qui goutte
+   | ~1 s
+[éveil]       les deux bourreaux lâchent les roues et attaquent le héros
+```
 
 ## Détails techniques
 
-- Nouveau `src/game/effects/TortureWheel.ts` : classe décor gérant le bâti, la roue (rotation lente + à-coups), la victime animée, les deux bourreaux « décoratifs » (sprites figés sur l'anim idle), la gerbe de sang finale et l'appel `onRelease(x, y)` vers la scène.
-- Nouveau `Bourreau extends Enemy` dans `src/game/entities/Enemy.ts` : stats intermédiaires entre Suppliant (rapide) et Pénitent (lourd), `animPrefix: "bourreau"`, portée de frappe moyenne, récompense de chair supérieure.
-- `src/game/assets.ts` : ajout des 3 feuilles bourreau à `SHEETS` (gabarit `ENEMY_FRAME_W/H`, spacing 0).
-- `src/game/scenes/BootScene.ts` : chargement de `torture_wheel_machine.png` et de la feuille victime.
-- `src/game/scenes/GameScene.ts` :
-  - instanciation de la machine dans `buildBackdrop()` pour `corridor` (placée contre le mur, hors zone de spawn du héros, en évitant les statues et la colonne de sortie) ;
-  - `tick(player.x, time)` dans `update()` ;
-  - callback de libération qui `spawn()` deux `Bourreau` aux positions des cordes.
-- Profondeur : machine derrière le héros (`depth -3`), au niveau des statues ; les bourreaux passent en profondeur d'ennemi normale une fois libérés.
+- `src/game/effects/TortureWheel.ts` → renommé `TortureRack.ts`, réécrit : bâti horizontal ancré contre le mur (`depth -4`), roues gauche/droite en sprites indépendants tournant par crans pendant l'effort, victime allongée avec `scaleX` croissant lors de l'étirement, bourreaux jouant `bourreau-crank` puis `bourreau-idle` avant libération.
+- Machine plaquée au mur : `y = FLOOR_Y - 40` avec les bourreaux en avant du bâti mais en retrait du couloir de marche du héros.
+- `src/game/assets.ts` : nouvelles constantes `BOURREAU_FRAME_W/H/BASELINE_Y` (288/224/214) et les 4 feuilles bourreau ; suppression des anciennes entrées 224x176.
+- `src/game/scenes/BootScene.ts` : chargement de `torture_rack_frame.png`, des deux roues et de la nouvelle feuille victime.
+- `src/game/entities/Enemy.ts` : `Bourreau` conserve ses stats mais passe sur le nouveau gabarit (échelle et hitbox élargies, portée de frappe augmentée).
+- `src/game/scenes/GameScene.ts` : `TORTURE_RACK_X` recalé pour que le chevalet occupe la niche du mur entre les statues (700 et 2050) sans gêner la colonne de sortie ; `tick()` inchangé, callback de libération identique.
+- Suppression des fichiers `torture_wheel_machine.png` et `torture_victim_spritesheet.png`.

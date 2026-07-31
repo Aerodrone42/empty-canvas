@@ -11,7 +11,7 @@ import { scatterFleshBlobs, type FleshBlob } from "../effects/FleshBlob";
 import { WeepingStatue } from "../effects/WeepingStatue";
 import { GateColumn } from "../effects/GateColumn";
 import { Parallax } from "../effects/Parallax";
-import { TortureWheel } from "../effects/TortureWheel";
+import { TortureRack } from "../effects/TortureRack";
 import { Bourreau, EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from "../entities/Enemy";
 
 import { GraspingHands } from "../entities/GraspingHands";
@@ -35,7 +35,7 @@ const GATE_X = 2150;
 /** au dela de ce point, le heros bascule dans la salle suivante */
 const GATE_EXIT_X = GATE_X + 110;
 /** machine d'ecartellement du corridor */
-const TORTURE_WHEEL_X = 1320;
+const TORTURE_RACK_X = 1320;
 
 
 
@@ -65,7 +65,7 @@ export class GameScene extends Phaser.Scene {
   /** amas de chair decoratifs colles au mur du corridor */
   private blobs: FleshBlob[] = [];
   /** machine d'ecartellement du corridor */
-  private wheel?: TortureWheel;
+  private wheel?: TortureRack;
   private gateWall?: Phaser.GameObjects.Rectangle;
 
   
@@ -280,7 +280,7 @@ export class GameScene extends Phaser.Scene {
 
       // machine d'ecartellement : deux bourreaux achevent un supplicie,
       // puis se retournent contre le heros
-      this.wheel = new TortureWheel(this, TORTURE_WHEEL_X, FLOOR_Y, (spots) => {
+      this.wheel = new TortureRack(this, TORTURE_RACK_X, FLOOR_Y, (spots) => {
         for (const spot of spots) {
           this.spawn(new Bourreau(this, spot.x, spot.y));
         }
