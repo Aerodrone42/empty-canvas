@@ -1,33 +1,23 @@
-# Torches murales animées
+## Objectif
 
-Ajouter des torchères le long des murs des deux salles : flamme animée, halo de lumière qui fluctue, fine fumée qui monte. Purement décoratif — aucune collision, aucun impact sur le gameplay ni sur le HUD.
+Les torches actuelles sont accrochées au mur du fond, ce qui les fait "flotter dans le vide" quand rien ne les soutient. On les remplace par des **torchères sur pied** posées au sol, alignées sur la ligne de sol de chaque salle.
 
-## Rendu visé
+## Ce qui change visuellement
 
-- Torche fixée au mur du fond, à environ 2/3 de hauteur, avec support en fer forgé et coupe de braises.
-- Flamme en boucle (spritesheet), légèrement désynchronisée d'une torche à l'autre pour éviter l'effet « clones ».
-- Halo : disque lumineux additif ambré dont le rayon et l'opacité oscillent en continu, avec de brefs sursauts aléatoires (courant d'air).
-- Fumée : quelques particules sombres semi-transparentes qui montent, s'élargissent et s'effacent au-dessus de la flamme.
-- Quelques braises orange qui montent occasionnellement.
-
-## Placement
-
-- Cathédrale : 4 torches réparties le long du mur, en évitant le crucifié et la colonne de sortie.
-- Corridor : 5 à 6 torches espacées régulièrement, placées derrière et la veine, cohérentes avec la perspective (légèrement plus petites vers le point de fuite).
-- Profondeur : derrière le héros et les ennemis, devant le fond peint.
+- Un pied haut en fer forgé (base évasée, fût élancé, vasque en haut) vu **de face**, dans le style gothique du jeu.
+- La flamme reste animée (même logique de flicker, halo ambre additif, fumée et braises).
+- Chaque torchère repose exactement sur la ligne de sol (`FLOOR_Y`), donc plus jamais de suspension dans le vide.
+- Elles restent purement décoratives : aucune collision, aucun effet gameplay. Le héros peut passer devant/derrière.
 
 ## Détails techniques
 
-- Nouvel asset `public/assets/sprites/props/wall_torch_spritesheet.png` : torche + flamme, boucle de 6 frames, généré puis assemblé au format spritesheet.
-- Chargement et animation `wall-torch-burn` déclarés dans `src/game/scenes/BootScene.ts`.
-- Nouveau `src/game/effects/WallTorch.ts` :
-  - classe `WallTorch` (sprite + halo + émetteurs), méthode `tick(time)` pour la fluctuation, `destroy()` pour le nettoyage.
-  - helper `placeTorches(scene, floorY, roomWidth, backdropKey)` qui retourne le tableau des torches placées.
-  - halo via `Phaser.GameObjects.Image` en `ADD` avec une texture radiale générée une seule fois, pas de light pipeline (le rendu reste compatible avec le HUD et la lisibilité du héros).
-  - fumée et braises via un seul `ParticleEmitter` par torche, à faible débit, pour rester léger.
-- Branchement dans `src/game/scenes/GameScene.ts` : instanciation dans `buildBackdrop()`, appel dans la boucle `update`, libération dans le nettoyage de salle (au même endroit que `critters` / `vein`).
-- Aucun corps physique, aucun overlap : le héros et les ennemis traversent les torches sans effet.
-
-## Vérification
-
-Chargement du jeu sans erreur console, puis capture d'écran des deux salles pour valider l'intensité de la lueur et la lisibilité du personnage.
+1. **Nouvel asset** : génération d'une spritesheet `floor_torch_spritesheet.png` (6 frames, silhouette haute ~ 96x224 par frame) via PIL — pied métallique fixe + flamme animée centrée dans la vasque. Remplace `wall_torch_spritesheet.png` dans `BootScene.ts` (nouvelles dimensions de frame).
+2. **`src/game/effects/WallTorch.ts`** renommé en `src/game/effects/FloorTorch.ts` :
+   - classe `FloorTorch` avec origine `(0.5, 1)` posée à `y = floorY` (léger offset aléatoire de quelques pixels pour éviter l'alignement parfait).
+   - recalcul du foyer (`FIRE_X`/`FIRE_Y`) sur les nouvelles dimensions pour que halo, fumée et braises partent de la vasque.
+   - profondeur : légèrement derrière le héros (arrière-plan proche) pour les torchères du fond, et une variante possible au premier plan si besoin de profondeur.
+3. **`placeTorches()`** revu :
+   - Cathédrale : 4 torchères contre le mur du fond, aux positions déjà validées (340, 1080, 1720, 2380), échelle uniforme, posées au sol.
+   - Corridor : 6 torchères en perspective, échelle décroissante vers le point de fuite, chacune posée sur la dalle correspondante (y suit la ligne de sol perspective au lieu d'un offset arbitraire).
+4. **`GameScene.ts`** : mise à jour des imports/types (`FloorTorch`), le reste du cycle `tick` reste identique.
+5. Suppression des références à l'ancien sprite mural (`sconce_front.png`, `wall_torch_spritesheet.png`).

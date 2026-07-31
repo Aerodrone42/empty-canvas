@@ -1,24 +1,25 @@
 import Phaser from "phaser";
 
 /**
- * Torcheres murales : flamme animee, halo ambre qui fluctue, fumee legere
- * et braises. Purement decoratif — aucun corps physique, aucun overlap :
- * le heros et les ennemis traversent la torche sans aucun effet.
+ * Torcheres sur pied : brasero pose au sol, flamme animee, halo ambre qui
+ * fluctue, fumee legere et braises. Purement decoratif — aucun corps physique,
+ * aucun overlap : le heros et les ennemis traversent la torchere sans effet.
  */
 
-export const TEX_TORCH = "wall-torch";
-export const ANIM_TORCH = "wall-torch-burn";
+export const TEX_TORCH = "floor-torch";
+export const ANIM_TORCH = "floor-torch-burn";
 
-const TEX_GLOW = "wall-torch-glow";
-const TEX_SMOKE = "wall-torch-smoke";
+const TEX_GLOW = "floor-torch-glow";
+const TEX_SMOKE = "floor-torch-smoke";
 
-/** hauteur affichee d'une torche a l'echelle 1 */
-const TORCH_H = 176;
-/** position du foyer dans la frame source (128x176) */
-const FIRE_X = 76 / 128;
-const FIRE_Y = 124 / 176;
+/** dimensions d'une frame source */
+const FRAME_W = 112;
+const FRAME_H = 240;
+/** position du foyer (vasque) dans la frame source */
+const FIRE_X = 0.5;
+const FIRE_Y = 88 / FRAME_H;
 
-/** Texture radiale generee une seule fois, partagee par toutes les torches. */
+/** Textures radiales generees une seule fois, partagees par toutes les torches. */
 function ensureTextures(scene: Phaser.Scene) {
   if (!scene.textures.exists(TEX_GLOW)) {
     const size = 256;
@@ -52,8 +53,7 @@ function ensureTextures(scene: Phaser.Scene) {
   }
 }
 
-export class WallTorch {
-  private readonly scene: Phaser.Scene;
+export class FloorTorch {
   private readonly sprite: Phaser.GameObjects.Sprite;
   private readonly glow: Phaser.GameObjects.Image;
   private readonly smoke: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -64,19 +64,19 @@ export class WallTorch {
   private nextGust = 0;
   private destroyed = false;
 
+  /** @param groundY ligne de sol sur laquelle repose le pied de la torchere */
   constructor(
     scene: Phaser.Scene,
     x: number,
-    y: number,
+    groundY: number,
     scale = 1,
     depth = -6,
   ) {
-    this.scene = scene;
     ensureTextures(scene);
     this.seed = Math.random() * Math.PI * 2;
 
     this.sprite = scene.add
-      .sprite(x, y, TEX_TORCH, 0)
+      .sprite(x, groundY, TEX_TORCH, 0)
       .setOrigin(0.5, 1)
       .setScale(scale)
       .setDepth(depth);
@@ -85,8 +85,8 @@ export class WallTorch {
     this.sprite.anims.setProgress(Math.random());
     this.sprite.anims.msPerFrame = Phaser.Math.Between(88, 124);
 
-    const fx = x + (FIRE_X - 0.5) * TORCH_H * scale * (128 / 176);
-    const fy = y - (1 - FIRE_Y) * TORCH_H * scale;
+    const fx = x + (FIRE_X - 0.5) * FRAME_W * scale;
+    const fy = groundY - (1 - FIRE_Y) * FRAME_H * scale;
 
     this.baseGlow = 0.5 * scale;
     this.glow = scene.add
@@ -96,7 +96,7 @@ export class WallTorch {
       .setScale(2.1 * scale)
       .setAlpha(this.baseGlow);
 
-    this.smoke = scene.add.particles(fx, fy - 40 * scale, TEX_SMOKE, {
+    this.smoke = scene.add.particles(fx, fy - 46 * scale, TEX_SMOKE, {
       speedY: { min: -34, max: -18 },
       speedX: { min: -10, max: 10 },
       scale: { start: 0.24 * scale, end: 0.85 * scale },
@@ -138,7 +138,7 @@ export class WallTorch {
 }
 
 /**
- * Place les torcheres le long du mur du fond selon la salle.
+ * Place les torcheres au sol selon la salle.
  * Les positions evitent le crucifie, la colonne de sortie et la machine.
  */
 export function placeTorches(
@@ -146,8 +146,8 @@ export function placeTorches(
   floorY: number,
   roomWidth: number,
   backdropKey: string,
-): WallTorch[] {
-  const torches: WallTorch[] = [];
+): FloorTorch[] {
+  const torches: FloorTorch[] = [];
 
   if (backdropKey === "corridor") {
     // perspective fuyante : plus petites vers le centre du couloir
@@ -156,16 +156,17 @@ export function placeTorches(
     for (let i = 0; i < count; i++) {
       const x = 260 + (i * (roomWidth - 520)) / (count - 1);
       const t = 1 - Math.min(1, Math.abs(x - mid) / mid);
-      const scale = 0.86 - t * 0.34;
-      const y = floorY - 190 - t * 70;
-      torches.push(new WallTorch(scene, x, y, scale, -6));
+      const scale = 0.8 - t * 0.34;
+      // le pied suit la ligne de sol qui remonte vers le point de fuite
+      const y = floorY - t * 46;
+      torches.push(new FloorTorch(scene, x, y, scale, -6));
     }
     return torches;
   }
 
   // cathedrale : quatre torcheres reparties, loin du crucifie et de la sortie
   for (const x of [340, 1080, 1720, 2380]) {
-    torches.push(new WallTorch(scene, x, floorY - 260, 0.92, -6));
+    torches.push(new FloorTorch(scene, x, floorY + Phaser.Math.Between(-3, 3), 0.9, -6));
   }
   return torches;
 }
