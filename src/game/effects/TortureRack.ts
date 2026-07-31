@@ -54,8 +54,10 @@ export class TortureRack {
   ) {
     this.scene = scene;
     this.x = x;
+    this.groundY = floorY;
     // le bati est plaque contre le mur du fond, pas sur le plan de jeu
     this.floorY = floorY - WALL_LIFT;
+
 
     const src = scene.textures.get(TEX_RACK).getSourceImage();
     const scale = RACK_W / (src.width || 1);
