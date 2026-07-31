@@ -129,6 +129,16 @@ export class FleshBlob {
       ease: "Sine.easeInOut",
       onComplete: () => this.sprite.setY(this.baseY),
     });
+
+    // l'ombre s'etale au rythme du gonflement
+    this.scene.tweens.add({
+      targets: this.shadow,
+      scaleX: 1.12,
+      scaleY: 1.18,
+      duration: 420,
+      yoyo: true,
+      ease: "Sine.easeInOut",
+    });
   }
 
   tick(time: number) {
@@ -139,9 +149,12 @@ export class FleshBlob {
   destroy() {
     this.destroyed = true;
     this.scene.tweens.killTweensOf(this.sprite);
+    this.scene.tweens.killTweensOf(this.shadow);
+    this.shadow.destroy();
     this.sprite.destroy();
   }
 }
+
 
 /**
  * Repartit des amas le long de la jonction sol/mur, en evitant le spawn du
