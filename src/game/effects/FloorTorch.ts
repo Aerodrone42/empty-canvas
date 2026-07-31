@@ -145,9 +145,9 @@ export class FloorTorch {
       this.nextGust = time + Phaser.Math.Between(2600, 6400);
       this.gust = Phaser.Math.FloatBetween(0.16, 0.34);
       // la flamme s'embrase en meme temps que le halo
-      if (this.sprite.anims.getName() !== ANIM_TORCH_FLARE) {
-        this.sprite.play(ANIM_TORCH_FLARE);
-        this.sprite.anims.msPerFrame = Phaser.Math.Between(84, 118);
+      if (this.flame.anims.getName() !== ANIM_TORCH_FLARE) {
+        this.flame.play(ANIM_TORCH_FLARE);
+        this.flame.anims.msPerFrame = Phaser.Math.Between(84, 118);
       }
     }
 
@@ -160,15 +160,19 @@ export class FloorTorch {
 
     const a = this.baseGlow + flicker + this.gust;
     this.glow.setAlpha(Phaser.Math.Clamp(a, 0.16, 0.95));
-    this.glow.setScale((2.1 + flicker * 1.6 + this.gust * 0.8) * this.sprite.scaleX);
+    this.glow.setScale((2.1 + flicker * 1.6 + this.gust * 0.8) * this.scale);
+    // seule la flamme respire : le socle reste parfaitement immobile
+    this.flame.setScale(this.scale, this.scale * (1 + flicker * 0.9 + this.gust * 0.5));
   }
 
   destroy() {
     this.destroyed = true;
-    this.sprite.destroy();
+    this.base.destroy();
+    this.flame.destroy();
     this.glow.destroy();
     this.smoke.destroy();
   }
+
 }
 
 /**
