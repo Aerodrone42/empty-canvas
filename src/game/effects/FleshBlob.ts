@@ -21,6 +21,8 @@ const TINT_WAKE = 0xd05a5e;
 export class FleshBlob {
   private readonly scene: Phaser.Scene;
   private readonly sprite: Phaser.GameObjects.Sprite;
+  /** ombre de contact diffuse : ancre la masse au sol */
+  private readonly shadow: Phaser.GameObjects.Ellipse;
   private readonly baseY: number;
   private nextWakeAt: number;
   private busy = false;
@@ -35,6 +37,13 @@ export class FleshBlob {
     const scale = ((BLOB_H * scaleFactor) / frameH) * 1;
 
     this.baseY = y;
+
+    const shadowW = 200 * scaleFactor;
+    this.shadow = scene.add
+      .ellipse(x, y + 2, shadowW, shadowW * 0.22, 0x1a0508, 0.5)
+      .setDepth(-3);
+    this.shadow.setBlendMode(Phaser.BlendModes.MULTIPLY);
+
     this.sprite = scene.add
       .sprite(x, y, TEX_KEY, 0)
       .setOrigin(0.5, 1)
@@ -47,6 +56,7 @@ export class FleshBlob {
 
     this.nextWakeAt = scene.time.now + Phaser.Math.Between(1200, 8000);
   }
+
 
   private static ensureAnim(scene: Phaser.Scene) {
     if (scene.anims.exists(ANIM_KEY)) return;
