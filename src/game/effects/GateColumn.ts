@@ -16,6 +16,12 @@ const SHAFT_W = 112;
 const TOP_Y = -260;
 /** la base mord un peu dans le sol : plus de vide sous la colonne */
 const BASE_SINK = 34;
+/** hauteur du raccord evase entre le fut et la base */
+const FLARE_H = 72;
+/** nombre de tranches qui composent l'evasement */
+const FLARE_SLICES = 6;
+/** enfoncement du fut dans la base (masque la coupe du motif) */
+const SHAFT_OVERLAP = 60;
 
 export class GateColumn {
   private readonly scene: Phaser.Scene;
