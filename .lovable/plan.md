@@ -1,29 +1,35 @@
-## Correction du chevalet
+## Petites créatures d'ambiance : rats et chauves-souris
 
-### 1. Nouveau supplicié (référence comprise)
-- Homme **allongé de profil**, à l'horizontale sur le plateau, vu de côté comme sur l'image de référence (celle-ci sert uniquement de guide de posture, elle n'est pas recopiée).
-- **Torse nu, simple short**, pieds nus ou sanglés.
-- **Bras tendus vers l'arrière**, au-dessus de la tête, poignets pris dans les fers reliés aux chaînes du treuil ; chevilles sanglées à l'autre extrémité.
-- Style pixel art cohérent avec les autres sprites du jeu, palette chair sale / bordeaux.
+Ajout d'une vie de fond purement décorative dans les salles, sans aucune interaction avec le combat.
 
-### 2. Échelle et placement
-- Taille humaine crédible : environ **1,7–1,8 m par rapport au héros**, plus jamais un corps de 2,50 m.
-- Corps **centré sur le plateau**, dans l'axe des chaînes — ni décalé sur le côté, ni posé au-dessus du bâti.
-- Chevalet remonté sur la **ligne mur/sol** du corridor, derrière le plan de jeu, comme demandé au départ.
+### Assets à générer
+- `public/assets/sprites/props/ambient_rat_spritesheet.png` — 6 frames de course de profil (cellules 64×32), pixel art, palette charbon / brun sale, yeux rouges, queue qui fouette.
+- `public/assets/sprites/props/ambient_bat_spritesheet.png` — 6 frames de battement d'ailes de profil (cellules 64×48), membrane rouge sombre translucide, corps noir.
 
-### 3. Spritesheet propre en 6 frames
-Le fichier actuel déborde entre les cellules (deux corps visibles dans une même frame). Régénération avec une seule pose centrée par cellule :
+Les deux feuilles seront produites en une seule bande horizontale sans marge, cohérentes avec le style des sprites existants (blob de chair, statue).
 
-```text
-f0 attaché   f1 tension   f2 étirement   f3 craquement   f4 déchirure   f5 corps rompu
-```
+### Nouveau fichier `src/game/effects/AmbientCritters.ts`
+Une classe `AmbientCritters` sur le même modèle que `FleshBlob` / `CorridorVein` :
 
-Les bras reculent progressivement, le torse s'allonge, le sang apparaît aux épaules et aux hanches.
+- **Pool recyclé** : 4 rats + 3 chauves-souris préinstanciés, invisibles au repos. Aucun objet créé/détruit en cours de jeu (pas de pression GC, important vu les ralentissements déjà rencontrés).
+- **Rats** : apparaissent hors champ à gauche ou à droite de la caméra, courent le long de la ligne sol/mur (`floorY - 10`, depth `-3`, donc derrière le héros), vitesse 220–320 px/s, avec de brèves pauses aléatoires (arrêt, tête qui bouge, reprise) puis sortie de l'écran. Petite ombre de contact ovale qui suit.
+- **Chauves-souris** : traversent la partie haute de l'écran (entre `floorY - 620` et `floorY - 380`), depth `-4`, trajectoire sinusoïdale (oscillation verticale via tween sur un offset), vitesse 260–380 px/s, légère variation d'échelle pour simuler la profondeur, alpha 0.75.
+- **Cadence** : un `TimerEvent` déclenche un passage toutes les 3–9 s aléatoirement, avec parfois un petit groupe de 2–3 chauves-souris décalées. Les passages sont suspendus si la caméra ne bouge pas depuis longtemps (évite l'effet de défilé).
+- **Aucune physique** : positions mises à jour par tween/`tick(delta)`, pas de corps Arcade, donc aucune collision possible avec le héros ou les ennemis.
+- **`destroy()`** qui nettoie tweens, timers et sprites, appelé au changement de salle.
 
-### 4. Bourreaux : skin conservé, mouvements corrigés
-- Apparence inchangée (elle convient).
-- Régénération des seules feuilles **marche et repos en vue de profil** : les feuilles actuelles sont dessinées de face, ce qui est incohérent pour un déplacement latéral 2D.
-- Poses de manivelle aux deux roues pendant le supplice ; après la rupture ils lâchent, se tournent vers le héros et avancent de profil.
+### Chargement
+- Ajout des deux spritesheets dans `BootScene.preload()`.
+- Ajout des deux animations (`ambient-rat-run` 12 fps boucle, `ambient-bat-fly` 14 fps boucle) dans `BootScene.create()`.
 
-### 5. Vérification
-Contrôle visuel dans le corridor : machine au mur, corps à l'échelle et centré, aucune superposition de sprites, bourreaux qui marchent de profil.
+### Intégration dans `GameScene.ts`
+- Champ `private critters?: AmbientCritters`.
+- Instanciation dans `buildBackdrop()` pour toutes les salles, avec un dosage par décor :
+  - cathédrale : chauves-souris majoritaires (grands volumes) ;
+  - corridor : rats majoritaires (couloir bas et étroit) ;
+  - trône / extérieur : mélange équilibré.
+- Appel de `this.critters?.tick(time, delta)` dans `update()`.
+- Nettoyage dans la réinitialisation de `create()` et au `SHUTDOWN`, comme pour `blobs` et `wheel`.
+
+### Vérification
+Contrôle visuel : les rats passent bien derrière le héros au ras du sol, les chauves-souris traversent le haut sans jamais recouvrir le HUD, aucune créature ne bloque ou ne touche le joueur, et le compteur du profiler (F3) ne montre pas de chute de framerate.
