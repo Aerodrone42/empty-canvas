@@ -50,41 +50,42 @@ export class TortureRack {
   ) {
     this.scene = scene;
     this.x = x;
-    this.floorY = floorY;
+    // le bati est plaque contre le mur du fond, pas sur le plan de jeu
+    this.floorY = floorY - WALL_LIFT;
 
     const src = scene.textures.get(TEX_RACK).getSourceImage();
     const scale = RACK_W / (src.width || 1);
     this.rackH = (src.height || 1) * scale;
 
-    // bati pose au sol contre le mur
+    // bati pose sur la plinthe du mur
     this.rack = scene.add
-      .image(x, floorY, TEX_RACK)
+      .image(x, this.floorY, TEX_RACK)
       .setOrigin(0.5, 1)
       .setScale(scale)
-      .setTint(0x8d7570)
-      .setDepth(-4);
+      .setTint(0x6d5a56)
+      .setDepth(-6);
 
-    // supplicie sangle sur la table : largeur ~ 0.55 du bati
-    const frame = scene.textures.get(TEX_VICTIM).get(0);
-    this.victimScale = (RACK_W * 0.55) / (frame.width || 1);
+    // supplicie sangle sur la table, centre dans l'axe des chaines
+    this.victimScale = VICTIM_LEN / VICTIM_ART_W;
     this.victim = scene.add
-      .sprite(x, floorY - this.rackH * 0.46, TEX_VICTIM, 0)
+      .sprite(x, this.floorY - this.rackH * 0.5, TEX_VICTIM, 0)
       .setOrigin(0.5, 0.5)
       .setScale(this.victimScale)
-      .setTint(0xa8807a)
-      .setDepth(-3);
+      .setTint(0x9c7a74)
+      .setDepth(-5);
 
-    // les deux bourreaux, arc-boutes sur les treuils
+    // les deux bourreaux, arc-boutes sur les treuils, tournes vers la machine
     for (const side of [-1, 1] as const) {
       const t = scene.add
-        .image(x + side * RACK_W * 0.54, floorY + 4, TEX_CRANK)
+        .image(x + side * RACK_W * 0.58, this.floorY + 6, TEX_CRANK)
         .setOrigin(0.5, 1)
-        .setScale(1.15)
-        .setFlipX(side < 0)
-        .setTint(0x9a8884)
-        .setDepth(-2);
+        .setScale(0.85)
+        .setFlipX(side > 0)
+        .setTint(0x8b7a76)
+        .setDepth(-4);
       this.torturers.push(t);
     }
+
 
     this.nextTwitchAt = scene.time.now + Phaser.Math.Between(600, 1800);
   }
