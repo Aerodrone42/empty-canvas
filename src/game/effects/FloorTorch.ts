@@ -64,10 +64,14 @@ function ensureTextures(scene: Phaser.Scene) {
 }
 
 export class FloorTorch {
-  private readonly sprite: Phaser.GameObjects.Sprite;
+  /** socle statique */
+  private readonly base: Phaser.GameObjects.Image;
+  /** flamme animee, seule partie qui bouge */
+  private readonly flame: Phaser.GameObjects.Sprite;
   private readonly glow: Phaser.GameObjects.Image;
   private readonly smoke: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly baseGlow: number;
+  private readonly scale: number;
   private readonly seed: number;
   /** sursaut de courant d'air en cours */
   private gust = 0;
@@ -84,24 +88,32 @@ export class FloorTorch {
   ) {
     ensureTextures(scene);
     this.seed = Math.random() * Math.PI * 2;
+    this.scale = scale;
 
-    this.sprite = scene.add
-      .sprite(x, groundY, TEX_TORCH, 0)
+    this.base = scene.add
+      .image(x, groundY, TEX_TORCH)
       .setOrigin(0.5, 1)
       .setScale(scale)
       .setDepth(depth);
+
+    // la flamme est calee sur le haut du socle (memes coordonnees source)
+    const topY = groundY - BASE_H * scale;
+    this.flame = scene.add
+      .sprite(x, topY, TEX_TORCH_FLAME, 0)
+      .setOrigin(0.5, 0)
+      .setScale(scale)
+      .setDepth(depth + 1);
     // desynchronisation : deux torches ne brulent jamais en phase
-    this.sprite.play(ANIM_TORCH_IDLE);
-    this.sprite.anims.setProgress(Math.random());
-    this.sprite.anims.msPerFrame = Phaser.Math.Between(96, 140);
+    this.flame.play(ANIM_TORCH_IDLE);
+    this.flame.anims.setProgress(Math.random());
+    this.flame.anims.msPerFrame = Phaser.Math.Between(96, 140);
     // au retour d'un sursaut, on reprend la respiration de repos
-    this.sprite.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIM_TORCH_FLARE, () => {
-      if (!this.destroyed) this.sprite.play(ANIM_TORCH_IDLE);
+    this.flame.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIM_TORCH_FLARE, () => {
+      if (!this.destroyed) this.flame.play(ANIM_TORCH_IDLE);
     });
 
-
-    const fx = x + (FIRE_X - 0.5) * FRAME_W * scale;
-    const fy = groundY - (1 - FIRE_Y) * FRAME_H * scale;
+    const fx = x;
+    const fy = groundY - (1 - FIRE_Y) * BASE_H * scale;
 
     this.baseGlow = 0.5 * scale;
     this.glow = scene.add
@@ -123,6 +135,7 @@ export class FloorTorch {
     });
     this.smoke.setDepth(depth - 2);
   }
+
 
   /** Fluctuation continue + brefs sursauts aleatoires. */
   tick(time: number) {
