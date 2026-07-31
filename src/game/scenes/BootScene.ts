@@ -44,6 +44,19 @@ export class BootScene extends Phaser.Scene {
     // grosse veine animee du corridor (decor de fond)
     this.load.image("corridor-vein", "/assets/sprites/props/corridor_vein.png");
 
+    // vie de fond : rats au ras du sol, chauves-souris en hauteur
+    this.load.spritesheet(
+      "ambient-rat",
+      "/assets/sprites/props/ambient_rat_spritesheet.png",
+      { frameWidth: 64, frameHeight: 40, spacing: 0 },
+    );
+    this.load.spritesheet(
+      "ambient-bat",
+      "/assets/sprites/props/ambient_bat_spritesheet.png",
+      { frameWidth: 64, frameHeight: 48, spacing: 0 },
+    );
+
+
     // chevalet d'ecartellement du corridor : bati, supplicie et bourreaux
     this.load.image("torture-rack", "/assets/sprites/props/torture_rack_frame.png");
     this.load.spritesheet(
