@@ -48,9 +48,18 @@ export class CorridorVein {
 
     const segW = roomWidth / SEGMENTS;
 
+    // leger chevauchement pour masquer la jonction entre troncons
+    const overlap = 12;
+
     for (let i = 0; i < SEGMENTS; i++) {
       const band = scene.add
-        .tileSprite(i * segW, this.y, segW / scale, srcH, "corridor-vein")
+        .tileSprite(
+          i * segW,
+          this.y,
+          (segW + overlap) / scale,
+          srcH,
+          "corridor-vein",
+        )
         .setOrigin(0, 0.5)
         .setScale(scale)
         .setScrollFactor(1)
@@ -58,10 +67,11 @@ export class CorridorVein {
         .setAlpha(0.9)
         .setTint(TINT_REST);
 
-      band.tilePositionX = i * 137;
+      // continuite du motif : chaque troncon reprend la ou le precedent s'arrete
+      band.tilePositionX = (i * segW) / scale;
       this.parts.push(band);
 
-      const delay = i * 220;
+      const delay = i * 90;
 
       // Battement : gonflement rapide, relachement lent, pause.
       const t = scene.tweens.chain({
@@ -70,14 +80,14 @@ export class CorridorVein {
         delay,
         tweens: [
           {
-            scaleY: scale * 1.22,
+            scaleY: scale * 1.14,
             alpha: 1,
             duration: 180,
             ease: "Quad.easeOut",
             onStart: () => band.setTint(TINT_PEAK),
           },
           {
-            scaleY: scale * 0.88,
+            scaleY: scale * 0.92,
             alpha: 0.85,
             duration: 700,
             ease: "Sine.easeInOut",
