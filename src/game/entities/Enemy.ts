@@ -435,16 +435,16 @@ export class EcorchePendu extends Enemy {
 export class Bourreau extends Enemy {
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, {
-      health: 44,
-      speed: 46,
-      chaseSpeed: 104,
-      damage: 13,
-      detectRange: 900,
-      attackRange: 78,
-      attackCooldown: 1200,
-      scale: 1.2,
-      bodyWidth: 48,
-      bodyHeight: 116,
+      health: 78,
+      speed: 40,
+      chaseSpeed: 92,
+      damage: 19,
+      detectRange: 1000,
+      attackRange: 104,
+      attackCooldown: 1400,
+      scale: 1.7,
+      bodyWidth: 64,
+      bodyHeight: 150,
       fleshReward: 16,
       animPrefix: "bourreau",
     });

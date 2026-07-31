@@ -44,14 +44,17 @@ export class BootScene extends Phaser.Scene {
     // grosse veine animee du corridor (decor de fond)
     this.load.image("corridor-vein", "/assets/sprites/props/corridor_vein.png");
 
-    // machine d'ecartellement du corridor : bati + roue, et la victime animee
-    this.load.image("torture-wheel", "/assets/sprites/props/torture_wheel_machine.png");
-    this.load.spritesheet(
-      "torture-victim",
-      "/assets/sprites/props/torture_victim_spritesheet.png",
-      { frameWidth: 200, frameHeight: 240, spacing: 0 },
+    // chevalet d'ecartellement du corridor : bati, supplicie et bourreaux
+    this.load.image("torture-rack", "/assets/sprites/props/torture_rack_frame.png");
+    this.load.image(
+      "torture-rack-victim",
+      "/assets/sprites/props/torture_rack_victim_intact.png",
     );
-
+    this.load.image(
+      "torture-rack-victim-torn",
+      "/assets/sprites/props/torture_rack_victim_torn.png",
+    );
+    this.load.image("bourreau-crank", "/assets/sprites/enemies/bourreau_crank.png");
 
     // bande-son : ambiance piano + theme de combat
     this.load.audio(MUSIC_AMBIENT, ambientTrack.url);
