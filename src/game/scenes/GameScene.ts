@@ -7,6 +7,7 @@ import { Profiler } from "../debug/Profiler";
 import { BloodFX } from "../effects/Blood";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
 import { CorridorVein } from "../effects/CorridorVein";
+import { scatterFleshBlobs, type FleshBlob } from "../effects/FleshBlob";
 import { WeepingStatue } from "../effects/WeepingStatue";
 import { GateColumn } from "../effects/GateColumn";
 import { Parallax } from "../effects/Parallax";
@@ -56,6 +57,8 @@ export class GameScene extends Phaser.Scene {
   /** veine geante animee du corridor */
   private vein?: CorridorVein;
   private statues: WeepingStatue[] = [];
+  /** amas de chair decoratifs colles au mur du corridor */
+  private blobs: FleshBlob[] = [];
   private gateWall?: Phaser.GameObjects.Rectangle;
   
   /** bande-son adaptative (ambiance / combat) */
@@ -81,6 +84,8 @@ export class GameScene extends Phaser.Scene {
     this.pickups = [];
     this.statues = [];
     this.vein = undefined;
+    for (const blob of this.blobs) blob.destroy();
+    this.blobs = [];
     this.exiting = false;
     this.roomCleared = false;
     this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
@@ -248,6 +253,14 @@ export class GameScene extends Phaser.Scene {
       this.vein = new CorridorVein(this, FLOOR_Y, ROOM_WIDTH);
 
       // statues de pleureuses qui saignent des yeux quand le heros approche
+      // amas de chair disperses sur la ligne sol/mur, reveils aleatoires
+      this.blobs = scatterFleshBlobs(this, FLOOR_Y, ROOM_WIDTH, {
+        count: Phaser.Math.Between(4, 6),
+        minX: 380,
+        maxX: ROOM_WIDTH - 320,
+        lift: 70,
+      });
+
       this.statues = [
         // Grandes, posees sur la plinthe du mur et toujours derriere le heros.
         new WeepingStatue(this, 700, FLOOR_Y, 0.72, 110),
@@ -434,6 +447,7 @@ export class GameScene extends Phaser.Scene {
     });
     prof.measure("sang", () => this.blood.tick(time));
     for (const statue of this.statues) statue.update(this.player.x);
+    for (const blob of this.blobs) blob.tick(time);
 
     this.enemies = this.enemies.filter((e) => e.active);
 
