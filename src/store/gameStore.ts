@@ -39,10 +39,18 @@ export type GameState = {
   absorbing: boolean;
   /** l'autel n'offre son soin complet qu'une fois par salle */
   altarHealUsed: boolean;
+  /** salle courante : sert de point de reprise */
+  stage: BackdropKey;
 
   enter: () => void;
   startNewRun: () => void;
   continueRun: () => void;
+  /** reprise directe sur une salle choisie dans le menu */
+  continueAtStage: (stage: BackdropKey) => void;
+  openStageSelect: () => void;
+  setStage: (stage: BackdropKey) => void;
+  /** restaure la sauvegarde locale (appelee au montage de la page) */
+  hydrateRun: () => void;
   pause: () => void;
   resume: () => void;
   openFleshPath: () => void;
