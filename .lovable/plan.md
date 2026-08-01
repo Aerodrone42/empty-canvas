@@ -1,39 +1,38 @@
 ## Objectif
 
-Supprimer la renaissance gratuite illimitée. À la mort, le héros repart au dernier **Autel de Sang** activé (juste avant le boss), en perdant toute sa Chair accumulée, et la zone se recharge en ennemis.
+Remplacer les trois blocs gris actuels par un autel de sang gothique, plus fin et cohérent avec le style pixel-art sombre du jeu, avec du sang qui déborde de la vasque et coule sur les côtés, le tout animé.
 
-## Règles de mort
+## Nouveau design (dans `src/game/effects/BloodAltar.ts`)
 
-- Plus de bouton « Renaître » qui relance une run neuve.
-- L'écran de mort propose : **Se relever à l'autel** (si un autel est activé dans la salle) et **Retour au menu**.
-- Si aucun autel n'a été activé dans la salle, la reprise se fait au début de la salle courante (pas au niveau 1).
-- Coût d'une mort :
-  - toute la Chair (`flesh`) est perdue ;
-  - la vie repart au maximum ;
-  - les ennemis de la salle (et le boss s'il n'est pas mort) réapparaissent au complet ;
-  - les mutations déjà greffées sont conservées (progression permanente).
-- Un compteur de morts est affiché sur l'écran de mort et dans le HUD de fin de salle.
+Silhouette repensée, plus étroite et verticale :
+- **Base** : socle à deux gradins peu hauts, arêtes biseautées, largeur réduite (~78 px au lieu de 112), pierre sombre veinée avec dégradé haut/bas plutôt qu'aplat uni.
+- **Fût central** : colonne fine (~34 px) légèrement galbée, avec gravures verticales et un sigil rouge sombre gravé au centre.
+- **Vasque** : coupe évasée posée sur le fût, lèvre en pierre claire captant la lumière, intérieur creux plus sombre.
+- **Palette** : uniquement des teintes déjà présentes dans le jeu (pierre brun-violacé, sang `#8e1420` → `#c42734`, reflets ambrés des torches).
 
-## Autel de Sang (point de sauvegarde)
+```text
+        ___(sang)___
+       \___vasque__/
+          |  |  |      <- coulées de sang le long du fût
+         _|  |  |_
+       _|__________|_  <- gradins
+```
 
-- Nouveau décor interactif `src/game/effects/BloodAltar.ts` : vasque de pierre remplie de sang, braise et lueur pulsante, particules quand il est éteint → allumé.
-- Placement Salle I : à `x ≈ 1350`, juste avant le déclencheur de la Monture d'Effroi (`MOUNT_TRIGGER_X = 1500`), donc impossible de manquer l'autel avant le boss.
-- Placement Salle II : avant la machine d'écartèlement (`x ≈ 1150`).
-- Activation : en s'approchant, une invite « Sceller le sang » apparaît ; l'action d'interaction (touche/bouton déjà mappable) allume l'autel, soigne à bloc et enregistre le point de réapparition.
-- Une fois allumé, il reste allumé pour la salle et sert de point de retour à chaque mort.
+## Sang animé
 
-## Sauvegarde
+- **Débordement** : 3 à 4 coulées permanentes partant de la lèvre de la vasque, dessinées en `Graphics` et redessinées chaque frame — longueur oscillante (respiration lente), largeur qui s'affine vers le bas, extrémité en goutte.
+- **Gouttes** : détachement périodique d'une goutte en bas de chaque coulée, qui tombe jusqu'au sol et se transforme en petite flaque qui s'étale puis s'estompe.
+- **Surface du bassin** : ellipse de liquide avec ondulation (léger scale sinusoïdal) + reflet spéculaire qui glisse lentement.
+- **Vapeur** : fines particules rouges montantes, discrètes, uniquement quand l'autel est scellé.
 
-- Le store mémorise `checkpoint: { stage, x } | null` et `deaths`.
-- Sauvegardé en local avec le reste de la run, donc le checkpoint survit à un rechargement de page.
-- Le checkpoint est remis à zéro en entrant dans une nouvelle salle et à chaque nouvelle run.
+## États
+
+- **Éteint** : pierre désaturée, sang presque noir figé, coulées quasi immobiles, lueur très faible, invite « Sceller le sang ».
+- **Scellé** : sang vif et lumineux, coulées actives, gouttes régulières, halo pulsant, flash caméra conservé au moment du scellement + onde de choc rouge en expansion.
 
 ## Détails techniques
 
-- `src/store/gameStore.ts` : ajout de `checkpoint`, `deaths`, `setCheckpoint()`, `respawnAtCheckpoint()` (flesh → 0, health → maxHealth, phase → `playing`), sérialisation dans `SavedRun`, reset dans `startNewRun` / `continueAtStage` / `setStage`.
-- `src/game/scenes/GameScene.ts` : instanciation de l'autel selon `backdropKey`, appel `tick()` dans la boucle, écoute du passage en phase `dead` puis, à la reprise, `scene.restart({ backdrop, spawnX })` pour respawner à l'autel avec ennemis et boss régénérés.
-- `create()` accepte un `spawnX` optionnel ; si l'autel de la salle était déjà scellé, il démarre allumé.
-- `src/components/game/PauseMenu.tsx` : refonte de `DeathScreen` (bouton autel, mention de la Chair perdue, compteur de morts).
-- `src/components/game/Hud.tsx` : petit repère « autel scellé » quand un checkpoint est actif.
-
-Aucun changement d'équilibrage des dégâts ni des stats du boss.
+- API publique inchangée (`constructor(scene, x, floorY, lit)`, `isLit`, `tick`, `destroy`) : aucun changement dans `GameScene.ts`.
+- Rendu vectoriel `Phaser.Graphics` conservé (pas de nouvel asset), avec un `Graphics` statique pour la pierre (dessiné une fois) et un `Graphics` dynamique pour le sang, redessiné dans `tick` — coût négligeable.
+- Réutilisation de la texture radiale `blood-altar-glow` existante pour le halo.
+- Vérification visuelle par capture Playwright de l'autel dans la Nef avant/après scellement.
