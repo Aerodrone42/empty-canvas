@@ -6,12 +6,18 @@ import { useGameStore } from "@/store/gameStore";
 
 /**
  * Autel de Sang : point de sauvegarde place juste avant chaque affrontement
- * majeur. Tant qu'il est eteint, une invite apparait quand le heros s'approche.
- * Une fois scelle, il soigne a bloc et devient le point de reapparition.
+ * majeur. Silhouette gothique fine (gradins, fut grave, vasque evasee) avec
+ * du sang qui deborde et s'ecoule le long de la pierre.
  */
 
 const TEX_GLOW = "blood-altar-glow";
 const RANGE = 170;
+
+// geometrie (repere : y = 0 au sol, valeurs negatives vers le haut)
+const BOWL_Y = -132;
+const BOWL_RX = 40;
+const SHAFT_TOP = -126;
+const SHAFT_BOTTOM = -46;
 
 function ensureGlow(scene: Phaser.Scene) {
   if (scene.textures.exists(TEX_GLOW)) return;
@@ -28,14 +34,33 @@ function ensureGlow(scene: Phaser.Scene) {
   canvas.refresh();
 }
 
+type Rivulet = {
+  /** decalage horizontal sur la levre de la vasque */
+  x: number;
+  /** longueur maximale de la coulee */
+  reach: number;
+  width: number;
+  phase: number;
+  speed: number;
+  /** goutte detachee : progression 0..1, -1 = aucune */
+  drop: number;
+  dropDelay: number;
+};
+
+type Pool = { x: number; life: number; ttl: number };
+
 export class BloodAltar {
   private scene: Phaser.Scene;
   private root: Phaser.GameObjects.Container;
+  private stone: Phaser.GameObjects.Graphics;
+  private blood: Phaser.GameObjects.Graphics;
   private glow: Phaser.GameObjects.Image;
-  private liquid: Phaser.GameObjects.Ellipse;
   private prompt: Phaser.GameObjects.Text;
-  private embers?: Phaser.GameObjects.Particles.ParticleEmitter;
+  private haze?: Phaser.GameObjects.Particles.ParticleEmitter;
   private padWasDown = false;
+
+  private rivulets: Rivulet[] = [];
+  private pools: Pool[] = [];
 
   readonly x: number;
   private lit = false;
@@ -45,28 +70,18 @@ export class BloodAltar {
     this.x = x;
     ensureGlow(scene);
 
-    const gfx = scene.add.graphics();
-    // socle : trois blocs de pierre empiles, taille grossierement
-    gfx.fillStyle(0x2a2226, 1);
-    gfx.fillRect(-46, -30, 92, 30);
-    gfx.fillStyle(0x34292d, 1);
-    gfx.fillRect(-38, -76, 76, 46);
-    gfx.fillStyle(0x3d3035, 1);
-    gfx.fillRect(-56, -104, 112, 28);
-    // veinures sombres
-    gfx.lineStyle(2, 0x1b1416, 0.9);
-    gfx.strokeRect(-56, -104, 112, 28);
-    gfx.strokeRect(-38, -76, 76, 46);
-    gfx.strokeRect(-46, -30, 92, 30);
-    // vasque
-    gfx.fillStyle(0x241c1f, 1);
-    gfx.fillEllipse(0, -104, 108, 34);
+    this.stone = scene.add.graphics();
+    this.drawStone();
 
-    this.liquid = scene.add.ellipse(0, -105, 88, 24, 0x8e1420, 1);
-    this.glow = scene.add.image(0, -118, TEX_GLOW).setScale(1.05).setBlendMode(Phaser.BlendModes.ADD);
+    this.blood = scene.add.graphics();
+
+    this.glow = scene.add
+      .image(0, BOWL_Y - 10, TEX_GLOW)
+      .setScale(0.85)
+      .setBlendMode(Phaser.BlendModes.ADD);
 
     this.prompt = scene.add
-      .text(0, -190, "", {
+      .text(0, -210, "", {
         fontFamily: "Georgia, serif",
         fontSize: "18px",
         color: "#e0b6ba",
@@ -76,24 +91,35 @@ export class BloodAltar {
       .setAlpha(0);
 
     this.root = scene.add
-      .container(x, floorY, [gfx, this.liquid, this.glow, this.prompt])
+      .container(x, floorY, [this.stone, this.blood, this.glow, this.prompt])
       .setDepth(24);
 
-    // gouttes qui debordent de la vasque une fois l'autel scelle
+    // coulees reparties de part et d'autre de la vasque
+    const seeds = [-32, -14, 13, 30];
+    this.rivulets = seeds.map((sx, i) => ({
+      x: sx,
+      reach: 34 + ((i * 17) % 38),
+      width: 2.2 + ((i * 7) % 3) * 0.6,
+      phase: i * 1.37,
+      speed: 0.0007 + i * 0.00016,
+      drop: -1,
+      dropDelay: 500 + i * 620,
+    }));
+
     if (scene.textures.exists("__WHITE")) {
-      this.embers = scene.add.particles(x, floorY - 110, "__WHITE", {
-        speed: { min: 8, max: 34 },
+      this.haze = scene.add.particles(x, floorY + BOWL_Y - 6, "__WHITE", {
+        speed: { min: 6, max: 20 },
         angle: { min: 250, max: 290 },
-        lifespan: 900,
+        lifespan: 1100,
         quantity: 1,
-        frequency: 140,
-        scale: { start: 2.4, end: 0 },
-        alpha: { start: 0.8, end: 0 },
+        frequency: 190,
+        scale: { start: 1.6, end: 0 },
+        alpha: { start: 0.5, end: 0 },
         tint: 0xd23a44,
         blendMode: Phaser.BlendModes.ADD,
       });
-      this.embers.setDepth(25);
-      this.embers.stop();
+      this.haze.setDepth(25);
+      this.haze.stop();
     }
 
     this.setLit(lit, true);
@@ -103,26 +129,184 @@ export class BloodAltar {
     return this.lit;
   }
 
+  /** Pierre : deux gradins bas, fut grave, vasque evasee. Dessine une fois. */
+  private drawStone() {
+    const g = this.stone;
+    g.clear();
+
+    const dark = 0x1c1518;
+    const mid = 0x2e2429;
+    const light = 0x3f3238;
+    const rim = 0x4d3d43;
+
+    // gradin inferieur
+    g.fillStyle(mid, 1);
+    g.fillRect(-39, -22, 78, 22);
+    g.fillStyle(light, 1);
+    g.fillRect(-39, -24, 78, 4);
+    // gradin superieur
+    g.fillStyle(mid, 1);
+    g.fillRect(-30, -46, 60, 24);
+    g.fillStyle(light, 1);
+    g.fillRect(-30, -48, 60, 4);
+
+    // fut galbe : polygone symetrique
+    g.fillStyle(0x352a2f, 1);
+    g.beginPath();
+    g.moveTo(-19, SHAFT_BOTTOM);
+    g.lineTo(-13, -78);
+    g.lineTo(-15, -110);
+    g.lineTo(-21, SHAFT_TOP);
+    g.lineTo(21, SHAFT_TOP);
+    g.lineTo(15, -110);
+    g.lineTo(13, -78);
+    g.lineTo(19, SHAFT_BOTTOM);
+    g.closePath();
+    g.fillPath();
+
+    // gravures verticales
+    g.lineStyle(1, dark, 0.8);
+    for (const gx of [-8, 0, 8]) {
+      g.beginPath();
+      g.moveTo(gx, -54);
+      g.lineTo(gx, -116);
+      g.strokePath();
+    }
+    // sigil grave
+    g.lineStyle(1.5, 0x5a1c24, 0.9);
+    g.strokeCircle(0, -86, 7);
+    g.beginPath();
+    g.moveTo(0, -95);
+    g.lineTo(0, -77);
+    g.moveTo(-6, -86);
+    g.lineTo(6, -86);
+    g.strokePath();
+
+    // vasque : coupe evasee
+    g.fillStyle(0x2a2126, 1);
+    g.beginPath();
+    g.moveTo(-BOWL_RX, BOWL_Y);
+    g.lineTo(-17, BOWL_Y + 22);
+    g.lineTo(17, BOWL_Y + 22);
+    g.lineTo(BOWL_RX, BOWL_Y);
+    g.closePath();
+    g.fillPath();
+
+    // levre de pierre claire
+    g.fillStyle(rim, 1);
+    g.fillEllipse(0, BOWL_Y, BOWL_RX * 2 + 6, 15);
+    g.fillStyle(0x150f11, 1);
+    g.fillEllipse(0, BOWL_Y + 1, BOWL_RX * 2 - 6, 11);
+
+    // ombre au sol
+    g.fillStyle(0x0b0709, 0.5);
+    g.fillEllipse(0, -2, 108, 12);
+  }
+
   private setLit(lit: boolean, silent = false) {
     this.lit = lit;
-    this.liquid.setFillStyle(lit ? 0xc42734 : 0x4a1a1e, 1);
     this.glow.setAlpha(lit ? 0.85 : 0.18);
-    if (lit) this.embers?.start();
-    else this.embers?.stop();
+    if (lit) this.haze?.start();
+    else this.haze?.stop();
     if (lit && !silent) {
       this.scene.cameras.main.flash(160, 120, 20, 30);
       this.scene.tweens.add({
         targets: this.glow,
-        scale: { from: 2.1, to: 1.05 },
+        scale: { from: 1.9, to: 0.85 },
         duration: 520,
         ease: "Cubic.easeOut",
+      });
+      // onde de choc rouge
+      const ring = this.scene.add.circle(0, BOWL_Y, 8);
+      ring.setStrokeStyle(3, 0xd23a44, 0.9);
+      this.root.add(ring);
+      this.scene.tweens.add({
+        targets: ring,
+        scale: 9,
+        alpha: 0,
+        duration: 620,
+        ease: "Cubic.easeOut",
+        onComplete: () => ring.destroy(),
       });
     }
   }
 
+  /** Coulees, gouttes et flaques. */
+  private drawBlood(time: number, delta: number) {
+    const g = this.blood;
+    g.clear();
+
+    const surface = this.lit ? 0xc42734 : 0x431417;
+    const stream = this.lit ? 0x9c1c28 : 0x300f12;
+    const shine = this.lit ? 0xff8a92 : 0x6a2a2f;
+    const act = this.lit ? 1 : 0.28;
+
+    // surface du bassin : ondulation lente
+    const wob = 1 + Math.sin(time / 520) * 0.02;
+    g.fillStyle(surface, 1);
+    g.fillEllipse(0, BOWL_Y + 1, (BOWL_RX * 2 - 10) * wob, 12 * wob);
+    // reflet specluaire qui glisse
+    const sx = Math.sin(time / 1400) * 14;
+    g.fillStyle(shine, this.lit ? 0.45 : 0.18);
+    g.fillEllipse(sx, BOWL_Y - 1, 16, 3.5);
+
+    for (const r of this.rivulets) {
+      const breathe = 0.72 + Math.sin(time * r.speed + r.phase) * 0.28;
+      const len = r.reach * breathe * (this.lit ? 1 : 0.45);
+      const top = BOWL_Y + 4;
+      const edgeCurve = r.x * 0.18; // les coulees rentrent vers le fut
+
+      // ruban qui s'affine
+      g.fillStyle(stream, 0.92);
+      g.beginPath();
+      g.moveTo(r.x - r.width, top);
+      g.lineTo(r.x + r.width, top);
+      g.lineTo(r.x + edgeCurve + r.width * 0.35, top + len);
+      g.lineTo(r.x + edgeCurve - r.width * 0.35, top + len);
+      g.closePath();
+      g.fillPath();
+      // goutte terminale
+      g.fillStyle(surface, 0.95);
+      g.fillCircle(r.x + edgeCurve, top + len, r.width * 0.85);
+
+      // detachement periodique
+      if (this.lit) {
+        r.dropDelay -= delta;
+        if (r.drop < 0 && r.dropDelay <= 0) {
+          r.drop = 0;
+          r.dropDelay = 1400 + Math.random() * 1600;
+        }
+        if (r.drop >= 0) {
+          r.drop += delta / 620;
+          const fromY = top + len;
+          const dy = fromY + (0 - fromY) * Math.min(1, r.drop * r.drop);
+          g.fillStyle(surface, 0.9);
+          g.fillEllipse(r.x + edgeCurve, dy, r.width * 1.5, r.width * 2.4);
+          if (r.drop >= 1) {
+            r.drop = -1;
+            this.pools.push({ x: r.x + edgeCurve, life: 0, ttl: 1500 });
+          }
+        }
+      } else {
+        r.drop = -1;
+      }
+    }
+
+    // flaques au sol
+    for (const p of this.pools) {
+      p.life += delta;
+      const t = Math.min(1, p.life / p.ttl);
+      g.fillStyle(stream, (1 - t) * 0.65 * act);
+      g.fillEllipse(p.x, -2, 6 + t * 22, 2 + t * 5);
+    }
+    this.pools = this.pools.filter((p) => p.life < p.ttl);
+  }
+
   /** Invite de proximite + activation. A appeler chaque frame. */
-  tick(playerX: number, time: number) {
+  tick(playerX: number, time: number, delta = 16) {
     const near = Math.abs(playerX - this.x) < RANGE;
+
+    this.drawBlood(time, delta);
 
     // respiration de la lueur
     const pulse = this.lit ? 0.78 + Math.sin(time / 380) * 0.14 : 0.16 + Math.sin(time / 900) * 0.05;
@@ -159,7 +343,7 @@ export class BloodAltar {
   }
 
   destroy() {
-    this.embers?.destroy();
+    this.haze?.destroy();
     this.root.destroy(true);
   }
 }
