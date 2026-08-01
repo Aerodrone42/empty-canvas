@@ -84,10 +84,29 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     return this.dying;
   }
 
+  /** hurtbox reelle de la creature (centre + demi-dimensions) */
+  get hurtbox() {
+    return {
+      cx: this.x,
+      cy: this.y - this.stats.bodyHeight / 2,
+      halfW: this.stats.bodyWidth / 2,
+      halfH: this.stats.bodyHeight / 2,
+    };
+  }
+
+  /** hauteur de la zone faible (tete / haut du torse) : critique garanti */
+  get weakPointY() {
+    return this.y - this.stats.bodyHeight * 0.82;
+  }
 
   takeHit(
     amount: number,
-    options: { knockback?: number; breakGuard?: boolean; fromX?: number } = {},
+    options: {
+      knockback?: number;
+      breakGuard?: boolean;
+      fromX?: number;
+      crit?: boolean;
+    } = {},
   ) {
     if (this.dying) return;
 
@@ -101,26 +120,41 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (options.breakGuard) this.guardBrokenUntil = time + 1500;
 
     const dir = options.fromX !== undefined ? Math.sign(this.x - options.fromX) || 1 : 1;
+    const crit = !!options.crit && !guarding;
+
+    // chiffre flottant : dore et agrandi sur critique, grise sur garde
+    this.scene.events.emit(
+      "fx-damage",
+      this.x,
+      this.y - this.stats.bodyHeight * 0.95,
+      dealt,
+      guarding ? "blocked" : crit ? "crit" : "normal",
+    );
 
     if (guarding) {
       this.scene.events.emit("fx-sparks", this.x + dir * 20, this.y - 60);
     } else {
-      // gerbe proportionnelle aux degats encaisses
+      // gerbe proportionnelle aux degats encaisses, renforcee sur critique
       this.scene.events.emit(
         "fx-blood",
         this.x + dir * 14,
         this.y - this.stats.bodyHeight * 0.55,
         dir,
-        Phaser.Math.Clamp(0.7 + dealt / 22, 0.7, 2.4),
+        Phaser.Math.Clamp((crit ? 1.4 : 0.7) + dealt / 22, 0.7, 3),
       );
+      if (crit) {
+        this.scene.cameras.main.shake(120, 0.008);
+        this.scene.events.emit("fx-sparks", this.x + dir * 16, this.weakPointY);
+      }
     }
 
-    this.setTint(guarding ? 0x9aa7b5 : 0xd94b4b);
-    this.scene.time.delayedCall(90, () => {
+    this.setTint(guarding ? 0x9aa7b5 : crit ? 0xffd166 : 0xd94b4b);
+    this.scene.time.delayedCall(crit ? 130 : 90, () => {
       if (this.active && !this.dying) this.clearTint();
     });
 
-    const knockback = (options.knockback ?? 0) * (guarding ? 0.25 : 1);
+    const knockback =
+      (options.knockback ?? 0) * (guarding ? 0.25 : 1) * (crit ? 1.35 : 1);
     if (knockback > 0 && this.body) {
       const body = this.body as Phaser.Physics.Arcade.Body;
       body.setVelocityX(dir * knockback);
@@ -131,6 +165,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.die(Phaser.Math.Clamp(dealt / 20, 0.8, 2.2));
     }
   }
+
 
   /** Etourdissement (parade réussie) : l'ennemi reste ouvert. */
   stun(durationMs: number) {
