@@ -31,6 +31,7 @@ import { Bourreau, EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from 
 import { GraspingHands } from "../entities/GraspingHands";
 import { Pickup } from "../entities/Pickup";
 import { Player } from "../entities/Player";
+import { ROOM_ORDER } from "../rooms";
 import type { BackdropKey } from "@/game/assets";
 import { useGameStore } from "@/store/gameStore";
 
