@@ -20,7 +20,7 @@ const INVULN_MS = 750;
 
 /**
  * Les feuilles du Vigile ont ete regenerees sur un gabarit unique : meme
- * cellule 192x144, silhouette de 110 px et ligne de pieds a y=138 sur toutes
+ * cellule 256x192, silhouette de 150 px et ligne de pieds a y=184 sur toutes
  * les frames. L'echelle et l'origine sont donc constantes.
  */
 
