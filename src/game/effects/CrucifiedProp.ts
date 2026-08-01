@@ -22,6 +22,7 @@ export class CrucifiedProp {
     textureKey = "crucifie-idle",
   ) {
     this.scene = scene;
+    const isWoman = textureKey === "crucifiee-idle";
 
     const tex = scene.textures.get(textureKey).getSourceImage();
     const scale = PROP_H / tex.height;
@@ -38,23 +39,27 @@ export class CrucifiedProp {
     this.sprite.play(`${textureKey}-anim`);
 
 
-    // respiration / balancement tres lent du corps
-    scene.tweens.add({
-      targets: this.sprite,
-      angle: { from: -0.7, to: 0.7 },
-      duration: 4200,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    });
-    scene.tweens.add({
-      targets: this.sprite,
-      scaleY: { from: scale, to: scale * 1.012 },
-      duration: 2600,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    });
+    // La femme possède une animation interne dans sa spritesheet : sa croix
+    // doit rester parfaitement immobile. L'ancien supplicié conserve son
+    // léger balancement global historique.
+    if (!isWoman) {
+      scene.tweens.add({
+        targets: this.sprite,
+        angle: { from: -0.7, to: 0.7 },
+        duration: 4200,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+      scene.tweens.add({
+        targets: this.sprite,
+        scaleY: { from: scale, to: scale * 1.012 },
+        duration: 2600,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+    }
 
     this.ensureDripTexture();
 
