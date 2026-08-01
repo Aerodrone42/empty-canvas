@@ -65,21 +65,32 @@ export class BootScene extends Phaser.Scene {
       { frameWidth: 64, frameHeight: 48, spacing: 0 },
     );
 
-    // monture funebre : illustration complete par frame, deja a la taille affichee
+    // monture d'effroi : mini-boss aerien, gueule vide (plus de victime)
+    const mountFrame = { frameWidth: 512, frameHeight: 360, spacing: 0 };
     this.load.spritesheet(
       "dread-mount-fly",
-      "/assets/sprites/props/dread_mount_fly.png?v=6",
-      { frameWidth: 512, frameHeight: 336, spacing: 0 },
+      "/assets/sprites/props/dread_mount_fly.png?v=7",
+      mountFrame,
     );
     this.load.spritesheet(
-      "dread-mount-fly-fed",
-      "/assets/sprites/props/dread_mount_fly_fed.png?v=6",
-      { frameWidth: 512, frameHeight: 336, spacing: 0 },
+      "dread-mount-dive",
+      "/assets/sprites/props/dread_mount_dive.png?v=7",
+      mountFrame,
     );
     this.load.spritesheet(
-      "dread-mount-swallow",
-      "/assets/sprites/props/dread_mount_swallow.png?v=6",
-      { frameWidth: 512, frameHeight: 336, spacing: 0 },
+      "dread-mount-bite",
+      "/assets/sprites/props/dread_mount_bite.png?v=7",
+      mountFrame,
+    );
+    this.load.spritesheet(
+      "dread-mount-claw",
+      "/assets/sprites/props/dread_mount_claw.png?v=7",
+      mountFrame,
+    );
+    this.load.spritesheet(
+      "dread-mount-death",
+      "/assets/sprites/props/dread_mount_death.png?v=7",
+      mountFrame,
     );
 
 
