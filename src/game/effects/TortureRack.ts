@@ -21,8 +21,8 @@ const WALL_LIFT = 100;
 const VICTIM_LEN = 150;
 /** largeur dessinee du corps dans une cellule de 512 px */
 const VICTIM_ART_W = 330;
-/** distance de declenchement */
-const TRIGGER_RANGE = 520;
+/** distance de declenchement : le heros doit etre tout pres pour voir la scene */
+const TRIGGER_RANGE = 230;
 /** duree d'un cran */
 const STEP_MS = 450;
 
