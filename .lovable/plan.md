@@ -1,24 +1,25 @@
-## Correction de la monture — deux ailes réellement animées
+## Correction anatomique stricte — exactement deux ailes
 
-Le diagnostic est confirmé : les 8 frames actuelles modifient surtout la moitié gauche de l’image (`x ≈ 0–320`), tandis que l’aile opposée reste pratiquement identique. Le code Phaser lit bien les 8 frames ; le défaut est donc dans la spritesheet générée, pas dans la lecture de l’animation.
+L’image annotée confirme l’erreur : elle contient la grande aile gauche, l’aile arrière supérieure, puis une troisième aile parasite sous le ventre. Cette génération sera rejetée intégralement et aucun de ces fichiers temporaires ne sera ajouté au jeu.
 
-1. **Refaire les frames complètes à partir de l’illustration native**
-   - Conserver un dragon entier par frame, sans élément collé par-dessus.
-   - Redessiner les deux ailes dans chaque pose : montée, extension, descente et retour.
-   - Donner aux deux ailes une amplitude cohérente avec la perspective, l’aile arrière restant visible mais bougeant réellement.
+1. **Repartir de la dernière illustration valide à deux ailes**
+   - Utiliser la frame originale du projet, pas la nouvelle image fautive.
+   - Conserver exactement les deux attaches d’ailes existantes au niveau des épaules.
+   - Verrouiller totalement le corps, la tête, l’humain, le cavalier, les pattes et la queue.
 
-2. **Protéger les zones détaillées**
-   - Ne déformer ni la tête, ni la gueule, ni l’humain, ni le cavalier.
-   - Limiter les transformations aux ailes et à une légère ondulation de la queue.
-   - Garder chaque frame à la taille d’affichage 512 × 336 pour éviter tout nouveau flou.
+2. **Créer un cycle anatomiquement contrôlé**
+   - Aile proche : modifier uniquement sa membrane et ses os à gauche du corps.
+   - Aile arrière : modifier uniquement l’aile visible derrière le cavalier.
+   - Interdire toute création de forme ailée sous la cage thoracique ou derrière les pattes.
+   - Utiliser des masques séparés et bornés pour les deux zones afin qu’aucune déformation ne puisse produire une troisième aile.
 
-3. **Remplacer toutes les séquences concernées**
-   - Régénérer les versions `fly` et `fly-fed` avec le même cycle bilatéral.
-   - Harmoniser `swallow` avec la même position d’ailes afin d’éviter un saut visuel au changement d’animation.
-   - Incrémenter la version des assets pour empêcher l’ancien sprite de rester en cache.
+3. **Limiter le cycle à des poses validées**
+   - Produire d’abord trois images isolées : ailes hautes, médianes et basses.
+   - Contrôler chaque image avant d’assembler la spritesheet.
+   - Construire ensuite les 8 frames par interpolation uniquement entre ces trois poses propres, sans nouvelle génération anatomique.
 
-4. **Contrôle visuel obligatoire**
-   - Extraire et comparer les 8 frames côte à côte.
-   - Vérifier séparément que chaque aile change de silhouette et de hauteur au cours du cycle.
-   - Tester l’animation dans le jeu, y compris le demi-tour horizontal et la transition avalement → vol nourri.
-   - Ne valider que si les deux ailes battent, que l’humain reste net et qu’aucun rectangle ou raccord n’apparaît.
+4. **Validation bloquante avant intégration**
+   - Compter visuellement et par zones les deux silhouettes d’ailes sur chaque frame.
+   - Rejeter toute frame avec plus de deux ailes, une aile fixe, un humain flou ou un artefact.
+   - Afficher la planche complète de contrôle avant de remplacer les assets actuels.
+   - Tester enfin le vol et l’avalement dans le jeu, puis seulement incrémenter la version des sprites.
