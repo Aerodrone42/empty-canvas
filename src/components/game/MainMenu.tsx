@@ -23,7 +23,8 @@ export function MainMenu() {
 
       <div className="mt-12 flex w-full max-w-xs flex-col gap-3">
         <MenuButton onClick={startNewRun}>Nouvelle partie</MenuButton>
-        <MenuButton onClick={continueRun} disabled={!hasSave}>
+        {/* toujours actif : toutes les salles sont selectionnables */}
+        <MenuButton onClick={continueRun}>
           Continuer
         </MenuButton>
         <MenuButton onClick={() => void toggleFullscreen()}>Plein écran</MenuButton>
