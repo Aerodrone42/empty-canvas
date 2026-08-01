@@ -145,17 +145,17 @@ export class BootScene extends Phaser.Scene {
     this.anims.create({
       key: "dread-mount-prey-fly",
       frames: this.anims.generateFrameNumbers("dread-mount-prey", {
-        frames: [0, 1, 2, 1],
+        frames: [0, 1, 2, 3, 4, 5],
       }),
-      frameRate: 6,
+      frameRate: 8,
       repeat: -1,
     });
     this.anims.create({
       key: "dread-mount-fed-fly",
       frames: this.anims.generateFrameNumbers("dread-mount-fed", {
-        frames: [0, 1, 2, 1],
+        frames: [0, 1, 2, 3, 4, 5],
       }),
-      frameRate: 6,
+      frameRate: 8,
       repeat: -1,
     });
 
