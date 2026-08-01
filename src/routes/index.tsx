@@ -41,6 +41,7 @@ function Index() {
   useEffect(() => {
     setHydrated(true);
     useBindingsStore.getState().hydrate();
+    useGameStore.getState().hydrateRun();
   }, []);
 
   if (!hydrated) {
@@ -62,6 +63,15 @@ function Index() {
     );
   }
 
+  if (phase === "stages") {
+    return (
+      <main className="relative min-h-screen">
+        <h1 className="sr-only">Sanguine Vigile — Choix de la salle</h1>
+        <StageSelect />
+      </main>
+    );
+  }
+
   if (phase === "menu" || (phase === "options" && optionsReturnPhase === "menu")) {
     return (
       <main className="relative min-h-screen">
@@ -70,6 +80,7 @@ function Index() {
       </main>
     );
   }
+
 
 
   return (
