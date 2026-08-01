@@ -37,6 +37,8 @@ const SAFE_RADIUS = 300;
 const GATE_X = 2150;
 /** au dela de ce point, le heros bascule dans la salle suivante */
 const GATE_EXIT_X = GATE_X + 110;
+/** seconde moitie de la cathedrale : la monture d'effroi fond sur le heros */
+const MOUNT_TRIGGER_X = 1500;
 /** machine d'ecartellement du corridor */
 const TORTURE_RACK_X = 1320;
 
@@ -286,7 +288,15 @@ export class GameScene extends Phaser.Scene {
     // supplicie ecorche : uniquement dans la cathedrale
     if (this.backdropKey === "cathedrale") {
       this.crucified = new CrucifiedProp(this, CRUCIFIED_X, FLOOR_Y);
-      this.mount = new DreadMount(this);
+      // mini-boss aerien : il surgit dans la seconde moitie de la salle
+      this.mount = new DreadMount(this, {
+        floorY: FLOOR_Y,
+        roomWidth: ROOM_WIDTH,
+        triggerX: MOUNT_TRIGGER_X,
+        getPlayer: () => this.player,
+        onStrike: (amount) => this.resolveEnemyStrike(amount),
+        onGore: (x, y) => this.blood.sparks(x, y),
+      });
     } else if (this.backdropKey === "corridor") {
       // grosse veine qui bat le long du couloir, derriere les statues
       this.vein = new CorridorVein(this, FLOOR_Y, ROOM_WIDTH);
@@ -448,6 +458,15 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // la monture d'effroi n'encaisse que lorsqu'elle descend au contact
+    if (this.mount && this.mount.isVulnerable) {
+      const withinX = Math.abs(this.mount.x - originX) < reach + 90;
+      const withinY = Math.abs(this.mount.y - this.player.y) < strike.vertical + 90;
+      if (withinX && withinY && this.mount.takeHit(damage, this.player.x)) {
+        hits += 1;
+      }
+    }
+
     // chaque coup porté recharge la jauge de Chair qui alimente le Rugissement
     if (hits > 0 && strike.id !== "special") {
       const bonus = strike.breakGuard || strike.id === "combo3" ? FLESH_HEAVY_BONUS : 0;
@@ -505,8 +524,9 @@ export class GameScene extends Phaser.Scene {
 
     this.enemies = this.enemies.filter((e) => e.active);
 
-    // salle nettoyee : le passage derriere la colonne s'ouvre
-    if (!this.roomCleared && this.enemies.every((e) => e.isDead)) {
+    // salle nettoyee : la monture doit etre abattue en plus des monstres au sol
+    const mountCleared = !this.mount || this.mount.isDefeated;
+    if (!this.roomCleared && mountCleared && this.enemies.every((e) => e.isDead)) {
       this.openGate();
     }
     if (this.roomCleared && !this.exiting && this.player.x > GATE_EXIT_X) {
