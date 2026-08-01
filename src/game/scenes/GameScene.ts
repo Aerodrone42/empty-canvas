@@ -17,6 +17,7 @@ import { DamageNumbers, type DamageKind } from "../effects/DamageNumbers";
 import { Profiler } from "../debug/Profiler";
 import { AmbientCritters } from "../effects/AmbientCritters";
 import { placeTorches, type FloorTorch } from "../effects/FloorTorch";
+import { AbsorbPrompt } from "../effects/AbsorbPrompt";
 import { BloodFX } from "../effects/Blood";
 import { BloodAltar } from "../effects/BloodAltar";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
@@ -34,7 +35,7 @@ import { Pickup } from "../entities/Pickup";
 import { Player } from "../entities/Player";
 import { ROOM_ORDER } from "../rooms";
 import type { BackdropKey } from "@/game/assets";
-import { useGameStore } from "@/store/gameStore";
+import { ABSORB_COST, useGameStore } from "@/store/gameStore";
 
 const ROOM_WIDTH = 2400;
 const ROOM_HEIGHT = 900;
@@ -76,6 +77,7 @@ export class GameScene extends Phaser.Scene {
   private hands: GraspingHands[] = [];
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
   private blood!: BloodFX;
+  private absorbPrompt?: AbsorbPrompt;
   /** chiffres de degats flottants */
   private damageNumbers!: DamageNumbers;
   private parallax!: Parallax;
@@ -149,6 +151,8 @@ export class GameScene extends Phaser.Scene {
     this.mount = undefined;
     this.altar?.destroy();
     this.altar = undefined;
+    this.absorbPrompt?.destroy();
+    this.absorbPrompt = undefined;
     for (const t of this.torches) t.destroy();
     this.torches = [];
 
@@ -169,6 +173,7 @@ export class GameScene extends Phaser.Scene {
 
     this.blood = new BloodFX(this, FLOOR_Y);
     this.damageNumbers = new DamageNumbers(this);
+    this.absorbPrompt = new AbsorbPrompt(this);
 
     this.buildBackdrop();
     this.buildGeometry();
@@ -517,6 +522,22 @@ export class GameScene extends Phaser.Scene {
     this.blood.siphon(this.player.x, this.player.y, 120);
   }
 
+  /** Badge de touche au-dessus du heros quand l'absorption est possible. */
+  private updateAbsorbPrompt(safe: boolean, delta: number) {
+    if (!this.absorbPrompt) return;
+    const body = this.player.body as Phaser.Physics.Arcade.Body | null;
+    const store = useGameStore.getState();
+    const onGround = !!body && (body.blocked.down || body.touching.down);
+    const visible =
+      safe &&
+      onGround &&
+      !this.player.isAbsorbing &&
+      store.health < store.maxHealth &&
+      store.flesh >= ABSORB_COST &&
+      !!this.blood.poolAt(this.player.x);
+    this.absorbPrompt.tick(visible, this.player.x, this.player.y - 110, delta);
+  }
+
 
   private resolvePlayerStrike(strike: Strike, damageScale = 1) {
     const store = useGameStore.getState();
@@ -640,6 +661,7 @@ export class GameScene extends Phaser.Scene {
         useGameStore.getState().setAbsorb(false, 0);
       }
       this.regenerateFromBlood(!threatened, delta);
+      this.updateAbsorbPrompt(!threatened, delta);
       // bande-son adaptative : theme epique tant qu'une creature menace
       this.music?.setCombat(threatened);
     });
