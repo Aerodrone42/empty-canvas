@@ -224,3 +224,103 @@ export function computeEffects(unlocked: string[]): MutationEffects {
 export function isAvailable(mutation: Mutation, unlocked: string[]) {
   return !mutation.requires || unlocked.includes(mutation.requires);
 }
+
+/**
+ * Description lisible de chaque effet, pour l'affichage du panneau de
+ * statistiques de la Voie de la Chair. Aucune logique de jeu ici : on se
+ * contente de formater les valeurs calculees par computeEffects.
+ */
+export type StatRow = {
+  key: keyof MutationEffects;
+  label: string;
+  format: (e: MutationEffects) => string;
+  /** valeur numerique comparable, pour detecter une amelioration */
+  score: (e: MutationEffects) => number;
+};
+
+const pct = (v: number) => `${Math.round(v * 100)} %`;
+
+export const STAT_ROWS: StatRow[] = [
+  {
+    key: "bonusHealth",
+    label: "Vitalité",
+    format: (e) => `${100 + e.bonusHealth} PV`,
+    score: (e) => e.bonusHealth,
+  },
+  {
+    key: "damageMult",
+    label: "Puissance",
+    format: (e) => pct(e.damageMult),
+    score: (e) => e.damageMult,
+  },
+  {
+    key: "bonusReach",
+    label: "Allonge",
+    format: (e) => (e.bonusReach ? `+${e.bonusReach} px` : "normale"),
+    score: (e) => e.bonusReach,
+  },
+  {
+    key: "attackCooldownMult",
+    label: "Cadence",
+    format: (e) => pct(1 / e.attackCooldownMult),
+    score: (e) => 1 / e.attackCooldownMult,
+  },
+  {
+    key: "speedMult",
+    label: "Course",
+    format: (e) => pct(e.speedMult),
+    score: (e) => e.speedMult,
+  },
+  {
+    key: "doubleJump",
+    label: "Sauts",
+    format: (e) => (e.doubleJump ? "3 (triple)" : "2 (double)"),
+    score: (e) => (e.doubleJump ? 1 : 0),
+  },
+  {
+    key: "damageReduction",
+    label: "Endurcie",
+    format: (e) => (e.damageReduction ? `-${Math.round(e.damageReduction * 100)} % subis` : "aucune"),
+    score: (e) => e.damageReduction,
+  },
+  {
+    key: "lifesteal",
+    label: "Vol de vie",
+    format: (e) => (e.lifesteal ? `+${e.lifesteal} PV / mort` : "aucun"),
+    score: (e) => e.lifesteal,
+  },
+  {
+    key: "fleshGainMult",
+    label: "Récolte",
+    format: (e) => pct(e.fleshGainMult),
+    score: (e) => e.fleshGainMult,
+  },
+  {
+    key: "dodgeDistanceMult",
+    label: "Roulade",
+    format: (e) => pct(e.dodgeDistanceMult),
+    score: (e) => e.dodgeDistanceMult,
+  },
+  {
+    key: "parryWindowBonus",
+    label: "Parade",
+    format: (e) => (e.parryWindowBonus ? `+${e.parryWindowBonus} ms` : "normale"),
+    score: (e) => e.parryWindowBonus,
+  },
+  {
+    key: "specialCostMult",
+    label: "Rugissement",
+    format: (e) =>
+      `${pct(e.specialCostMult)} coût${e.specialRadiusBonus ? ` · +${e.specialRadiusBonus} portée` : ""}`,
+    score: (e) => 1 / e.specialCostMult + e.specialRadiusBonus / 100,
+  },
+];
+
+/** Resume court d'une mutation, affiche en jeu apres la greffe. */
+export function mutationSummary(mutation: Mutation, before: string[]): string {
+  const prev = computeEffects(before);
+  const next = computeEffects([...before, mutation.id]);
+  const changed = STAT_ROWS.filter((row) => row.score(next) !== row.score(prev));
+  if (!changed.length) return mutation.description;
+  return changed.map((row) => `${row.label} ${row.format(prev)} → ${row.format(next)}`).join(" · ");
+}
