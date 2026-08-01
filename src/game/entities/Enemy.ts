@@ -374,7 +374,27 @@ export class EcorchePendu extends Enemy {
     this.play("ecorche-hang-anim", true);
   }
 
-  private drop() {
+  /** suspendu, le corps pend vers le bas : la hurtbox suit la silhouette */
+  get hurtbox() {
+    const base = super.hurtbox;
+    if (this.phase !== "hanging") return base;
+    return { ...base, cy: this.y + base.halfH };
+  }
+
+  get weakPointY() {
+    return this.phase === "hanging" ? this.y + 100 : super.weakPointY;
+  }
+
+  /** le frapper au plafond le decroche immediatement */
+  takeHit(
+    amount: number,
+    options: { knockback?: number; breakGuard?: boolean; fromX?: number; crit?: boolean } = {},
+  ) {
+    if (this.phase === "hanging" && !this.isDead) this.drop();
+    super.takeHit(amount, options);
+  }
+
+
     this.phase = "falling";
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(true);
