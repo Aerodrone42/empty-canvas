@@ -9,6 +9,7 @@ import { MainMenu } from "@/components/game/MainMenu";
 import { Options } from "@/components/game/Options";
 import { DeathScreen, PauseMenu } from "@/components/game/PauseMenu";
 import { PhaserCanvas } from "@/components/game/PhaserCanvas";
+import { StageSelect } from "@/components/game/StageSelect";
 import { useGamepadUi } from "@/hooks/useGamepadUi";
 import { useBindingsStore } from "@/store/bindingsStore";
 import { useGameStore } from "@/store/gameStore";
@@ -40,6 +41,7 @@ function Index() {
   useEffect(() => {
     setHydrated(true);
     useBindingsStore.getState().hydrate();
+    useGameStore.getState().hydrateRun();
   }, []);
 
   if (!hydrated) {
@@ -61,6 +63,15 @@ function Index() {
     );
   }
 
+  if (phase === "stages") {
+    return (
+      <main className="relative min-h-screen">
+        <h1 className="sr-only">Sanguine Vigile — Choix de la salle</h1>
+        <StageSelect />
+      </main>
+    );
+  }
+
   if (phase === "menu" || (phase === "options" && optionsReturnPhase === "menu")) {
     return (
       <main className="relative min-h-screen">
@@ -69,6 +80,7 @@ function Index() {
       </main>
     );
   }
+
 
 
   return (

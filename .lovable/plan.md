@@ -1,41 +1,33 @@
-## Périmètre
+## Objectif
 
-Refaire **uniquement le Bourreau** : ses trois planches de sprites, régénérées par génération d'image, dans le style du jeu et aux dimensions exactes du moteur.
+Remplacer le bouton « Continuer » (qui reprend simplement la partie) par un écran de sélection de salle listant les 4 stages, tous accessibles en permanence, pour tester n'importe quel niveau sans refaire les précédents.
 
-**Rien d'autre n'est touché** : ni la machine d'écartèlement (`torture_rack_frame.png`), ni le supplicié (`torture_rack_victim_spritesheet.png`), ni `src/game/effects/TortureRack.ts`.
+## Ce qui existe aujourd'hui
 
-## Contraintes fixes
+- Le jeu enchaîne 4 décors : `cathedrale`, `corridor`, `throne`, `exterieur` (`ROOM_ORDER` dans `GameScene.ts`).
+- `BootScene` lance toujours `game` sans paramètre : la partie démarre forcément à la cathédrale.
+- Le store (`gameStore.ts`) ne mémorise ni la salle courante ni la progression ; `continueRun()` se contente de repasser en phase `playing`.
+- Rien n'est persisté entre deux rechargements (vie, chair, mutations, salle).
 
-- **224 x 176 par frame**, fond transparent, pieds sur la ligne de sol, même échelle que les autres ennemis.
-- Silhouette stable d'une frame à l'autre : même centre, même taille de couperet, même carrure.
-- Style : gothique organique sombre, cuir tanné, masque de bourreau à lanières, chaîne et crochet à la ceinture, torse pâle marqué, éclairage latéral froid, sang séché. Pas de contour cartoon, pas de fond.
+## Ce qui sera construit
 
-## Planches
+1. **Suivi de la salle courante dans le store**
+   - Nouveau champ `stage` (clé de décor) mis à jour à chaque entrée dans une salle.
+   - Sauvegarde de l'état de run (salle, vie, vie max, chair, mutations, kills, parades) dans le stockage local du navigateur, restaurée au lancement.
 
-| Planche | Frames | Contenu |
-|---|---|---|
-| `bourreau_attack_spritesheet.png` | 6 | armement couperet derrière l'épaule (0-1), swing (2-3), impact bras tendu vers l'avant (4), retour à la garde (5) |
-| `bourreau_idle_spritesheet.png` | 4 | respiration lourde, couperet appuyé sur l'épaule, chaîne qui balance |
-| `bourreau_walk_spritesheet.png` | 6 | marche pesante, épaules qui roulent |
+2. **Écran de sélection de salle**
+   - Le bouton « Continuer » ouvre un panneau listant les 4 salles avec leur nom lisible (I — La Nef Suppurante, II — Le Corridor de Chair, III — Le Trône, IV — L'Extérieur), toutes cliquables en permanence.
+   - La salle où l'on s'était arrêté est mise en avant (« reprise ici »).
+   - Bouton Retour vers le menu principal.
 
-L'attaque est la priorité : c'est elle qui est illisible aujourd'hui. Idle et walk sont refaits dans la foulée pour rester cohérents avec elle.
+3. **Chargement de la salle choisie**
+   - Le clic démarre/redémarre la scène de jeu sur le décor choisi, en conservant l'état sauvegardé du héros (vie, chair, mutations) — pas de remise à zéro.
+   - « Nouvelle partie » reste inchangée : salle 1, état neuf.
 
-`bourreau_crank.png` (le bourreau à la manivelle) reste tel quel puisqu'il appartient à la scène de la machine.
+## Détails techniques
 
-## Méthode
-
-1. Une **feuille de référence** du Bourreau générée en premier, validée visuellement avant toute animation.
-2. Chaque frame générée à partir de cette référence : seule la pose change, le personnage reste identique.
-3. Assemblage sur la grille 224 x 176 avec contrôle programmatique : bbox de chaque frame, pieds alignés, centre stable, transparence propre, largeur totale exacte.
-4. **Validation visuelle avant câblage.** Une frame incohérente est régénérée, jamais repeinte à la main.
-
-## Câblage moteur (une seule fois, à la fin)
-
-- `src/game/assets.ts` : `bourreau-attack` → `frameCount: 6`, `frameRate: 12` ; ajustement des compteurs idle/walk si nécessaire.
-- `src/game/scenes/BootScene.ts` : anim `bourreau-windup-anim` (frames 0-1, 7 fps) pour la phase d'anticipation.
-- `src/game/entities/Enemy.ts` : champ optionnel `windupAnim` dans `EnemyStats`, joué pendant les 350 ms d'anticipation à la place du idle teinté ; le coup part sur la frame d'impact.
-- Contrôle final en jeu par capture runtime : anticipation lisible, swing visible, impact synchronisé avec les dégâts.
-
-## Ce que je ne fais plus
-
-Aucun membre dessiné en script, aucune rotation de lame, aucun inpainting manuel. Le sprite sort de la génération d'image ou n'est pas livré.
+- `gameStore` : ajout de `stage`, `setStage`, `continueAtStage(key)`, plus persistance localStorage (clé dédiée, hydratation au montage comme `bindingsStore.hydrate()`).
+- Nouvelle phase UI `stages` (ou état local du menu) pour l'écran de sélection ; nouveau composant `src/components/game/StageSelect.tsx` rendu depuis la même zone que `MainMenu`.
+- `PhaserCanvas` / `BootScene` : lancement de la scène `game` avec `{ backdrop: stage }` ; côté React, changer de salle depuis le menu déclenche un `scene.restart({ backdrop })` sur l'instance Phaser existante.
+- `GameScene.init/create` : appelle `setStage(this.backdropKey)` pour que la progression suive aussi les transitions in-game via `exitRoom()`.
+- Les noms de salles sont définis dans une petite table à côté de `ROOM_ORDER` pour être partagés avec l'UI.

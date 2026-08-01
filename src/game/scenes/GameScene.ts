@@ -31,6 +31,7 @@ import { Bourreau, EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from 
 import { GraspingHands } from "../entities/GraspingHands";
 import { Pickup } from "../entities/Pickup";
 import { Player } from "../entities/Player";
+import { ROOM_ORDER } from "../rooms";
 import type { BackdropKey } from "@/game/assets";
 import { useGameStore } from "@/store/gameStore";
 
@@ -55,8 +56,9 @@ const TORTURE_RACK_X = 1320;
 
 
 
-/** enchainement des salles : la colonne mene a la suivante */
-const ROOM_ORDER: BackdropKey[] = ["cathedrale", "corridor", "throne", "exterieur"];
+
+
+
 
 
 export class GameScene extends Phaser.Scene {
@@ -108,6 +110,8 @@ export class GameScene extends Phaser.Scene {
 
   init(data?: { backdrop?: BackdropKey }) {
     this.backdropKey = data?.backdrop ?? "cathedrale";
+    // memorise la salle atteinte : point de reprise du menu Continuer
+    useGameStore.getState().setStage(this.backdropKey);
   }
 
 

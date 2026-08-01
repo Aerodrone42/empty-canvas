@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import type { BackdropKey } from "@/game/assets";
 import {
   BASE_EFFECTS,
   MUTATIONS,
@@ -11,6 +12,7 @@ import {
 export type Phase =
   | "warning"
   | "menu"
+  | "stages"
   | "playing"
   | "paused"
   | "flesh"
@@ -37,10 +39,18 @@ export type GameState = {
   absorbing: boolean;
   /** l'autel n'offre son soin complet qu'une fois par salle */
   altarHealUsed: boolean;
+  /** salle courante : sert de point de reprise */
+  stage: BackdropKey;
 
   enter: () => void;
   startNewRun: () => void;
   continueRun: () => void;
+  /** reprise directe sur une salle choisie dans le menu */
+  continueAtStage: (stage: BackdropKey) => void;
+  openStageSelect: () => void;
+  setStage: (stage: BackdropKey) => void;
+  /** restaure la sauvegarde locale (appelee au montage de la page) */
+  hydrateRun: () => void;
   pause: () => void;
   resume: () => void;
   openFleshPath: () => void;
@@ -69,6 +79,58 @@ export const ABSORB_COST = 25;
 export const ABSORB_HEAL = 20;
 export const ABSORB_DURATION = 900;
 
+/** cle de sauvegarde locale de la progression */
+const SAVE_KEY = "sanguine-vigile-run";
+
+type SavedRun = {
+  stage: BackdropKey;
+  health: number;
+  maxHealth: number;
+  flesh: number;
+  kills: number;
+  parries: number;
+  mutations: string[];
+};
+
+function readSave(): SavedRun | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as Partial<SavedRun>;
+    if (!data || typeof data.stage !== "string") return null;
+    return {
+      stage: data.stage as BackdropKey,
+      health: typeof data.health === "number" ? data.health : BASE_MAX_HEALTH,
+      maxHealth: typeof data.maxHealth === "number" ? data.maxHealth : BASE_MAX_HEALTH,
+      flesh: typeof data.flesh === "number" ? data.flesh : 0,
+      kills: typeof data.kills === "number" ? data.kills : 0,
+      parries: typeof data.parries === "number" ? data.parries : 0,
+      mutations: Array.isArray(data.mutations) ? data.mutations : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeSave(state: GameState) {
+  if (typeof window === "undefined") return;
+  try {
+    const save: SavedRun = {
+      stage: state.stage,
+      health: state.health,
+      maxHealth: state.maxHealth,
+      flesh: state.flesh,
+      kills: state.kills,
+      parries: state.parries,
+      mutations: state.mutations,
+    };
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  } catch {
+    // stockage indisponible : la progression reste en memoire
+  }
+}
+
 export const useGameStore = create<GameState>((set, get) => ({
   phase: "warning",
   health: BASE_MAX_HEALTH,
@@ -86,6 +148,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   absorbProgress: 0,
   absorbing: false,
   altarHealUsed: false,
+  stage: "cathedrale",
 
   enter: () => set({ phase: "menu" }),
 
@@ -103,9 +166,43 @@ export const useGameStore = create<GameState>((set, get) => ({
       absorbing: false,
       absorbProgress: 0,
       altarHealUsed: false,
+      stage: "cathedrale",
     }),
 
-  continueRun: () => set({ phase: get().hasSave ? "playing" : "menu" }),
+  /** le bouton Continuer ouvre desormais la selection de salle */
+  continueRun: () => set({ phase: "stages" }),
+  openStageSelect: () => set({ phase: "stages" }),
+
+  /** reprise sur la salle choisie, en conservant l'etat du heros */
+  continueAtStage: (stage) =>
+    set({
+      phase: "playing",
+      stage,
+      hasSave: true,
+      absorbing: false,
+      absorbProgress: 0,
+      altarHealUsed: false,
+    }),
+
+  setStage: (stage) => set({ stage, hasSave: true }),
+
+  hydrateRun: () => {
+    const save = readSave();
+    if (!save) return;
+    const effects = computeEffects(save.mutations);
+    set({
+      stage: save.stage,
+      health: save.health,
+      maxHealth: save.maxHealth,
+      flesh: save.flesh,
+      kills: save.kills,
+      parries: save.parries,
+      mutations: save.mutations,
+      effects,
+      hasSave: true,
+    });
+  },
+
 
   pause: () => set((s) => (s.phase === "playing" ? { phase: "paused" } : s)),
   resume: () =>
@@ -199,3 +296,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
   },
 }));
+
+// sauvegarde locale : salle atteinte + etat du heros, ecrite a chaque changement
+let saveTimer: ReturnType<typeof setTimeout> | undefined;
+useGameStore.subscribe((state) => {
+  if (!state.hasSave) return;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => writeSave(useGameStore.getState()), 300);
+});
+
