@@ -18,14 +18,17 @@ export const ANIM_TORCH_FLARE = "floor-torch-flare";
 const TEX_GLOW = "floor-torch-glow";
 const TEX_SMOKE = "floor-torch-smoke";
 
-/** dimensions du socle */
-const BASE_W = 150;
-const BASE_H = 274;
-/** dimensions d'une frame de flamme (calee sur le haut du socle) */
-export const FLAME_W = 150;
-export const FLAME_H = 112;
-/** position du foyer (levre de la vasque) dans le socle */
-const FIRE_Y = 100 / BASE_H;
+/** dimensions du socle (calice + couronne, strictement immobile) */
+const BASE_W = 154;
+const BASE_H = 220;
+/** dimensions d'une frame de flamme (feu pur, sans aucun metal) */
+export const FLAME_W = 81;
+export const FLAME_H = 102;
+/** decalage de la flamme par rapport au coin haut-gauche du socle */
+const FLAME_DX = 40;
+const FLAME_DY = -55;
+/** hauteur du foyer au-dessus du pied, en px source */
+const FIRE_UP = 180;
 
 
 
@@ -96,11 +99,13 @@ export class FloorTorch {
       .setScale(scale)
       .setDepth(depth);
 
-    // la flamme est calee sur le haut du socle (memes coordonnees source)
-    const topY = groundY - BASE_H * scale;
+    // la flamme est ancree par sa base, calee sur la levre de la vasque
+    const baseTop = groundY - BASE_H * scale;
+    const flameX = x + (FLAME_DX + FLAME_W / 2 - BASE_W / 2) * scale;
+    const flameBottomY = baseTop + (FLAME_DY + FLAME_H) * scale;
     this.flame = scene.add
-      .sprite(x, topY, TEX_TORCH_FLAME, 0)
-      .setOrigin(0.5, 0)
+      .sprite(flameX, flameBottomY, TEX_TORCH_FLAME, 0)
+      .setOrigin(0.5, 1)
       .setScale(scale)
       .setDepth(depth + 1);
     // desynchronisation : deux torches ne brulent jamais en phase
@@ -112,8 +117,8 @@ export class FloorTorch {
       if (!this.destroyed) this.flame.play(ANIM_TORCH_IDLE);
     });
 
-    const fx = x;
-    const fy = groundY - (1 - FIRE_Y) * BASE_H * scale;
+    const fx = flameX;
+    const fy = groundY - FIRE_UP * scale;
 
     this.baseGlow = 0.5 * scale;
     this.glow = scene.add

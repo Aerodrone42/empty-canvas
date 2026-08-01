@@ -1,28 +1,32 @@
 ## Constat
 
-Deux problèmes confirmés dans la planche actuelle (`floor_torch_spritesheet.png`, 10 frames de 113x300) :
+En inspectant `floor_torch_flame_spritesheet.png`, chaque vignette contient encore **la couronne métallique du brasero** (les pointes claires en bas de chaque frame), en plus du feu. Comme les 10 vignettes de la planche de référence ont été rendues indépendamment, cette couronne n'est pas identique au pixel près d'une frame à l'autre : en animation, c'est elle qui tremble autour de la flamme.
 
-1. **Toute la torche bouge.** Les 10 vignettes de la planche de référence ont été rendues indépendamment : le brasero n'est pas au pixel près identique d'une frame à l'autre (légères variations de forme, d'ombre et de position). En jouant l'animation, c'est donc le candélabre entier qui tremble, alors que seule la flamme devrait vivre.
-2. **Le design ne correspond plus.** La nouvelle référence (`image-27.png`) est un brasero-calice en fer forgé avec pointes, chaînes et loques rouges — pas le fût élancé actuel.
+Le socle statique, lui, est correct et ne bouge pas.
 
 ## Plan
 
-1. **Re-découper la nouvelle planche `image-27.png`**
-   - Grille 5x2, suppression des libellés au-dessus de chaque case, détourage du fond noir par seuillage de luminance.
-   - Alignement des 10 vignettes sur une bounding-box commune du **socle** (le calice), pas sur la silhouette globale — c'est ce qui supprime le tremblement.
+1. **Régénérer `floor_torch_flame_spritesheet.png` avec un masque strictement chromatique**
+   - Ne conserver que les pixels réellement en feu : teinte orange/rouge/jaune (rouge dominant, saturation élevée, luminance élevée).
+   - Éliminer tous les pixels gris/métalliques/bruns sombres (là où R ≈ V ≈ B, ou saturation faible) — c'est ce qui supprime la couronne et les éclats de fer.
+   - Nettoyage des pixels isolés (petit filtre de taille de composante) pour éviter les points parasites blancs visibles autour des flammes actuelles.
+   - Léger adoucissement du canal alpha en bordure pour éviter l'aliasing dur.
 
-2. **Séparer socle et flamme en deux textures**
-   - `floor_torch_base.png` : image unique, statique, prise sur la frame 1 (calice + chaînes + loques). Elle ne bougera jamais.
-   - `floor_torch_flame_spritesheet.png` : uniquement la zone de flamme (au-dessus de la lèvre du calice), extraite des 10 frames, toutes recadrées sur la même boîte et donc parfaitement superposables.
-   - Suppression de l'ancienne planche unique.
+2. **Régénérer `floor_torch_base.png` en y intégrant la couronne**
+   - La couronne + les pointes appartiennent au socle : les inclure dans l'image fixe pour qu'elles restent parfaitement immobiles.
+   - Prendre la frame de référence à flamme la plus faible pour minimiser la lumière projetée figée sur le métal.
 
-3. **Réécrire `src/game/effects/FloorTorch.ts`**
-   - Une `Image` fixe pour le socle + un `Sprite` animé pour la flamme, ancré au foyer du calice.
-   - Boucle de repos (idle → faible → moyenne → vacillement) et sursaut aléatoire (forte → embrasement → intensification → tourbillon → souffle → étincelles), synchronisés avec le halo et les braises déjà en place.
-   - Petit `setScale` vertical léger sur la flamme uniquement, jamais sur le socle.
+3. **Recaler l'ancrage dans `src/game/effects/FloorTorch.ts`**
+   - Ajuster `FLAME_H` / la position `topY` pour que la base du feu se pose sur la lèvre de la vasque désormais incluse dans le socle.
+   - Aucun changement de logique d'animation : la boucle repos + sursaut restent en place.
 
-4. **`BootScene.ts`** : charger les deux nouveaux assets et redéfinir les animations `floor-torch-idle` / `floor-torch-flare` sur la spritesheet de flamme.
+4. **`BootScene.ts`** : mettre à jour `frameWidth` / `frameHeight` de la spritesheet de flamme si le recadrage change les dimensions.
 
-5. **Placement** : échelle ajustée au nouveau gabarit (brasero plus trapu que l'ancien fût), pied posé sur la ligne de sol, 4 torchères en cathédrale, 6 en perspective dans le corridor.
+5. **Vérification** : capture en jeu pour confirmer que le métal est strictement immobile et que seules les langues de feu vivent.
 
-6. **Vérification** : capture en jeu dans les deux salles pour confirmer que le socle est parfaitement immobile et que seule la flamme vit.
+## Détails techniques
+
+Masque de feu appliqué par pixel (Python/PIL) :
+- garder si `R > 90` et `R - B > 45` et `max(R,G,B) > 100`
+- rejeter si `max-min < 40` (gris/métal)
+- alpha proportionnel à l'intensité du rouge pour un fondu naturel des bords

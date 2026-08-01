@@ -49,7 +49,7 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet(
       "floor-torch-flame",
       "/assets/sprites/props/floor_torch_flame_spritesheet.png",
-      { frameWidth: 150, frameHeight: 112, spacing: 0 },
+      { frameWidth: 81, frameHeight: 102, spacing: 0 },
     );
 
 
