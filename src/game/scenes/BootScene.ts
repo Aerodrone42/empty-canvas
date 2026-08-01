@@ -37,6 +37,9 @@ export class BootScene extends Phaser.Scene {
     // statue de pleureuse (larmes de sang a l'approche du heros)
     this.load.image("statue-pleureuse", "/assets/sprites/props/weeping_statue.png");
 
+    // autel de sang (point de sauvegarde)
+    this.load.image("blood-altar", "/assets/sprites/props/blood_altar.png");
+
     // amas de chair animes le long du mur du corridor
     this.load.spritesheet(
       "flesh-blob",

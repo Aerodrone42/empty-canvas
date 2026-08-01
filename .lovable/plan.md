@@ -1,38 +1,30 @@
-## Objectif
+## Constat
 
-Remplacer les trois blocs gris actuels par un autel de sang gothique, plus fin et cohérent avec le style pixel-art sombre du jeu, avec du sang qui déborde de la vasque et coule sur les côtés, le tout animé.
+Deux problèmes distincts :
+1. **Le style** : l'autel est dessiné en vecteur (`Phaser.Graphics`) — formes plates, aplats unis, aucun grain pixel-art. Ça jure avec les décors du jeu qui sont des sprites pixel-art peints (croix du supplicié, machine de torture, colonne de viscères).
+2. **La profondeur** : l'autel est en `depth 24`, le héros en `depth 5`. Le héros passe donc *derrière* l'autel.
 
-## Nouveau design (dans `src/game/effects/BloodAltar.ts`)
+## Correctif 1 — vrai sprite pixel-art
 
-Silhouette repensée, plus étroite et verticale :
-- **Base** : socle à deux gradins peu hauts, arêtes biseautées, largeur réduite (~78 px au lieu de 112), pierre sombre veinée avec dégradé haut/bas plutôt qu'aplat uni.
-- **Fût central** : colonne fine (~34 px) légèrement galbée, avec gravures verticales et un sigil rouge sombre gravé au centre.
-- **Vasque** : coupe évasée posée sur le fût, lèvre en pierre claire captant la lumière, intérieur creux plus sombre.
-- **Palette** : uniquement des teintes déjà présentes dans le jeu (pierre brun-violacé, sang `#8e1420` → `#c42734`, reflets ambrés des torches).
+Abandon du dessin vectoriel. Génération d'un **asset pixel-art** de l'autel dans le style exact du jeu (même palette pierre brun-violacé / sang, même niveau de détail que la croix du supplicié, même éclairage latéral chaud) :
+- `blood-altar.png` : autel gothique élancé — base à gradins usés, fût sculpté étroit avec gravures et sigil, vasque en pierre ciselée remplie de sang, coulées séchées le long du fût. Fond transparent, cadrage serré.
+- Vérification de la transparence et du recadrage via script Python (comme pour les autres props), puis publication en asset et import dans le jeu.
+- Deux teintes issues du même sprite : état éteint (sprite assombri/désaturé par `setTint`) et état scellé (teinte normale + halo).
 
-```text
-        ___(sang)___
-       \___vasque__/
-          |  |  |      <- coulées de sang le long du fût
-         _|  |  |_
-       _|__________|_  <- gradins
-```
+## Correctif 2 — profondeur
 
-## Sang animé
+`depth` de l'autel passé de `24` à `-2` (comme les autres props de sol : `TortureRack`, `CrucifiedProp`, `FleshBlob`) : **le héros passe devant l'autel**. Le halo et les particules suivent la même couche, l'invite texte reste au-dessus.
 
-- **Débordement** : 3 à 4 coulées permanentes partant de la lèvre de la vasque, dessinées en `Graphics` et redessinées chaque frame — longueur oscillante (respiration lente), largeur qui s'affine vers le bas, extrémité en goutte.
-- **Gouttes** : détachement périodique d'une goutte en bas de chaque coulée, qui tombe jusqu'au sol et se transforme en petite flaque qui s'étale puis s'estompe.
-- **Surface du bassin** : ellipse de liquide avec ondulation (léger scale sinusoïdal) + reflet spéculaire qui glisse lentement.
-- **Vapeur** : fines particules rouges montantes, discrètes, uniquement quand l'autel est scellé.
+## Sang animé par-dessus le sprite
 
-## États
-
-- **Éteint** : pierre désaturée, sang presque noir figé, coulées quasi immobiles, lueur très faible, invite « Sceller le sang ».
-- **Scellé** : sang vif et lumineux, coulées actives, gouttes régulières, halo pulsant, flash caméra conservé au moment du scellement + onde de choc rouge en expansion.
+Overlay léger conservé, mais discret et calé sur la vasque du sprite :
+- surface de sang qui ondule et scintille dans la vasque ;
+- 2 à 3 coulées fines le long du fût, longueur qui respire, avec goutte qui se détache et petite flaque au sol qui s'estompe ;
+- halo rouge pulsant + vapeur uniquement quand l'autel est scellé ;
+- flash caméra et onde de choc au moment du scellement.
 
 ## Détails techniques
 
-- API publique inchangée (`constructor(scene, x, floorY, lit)`, `isLit`, `tick`, `destroy`) : aucun changement dans `GameScene.ts`.
-- Rendu vectoriel `Phaser.Graphics` conservé (pas de nouvel asset), avec un `Graphics` statique pour la pierre (dessiné une fois) et un `Graphics` dynamique pour le sang, redessiné dans `tick` — coût négligeable.
-- Réutilisation de la texture radiale `blood-altar-glow` existante pour le halo.
-- Vérification visuelle par capture Playwright de l'autel dans la Nef avant/après scellement.
+- Fichier touché : `src/game/effects/BloodAltar.ts` (remplacement du `Graphics` pierre par `scene.add.image(...)`), plus le chargement de la texture dans le préchargement de `GameScene.ts`.
+- API publique inchangée (`constructor`, `isLit`, `tick`, `destroy`).
+- Contrôle visuel par capture Playwright dans la Nef : autel éteint, héros passant devant, puis autel scellé.
