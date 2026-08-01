@@ -149,6 +149,8 @@ export class GameScene extends Phaser.Scene {
     this.mount = undefined;
     this.altar?.destroy();
     this.altar = undefined;
+    this.absorbPrompt?.destroy();
+    this.absorbPrompt = undefined;
     for (const t of this.torches) t.destroy();
     this.torches = [];
 
