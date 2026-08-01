@@ -421,5 +421,6 @@ export class DreadMount {
     this.scene.tweens.killTweensOf(this.sprite);
     this.sprite.destroy();
     this.gore.destroy();
+    this.bar.destroy();
   }
 }
