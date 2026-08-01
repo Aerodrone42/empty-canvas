@@ -9,6 +9,7 @@ import { MainMenu } from "@/components/game/MainMenu";
 import { Options } from "@/components/game/Options";
 import { DeathScreen, PauseMenu } from "@/components/game/PauseMenu";
 import { PhaserCanvas } from "@/components/game/PhaserCanvas";
+import { StageSelect } from "@/components/game/StageSelect";
 import { useGamepadUi } from "@/hooks/useGamepadUi";
 import { useBindingsStore } from "@/store/bindingsStore";
 import { useGameStore } from "@/store/gameStore";
