@@ -598,6 +598,10 @@ export class GameScene extends Phaser.Scene {
           Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y) < SAFE_RADIUS,
       );
       this.player.setSafeToAbsorb(!threatened);
+      // filet de securite : pas d'absorption en cours => pas de barre a l'ecran
+      if (!this.player.isAbsorbing && useGameStore.getState().absorbing) {
+        useGameStore.getState().setAbsorb(false, 0);
+      }
       this.regenerateFromBlood(!threatened, delta);
       // bande-son adaptative : theme epique tant qu'une creature menace
       this.music?.setCombat(threatened);
