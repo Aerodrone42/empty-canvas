@@ -1,36 +1,20 @@
-## Le concept (tel qu'il est codé aujourd'hui)
+## Objectif
 
-La **Voie de la Chair** est l'arbre de progression permanent du Vigile. La Chair récoltée sur les cadavres sert de monnaie : chaque greffe modifie durablement tes statistiques, et les greffes de rang 2/3 exigent la greffe parente (« la chair pousse sur la chair »).
+Archiver la bible narrative « Sanguine Vigile : Les Neuf Cercles » dans le projet pour pouvoir y puiser à chaque étape, sans toucher au jeu maintenant.
 
-Trois branches :
-- **Ossuaire** — encaisser (PV max, réduction de dégâts, fenêtre de parade)
-- **Tendon** — bouger (vitesse, double/triple saut, cadence d'attaque, roulade)
-- **Sanie** — tuer (dégâts, portée, vol de vie, gain de Chair, Rugissement)
+J'ai déjà lu le document : ~60 000 caractères, structuré en postulat, arc du protagoniste en 6 actes, les neuf cercles de Dante en 100 niveaux, Mère-Suture révélée comme geôlière de Lucifer, système de choix moral (achever/épargner) menant à deux fins, le Phlégéthon comme cœur thématique.
 
-Vérifié dans le code : les effets **sont réellement appliqués** (vitesse, saut, cooldown, portée, roulade, parade, coût du Rugissement, PV max, réduction de dégâts, vol de vie). Le problème n'est pas mécanique, c'est que **rien ne le montre** : pas de chiffres, pas de retour visuel, pas de changement d'apparence. Tes deux greffes actuelles donnent +30 PV max et ×1.4 dégâts — invisible sans jauge chiffrée.
+## Ce que je vais faire
 
-## Ce que je propose de construire
+1. **`docs/bible-narrative.md`** — conversion Markdown complète et fidèle du document, versionnée dans le dépôt (donc récupérable sur ton GitHub). C'est la source de vérité que je relirai à chaque demande.
+2. **`docs/bible-index.md`** — un sommaire court : liste des cercles, des niveaux, des boss, des personnages et des mécaniques annoncées, avec renvois vers les sections de la bible. Ça me permet de retrouver instantanément la bonne partie sans relire 60 000 caractères à chaque fois.
+3. **Pointeur d'asset vers le .docx d'origine** (`src/assets/bible-narrative.docx.asset.json`) pour conserver le fichier source intact sans alourdir le dépôt.
+4. **Note dans `AGENTS.md`** : une ligne indiquant que toute évolution narrative/contenu doit se référer à `docs/bible-narrative.md`.
 
-### 1. Panneau de statistiques dans la Voie de la Chair
-Une colonne récapitulative permanente affichant les valeurs courantes issues des effets calculés : PV max, dégâts, vitesse, cadence, portée, réduction de dégâts, vol de vie, sauts. Au survol d'une mutation non greffée, les lignes concernées affichent la valeur future en surbrillance (ex. `Dégâts 140 % → 175 %`), pour voir le gain avant d'acheter.
+## Ce que je ne fais pas maintenant
 
-### 2. Retour à la greffe
-Au moment de l'achat : flash rouge sur la carte, tremblement bref du panneau, son de chair, et la ligne de stat concernée s'anime. La carte greffée reçoit un liseré plus marqué (état « GREFFÉE » actuel trop discret).
-
-### 3. Preuve en jeu
-- Bandeau bref en haut de l'écran au retour dans le niveau : nom de la mutation + effet en une ligne.
-- HUD : nombre de greffes actives, et la jauge de vie montre la portion « bonus » (PV gagnés par mutation) dans une teinte distincte.
-- Chiffres de dégâts (`DamageNumbers`) teintés différemment quand un multiplicateur de mutation est actif, pour que la montée en puissance soit visible coup après coup.
-
-### 4. Marques visuelles sur le héros (optionnel, plus lourd)
-Teinte/overlay léger sur le sprite selon la branche dominante (osseuse, nerveuse, sanguine). À faire seulement si tu le veux : ça touche aux assets du personnage.
+Aucune modification du jeu : pas de nouveaux niveaux, pas d'ennemis, pas de refonte du scénario en place. On avancera cercle par cercle, à ta demande.
 
 ## Détails techniques
 
-- `src/game/mutations.ts` : ajouter un descripteur d'affichage par effet (label, format %, sens « plus haut = mieux ») pour générer le panneau de stats sans dupliquer la logique.
-- `src/components/game/FleshPath.tsx` : colonne stats + prévisualisation au survol via `computeEffects([...unlocked, hoveredId])`.
-- `src/components/game/Hud.tsx` : segment de PV bonus et compteur de greffes.
-- `src/store/gameStore.ts` : exposer le dernier `unlockMutation` pour le bandeau de confirmation (aucun changement de règles de jeu).
-- `src/game/effects/DamageNumbers.ts` + appel dans `GameScene.ts` : teinte selon `damageMult > 1`.
-
-Les points 1 à 3 ne changent aucune valeur d'équilibrage — uniquement la lisibilité.
+Conversion via `pandoc` (déjà validée), écriture des deux fichiers Markdown, création du pointeur avec `lovable-assets create`. Aucun code applicatif touché, aucun impact sur le build.
