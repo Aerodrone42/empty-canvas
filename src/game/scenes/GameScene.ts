@@ -110,6 +110,8 @@ export class GameScene extends Phaser.Scene {
 
   init(data?: { backdrop?: BackdropKey }) {
     this.backdropKey = data?.backdrop ?? "cathedrale";
+    // memorise la salle atteinte : point de reprise du menu Continuer
+    useGameStore.getState().setStage(this.backdropKey);
   }
 
 
