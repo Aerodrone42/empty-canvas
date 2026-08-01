@@ -179,15 +179,17 @@ export const SHEETS: SheetDef[] = [
     spacing: 0,
   },
   {
+    // 6 frames : armement (0-1), swing (2-3), impact + retour (4-5)
     key: "bourreau-attack",
     path: `${ENEMIES}/bourreau_attack_spritesheet.png`,
     frameWidth: ENEMY_FRAME_W,
     frameHeight: ENEMY_FRAME_H,
-    frameCount: 5,
-    frameRate: 10,
+    frameCount: 6,
+    frameRate: 12,
     repeat: 0,
     spacing: 0,
   },
+
 
   // --- Ecorche-Pendu (tombe du plafond, onde de sang, explose a la mort) ---
   {
