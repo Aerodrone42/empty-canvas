@@ -198,7 +198,7 @@ export class AmbientCritters {
     const ratScale = (RAT_H * scaleVar) / (c.sprite.frame.height || RAT_H);
     c.sprite
       .setPosition(toRight ? left : right, c.baseY)
-      .setFlipX(!toRight)
+      .setFlipX(toRight)
       .setScale(ratScale)
       .setVisible(true);
     c.sprite.play(ANIM_RAT);
