@@ -297,9 +297,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (!holding || !onGround || left || right) {
         this.cancelAbsorb();
       } else if (time >= this.stateUntil) {
-        const store = useGameStore.getState();
-        store.consumeFleshForHealth();
-        store.setAbsorb(false, 0);
+        const gs = useGameStore.getState();
+        gs.consumeFleshForHealth();
+        gs.setAbsorb(false, 0);
         this.moveState = "idle";
         this.clearTint();
         this.scene.events.emit("fx-heal", this.x, this.y - 70);
