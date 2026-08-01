@@ -119,6 +119,7 @@ export class DreadMount {
     this.scene.tweens.add({ targets: this.sprite, alpha: 0.92, duration: 900 });
 
     this.flying = true;
+    console.log("MOUNT launch", this.sprite.x, this.sprite.y, this.vx, this.sprite.scale, this.sprite.depth);
   }
 
   /** la gueule se referme : secousse de tete, gerbe de sang, gorge qui gonfle */
@@ -165,6 +166,7 @@ export class DreadMount {
     const left = cam.scrollX * SCROLL_FACTOR - margin;
     const right = cam.scrollX * SCROLL_FACTOR + this.viewWidth + margin;
 
+    if (Math.random() < 0.01) console.log("MOUNT at", Math.round(this.sprite.x), Math.round(this.sprite.y), this.sprite.visible, this.sprite.alpha);
     if (this.sprite.x < left - 40 || this.sprite.x > right + 40) {
       this.flying = false;
       this.sprite.setVisible(false);
