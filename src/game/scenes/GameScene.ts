@@ -40,6 +40,9 @@ const ROOM_HEIGHT = 900;
 /** supplicie ecorche : decor anime au centre de la cathedrale */
 // Emplacement marque par la croix rouge : juste a droite de la zone de depart.
 const CRUCIFIED_X = 430;
+/** suppliciee (femme) : juste a droite du supplicie */
+const CRUCIFIED_WOMAN_X = 690;
+
 const FLOOR_Y = 880;
 /** soin par seconde en se reposant dans une flaque de sang */
 const POOL_REGEN_PER_SEC = 6;
@@ -79,6 +82,9 @@ export class GameScene extends Phaser.Scene {
   private gateColumn?: GateColumn;
   /** supplicie ecorche du fond de la cathedrale */
   private crucified?: CrucifiedProp;
+  /** suppliciee (femme) a droite du supplicie */
+  private crucifiedWoman?: CrucifiedProp;
+
   /** monture funebre qui traverse le ciel de la cathedrale */
   private mount?: DreadMount;
   /** veine geante animee du corridor */
@@ -322,6 +328,13 @@ export class GameScene extends Phaser.Scene {
     // supplicie ecorche : uniquement dans la cathedrale
     if (this.backdropKey === "cathedrale") {
       this.crucified = new CrucifiedProp(this, CRUCIFIED_X, FLOOR_Y);
+      this.crucifiedWoman = new CrucifiedProp(
+        this,
+        CRUCIFIED_WOMAN_X,
+        FLOOR_Y,
+        "crucifiee-idle",
+      );
+
       // mini-boss aerien : il surgit dans la seconde moitie de la salle
       this.mount = new DreadMount(this, {
         floorY: FLOOR_Y,

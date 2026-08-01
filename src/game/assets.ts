@@ -275,6 +275,19 @@ export const SHEETS: SheetDef[] = [
     spacing: 0,
   },
 
+  // --- Suppliciee (femme rousse, robe blanche ensanglantee) ---
+  {
+    key: "crucifiee-idle",
+    path: `${SPRITES}/props/crucifiee_femme_spritesheet.png`,
+    frameWidth: 223,
+    frameHeight: 665,
+    frameCount: 8,
+    frameRate: 5,
+    repeat: -1,
+    spacing: 0,
+  },
+
+
   // --- Mains du sol (piege : agrippent et ralentissent le heros) ---
   {
     key: "mains-sol",
