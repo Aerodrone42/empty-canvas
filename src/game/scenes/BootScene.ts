@@ -65,18 +65,11 @@ export class BootScene extends Phaser.Scene {
       { frameWidth: 64, frameHeight: 48, spacing: 0 },
     );
 
-    // monture funebre : chauve-souris colossale et son cavalier, proie vivante
-    // dans la gueule puis proie avalee
-    this.load.spritesheet(
-      "dread-mount-prey",
-      "/assets/sprites/props/dread_mount_prey_spritesheet.png",
-      { frameWidth: 320, frameHeight: 238, spacing: 0 },
-    );
-    this.load.spritesheet(
-      "dread-mount-fed",
-      "/assets/sprites/props/dread_mount_fed_spritesheet.png",
-      { frameWidth: 320, frameHeight: 238, spacing: 0 },
-    );
+    // monture funebre : pieces separees assemblees et animees par pivot
+    this.load.image("dread-mount-body", "/assets/sprites/props/dread_mount_body.png");
+    this.load.image("dread-mount-wing", "/assets/sprites/props/dread_mount_wing.png");
+    this.load.image("dread-mount-tail", "/assets/sprites/props/dread_mount_tail.png");
+    this.load.image("dread-mount-victim", "/assets/sprites/props/dread_mount_victim.png");
 
 
     // chevalet d'ecartellement du corridor : bati, supplicie et bourreaux
@@ -141,24 +134,9 @@ export class BootScene extends Phaser.Scene {
       repeat: -1,
     });
 
-    // Monture funebre : boucle fermee sur les quatre poses stables. Les poses
-    // extremes 0 et 5 deformeraient brutalement l'aile et la queue au raccord.
-    this.anims.create({
-      key: "dread-mount-prey-fly",
-      frames: this.anims.generateFrameNumbers("dread-mount-prey", {
-        frames: [1, 2, 3, 4, 3, 2],
-      }),
-      frameRate: 7,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "dread-mount-fed-fly",
-      frames: this.anims.generateFrameNumbers("dread-mount-fed", {
-        frames: [1, 2, 3, 4, 3, 2],
-      }),
-      frameRate: 7,
-      repeat: -1,
-    });
+    // Monture funebre : plus d'animation de planche, les ailes et la queue sont
+    // pivotees en direct dans DreadMount.
+
 
     // Saut du Vigile : la feuille est decoupee en trois phases.
     this.anims.create({
