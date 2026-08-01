@@ -14,9 +14,9 @@ export const ANIM_MOUNT_PREY = "dread-mount-prey-fly";
 export const ANIM_MOUNT_FED = "dread-mount-fed-fly";
 
 /** envergure affichee de la bete */
-const MOUNT_W = 520;
+const MOUNT_W = 460;
 /** hauteur de croisiere dans le ciel */
-const CRUISE_Y = 250;
+const CRUISE_Y = 300;
 /** parallaxe : la bete est loin derriere l'architecture de premier plan */
 const SCROLL_FACTOR = 0.55;
 
@@ -105,7 +105,7 @@ export class DreadMount {
 
     this.sprite.x = toRight ? left : right;
     this.vx = (toRight ? 1 : -1) * Phaser.Math.Between(120, 155);
-    this.baseY = Phaser.Math.Between(CRUISE_Y - 60, CRUISE_Y + 70);
+    this.baseY = Phaser.Math.Between(CRUISE_Y - 40, CRUISE_Y + 60);
     this.phase = Math.random() * Math.PI * 2;
     this.swallowed = false;
     this.swallowAt = Phaser.Math.Between(1600, 3200);
