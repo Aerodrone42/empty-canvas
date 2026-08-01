@@ -139,6 +139,7 @@ export class GameScene extends Phaser.Scene {
     // premiere salle : choeur gothique ; salles suivantes : theme habituel
     this.music = new MusicDirector(this, {
       intro: this.backdropKey === ROOM_ORDER[0],
+      suspense: this.backdropKey === ROOM_ORDER[1],
     });
 
     this.blood = new BloodFX(this, FLOOR_Y);
