@@ -59,8 +59,8 @@ const MOUNT_TRIGGER_X = 1500;
 const TORTURE_RACK_X = 1320;
 /** autel de sang : point de sauvegarde place juste avant l'affrontement majeur */
 const ALTAR_X: Partial<Record<BackdropKey, number>> = {
-  cathedrale: 1350,
-  corridor: 1150,
+  cathedrale: 1400,
+  corridor: 1200,
 };
 
 
