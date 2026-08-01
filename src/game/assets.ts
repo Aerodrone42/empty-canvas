@@ -43,7 +43,7 @@ export const SHEETS: SheetDef[] = [
   // --- Vigile Muet (heros) : feuilles 256x192 decoupees des planches v2 ---
   {
     key: "vigile-idle",
-    path: `${HERO}/vigile_muet_idle_spritesheet.png`,
+    path: `${HERO}/vigile_muet_idle_spritesheet.png?v=2`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
     frameCount: 4,
@@ -53,7 +53,7 @@ export const SHEETS: SheetDef[] = [
   },
   {
     key: "vigile-walk",
-    path: `${HERO}/vigile_muet_walk_spritesheet.png`,
+    path: `${HERO}/vigile_muet_walk_spritesheet.png?v=2`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
     frameCount: 6,
@@ -63,7 +63,7 @@ export const SHEETS: SheetDef[] = [
   },
   {
     key: "vigile-attack",
-    path: `${HERO}/vigile_muet_attack_spritesheet.png`,
+    path: `${HERO}/vigile_muet_attack_spritesheet.png?v=2`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
     frameCount: 4,
@@ -83,7 +83,7 @@ export const SHEETS: SheetDef[] = [
   },
   {
     key: "vigile-jump",
-    path: `${HERO}/vigile_muet_jump_spritesheet.png`,
+    path: `${HERO}/vigile_muet_jump_spritesheet.png?v=2`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
     frameCount: 3,
