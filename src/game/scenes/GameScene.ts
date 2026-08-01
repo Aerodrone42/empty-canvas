@@ -522,6 +522,22 @@ export class GameScene extends Phaser.Scene {
     this.blood.siphon(this.player.x, this.player.y, 120);
   }
 
+  /** Badge de touche au-dessus du heros quand l'absorption est possible. */
+  private updateAbsorbPrompt(safe: boolean, delta: number) {
+    if (!this.absorbPrompt) return;
+    const body = this.player.body as Phaser.Physics.Arcade.Body | null;
+    const store = useGameStore.getState();
+    const onGround = !!body && (body.blocked.down || body.touching.down);
+    const visible =
+      safe &&
+      onGround &&
+      !this.player.isAbsorbing &&
+      store.health < store.maxHealth &&
+      store.flesh >= ABSORB_COST &&
+      !!this.blood.poolAt(this.player.x);
+    this.absorbPrompt.tick(visible, this.player.x, this.player.y - 110, delta);
+  }
+
 
   private resolvePlayerStrike(strike: Strike, damageScale = 1) {
     const store = useGameStore.getState();
