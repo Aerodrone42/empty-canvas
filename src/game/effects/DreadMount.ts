@@ -322,6 +322,8 @@ export class DreadMount {
       return;
     }
 
+    this.drawBar();
+
     if (this.state === "dying") return;
 
     this.bob += dt * 2.4;
