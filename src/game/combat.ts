@@ -72,6 +72,18 @@ export const STRIKES: Record<string, Strike> = {
     centerY: -72,
     backReach: 26,
   },
+  upper: {
+    id: "upper",
+    reach: 92,
+    vertical: 110,
+    damage: 20,
+    knockback: 120,
+    breakGuard: false,
+    shape: "arc",
+    duration: 320,
+    centerY: -170,
+    backReach: 40,
+  },
   dive: {
     id: "dive",
     reach: 118,
