@@ -6,7 +6,6 @@ export function MainMenu() {
   const startNewRun = useGameStore((s) => s.startNewRun);
   const continueRun = useGameStore((s) => s.continueRun);
   const openOptions = useGameStore((s) => s.openOptions);
-  const hasSave = useGameStore((s) => s.hasSave);
   const bindings = useBindingsStore((s) => s.bindings);
 
   return (
