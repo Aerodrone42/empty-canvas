@@ -73,18 +73,19 @@ export class BloodAltar {
 
     const src = scene.textures.get(TEX_ALTAR).getSourceImage();
     const scale = PROP_H / src.height;
+    const wScale = scale * 0.62;
 
-    this.sprite = scene.add.image(0, 0, TEX_ALTAR).setOrigin(0.5, 1).setScale(scale);
+    this.sprite = scene.add.image(0, 0, TEX_ALTAR).setOrigin(0.5, 1).setScale(wScale, scale);
 
     // la vasque occupe environ le quart superieur du sprite
     this.bowlY = -PROP_H * 0.9;
-    this.bowlRx = (src.width * scale) / 2 - 6;
+    this.bowlRx = (src.width * wScale) / 2 - 5;
 
     this.blood = scene.add.graphics();
 
     this.glow = scene.add
       .image(0, this.bowlY, TEX_GLOW)
-      .setScale(0.8)
+      .setScale(0.55)
       .setBlendMode(Phaser.BlendModes.ADD);
 
     this.prompt = scene.add
