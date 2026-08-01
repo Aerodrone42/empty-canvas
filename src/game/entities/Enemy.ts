@@ -394,8 +394,9 @@ export class EcorchePendu extends Enemy {
     super.takeHit(amount, options);
   }
 
-
+  private drop() {
     this.phase = "falling";
+
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(true);
     body.setVelocityY(120);
