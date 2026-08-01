@@ -20,10 +20,10 @@ export const ANIM_MOUNT_FLY = "dread-mount-fly-anim";
 export const ANIM_MOUNT_FLY_FED = "dread-mount-fly-fed-anim";
 export const ANIM_MOUNT_SWALLOW = "dread-mount-swallow-anim";
 
-/** cadre d'une frame de la feuille */
-const FRAME_W = 696;
+/** cadre d'une frame de la feuille : deja a la taille d'affichage (aucun rescale) */
+const FRAME_W = 512;
 /** largeur affichee de la bete entiere, ailes deployees */
-const MOUNT_W = 500;
+const MOUNT_W = 512;
 /** hauteur de croisiere dans le ciel */
 const CRUISE_Y = 400;
 /** parallaxe : la bete est loin derriere l'architecture de premier plan */
