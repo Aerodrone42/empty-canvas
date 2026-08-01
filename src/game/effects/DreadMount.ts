@@ -150,8 +150,10 @@ export class DreadMount {
 
     const dt = delta / 1000;
     this.sprite.x += this.vx * dt;
-    this.phase += dt * 1.1;
-    this.sprite.y = this.baseY + Math.sin(this.phase) * 16;
+    // Le corps accompagne chaque battement au lieu de flotter lentement sans
+    // rapport avec les ailes. Une faible amplitude garde le cavalier stable.
+    this.phase += dt * 5.5;
+    this.sprite.y = this.baseY + Math.sin(this.phase) * 7;
 
     if (!this.swallowed) {
       this.swallowAt -= delta;
