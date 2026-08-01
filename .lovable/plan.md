@@ -1,27 +1,22 @@
-## Problème
+## Correction complète du héros
 
-Sur la planche d'esquive, la découpe verticale tombe en plein milieu du héros : la tête/capuche de la frame 1 se retrouve collée dans la cellule 2 (entourée en rouge), et la frame 1 se retrouve décapitée. La méthode actuelle coupe aux « minima » de densité à intervalle régulier, ce qui traverse le personnage quand deux poses se chevauchent ou se touchent.
+1. **Nettoyer les spritesheets**
+   - Supprimer le halo et les pixels blancs résiduels sur `idle`, `walk` et `attack` en corrigeant l’alpha, sans effacer les vrais détails clairs du masque ou de la lame.
+   - Conserver le style, les couleurs et le design validés du Vigile.
 
-## Correction
+2. **Corriger l’attaque doublée**
+   - Refaire la 4ᵉ cellule de la planche d’attaque : elle contient actuellement deux Vigiles dans une seule frame.
+   - Garder uniquement la pose d’attaque correcte et son effet de lame, centrés dans une cellule 256×192.
 
-1. **Segmentation par composantes connexes** au lieu de coupes verticales :
-   - détourage du fond (déjà en place),
-   - étiquetage des blobs de pixels opaques,
-   - regroupement des blobs dont les boîtes englobantes se chevauchent ou sont distantes de moins de ~10 px horizontalement (une cape déchirée ou une botte détachée reste rattachée à son personnage),
-   - conservation des N plus gros groupes (N = nombre de frames attendu), triés de gauche à droite.
-2. **Aucune coupe droite** : chaque frame est extraite via sa propre boîte englobante, donc une tête ne peut plus passer dans la cellule voisine.
-3. **Garde-fou** : si le nombre de groupes détectés ≠ N attendu, le script s'arrête avec un message plutôt que de produire une planche fausse ; on ajuste alors le seuil de fusion.
-4. Conservation du reste : échelle unique par animation (pose la plus haute = 150 px), alignement au sol, centrage horizontal, cellules 256×192.
+3. **Uniformiser la taille pendant le saut**
+   - Renormaliser chaque pose de saut sur la même hauteur visuelle et la même ligne de référence que les autres animations.
+   - Préserver les différences de posture (accroupi, montée, chute) sans donner l’impression que le héros rétrécit.
+   - Corriger le double saut pour utiliser une animation existante valide plutôt qu’une clé de texture incorrecte.
 
-## Sorties
+4. **Stabiliser le rendu Phaser**
+   - Garder une échelle et une origine constantes lors de tous les changements d’animation.
+   - Vérifier que la hitbox et les pieds restent alignés au sol après chaque transition.
 
-`public/assets/sprites/hero/vigile_muet_{jump,dodge,parry,hurt,death}_spritesheet.png`
-(3, 5, 3, 2 et 5 frames — 768×192, 1280×192, 768×192, 512×192, 1280×192)
-
-## QA
-
-Rendu de contrôle de chaque planche sur fond sombre avec grille de cellules superposée, inspection visuelle frame par frame : tête entière, aucun fragment d'une pose voisine, pieds sur la ligne de sol.
-
-## Détails techniques
-
-Script Python (PIL + numpy) en `/tmp`, étiquetage via `scipy.ndimage.label`, masque alpha par distance colorimétrique au fond (seuil 34), redimensionnement LANCZOS.
+5. **Contrôle visuel en jeu**
+   - Tester repos, marche, attaque, saut et double saut dans la salle.
+   - Vérifier visuellement l’absence de bordure blanche, de personnage dupliqué et de variation incohérente de taille.
