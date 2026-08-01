@@ -112,6 +112,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.cursors = scene.input.keyboard!.createCursorKeys();
     this.play("vigile-idle-anim");
+    // nouvelle salle / nouveau heros : aucun residu d'absorption a l'ecran
+    useGameStore.getState().setAbsorb(false, 0);
   }
 
   /** Echelle et origine fixes (gabarit normalise), hitbox constante. */
@@ -132,6 +134,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   get facingDirection() {
     return this.facing;
+  }
+
+  /** Vrai uniquement pendant une absorption de chair. */
+  get isAbsorbing() {
+    return this.moveState === "absorb";
   }
 
   get isAttacking() {
@@ -206,10 +213,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** Interrompt l'absorption de chair en cours. */
   private cancelAbsorb() {
+    // le flag du HUD est toujours remis a zero, meme si l'etat a deja change
+    useGameStore.getState().setAbsorb(false, 0);
     if (this.moveState !== "absorb") return;
     this.moveState = "idle";
     this.clearTint();
-    useGameStore.getState().setAbsorb(false, 0);
   }
 
 
@@ -294,7 +302,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (!holding || !onGround || left || right) {
         this.cancelAbsorb();
       } else if (time >= this.stateUntil) {
-        useGameStore.getState().consumeFleshForHealth();
+        const gs = useGameStore.getState();
+        gs.consumeFleshForHealth();
+        gs.setAbsorb(false, 0);
         this.moveState = "idle";
         this.clearTint();
         this.scene.events.emit("fx-heal", this.x, this.y - 70);
