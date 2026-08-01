@@ -1,21 +1,38 @@
-## Constat vérifié
+## Diagnostic
 
-En décomposant `public/assets/sprites/props/dread_mount_prey_spritesheet.png` (6 frames de 320x238), la zone de l'aile arrière (droite, derrière le cavalier) est :
-- **vide sur les frames 1, 2, 5, 6**
-- **dessinée uniquement sur les frames 3 et 4**
+La spritesheet actuelle (`dread_mount_prey/fed_spritesheet.png`, 6 cases de 320×238) a été fabriquée en découpant et faisant pivoter les ailes **à l'intérieur** de la case existante. Résultat vérifié :
+- les pointes d'ailes sortent de la case et sont rognées (« ailes coupées ») ;
+- l'amplitude a dû être bridée et l'animation réduite à 4 poses (`[1,2,3,4,3,2]` à 7 fps) pour masquer les raccords → battement « à peine » visible.
 
-Résultat à l'écran : l'aile droite « clignote » — elle surgit puis disparaît, au lieu de battre. La cause est le script de génération (`order=[0,1,2,2,1,0]`) : seule l'image source n°2 contient cette aile, les deux autres sources n'en ont pas.
+Continuer à retoucher cette planche ne peut pas marcher : le problème est dans la méthode, pas dans les réglages.
 
-## Correction proposée
+## Nouvelle approche : monture articulée
 
-1. **Extraire l'aile arrière** depuis la frame source qui la contient (masque polygonal autour de la zone aile droite, avec léger feathering pour éviter la couture), et la conserver comme calque réutilisable.
-2. **La recomposer sur les 6 frames**, derrière le cavalier et le corps (ordre de composition : aile arrière → corps/cavalier → aile avant), pour qu'elle soit toujours présente.
-3. **L'animer** par rotation autour de son point d'attache à l'épaule, en opposition de phase avec l'aile avant (cycle type : +9°, +3°, -6°, -9°, -3°, +5°), avec une légère compression horizontale sur les frames d'extension pour simuler la perspective.
-4. **Nettoyer les résidus** de l'aile dans les frames sources 3 et 4 avant recomposition, pour éviter une double aile.
-5. Appliquer le même traitement aux deux planches : `dread_mount_prey_spritesheet.png` et `dread_mount_fed_spritesheet.png`.
-6. **Vérification** : re-découpage des 6 frames et contrôle visuel que la zone aile droite est non vide et varie progressivement sur tout le cycle.
+Abandonner la spritesheet de vol. Générer **trois images séparées**, chacune détourée sur fond transparent :
+
+1. `dread_mount_body.png` — corps osseux + tête + gueule ouverte avec l'humain qui dépasse + cavalier encapuchonné, **sans ailes**.
+2. `dread_mount_wing.png` — une seule aile membraneuse, dessinée déployée, avec le point d'attache (épaule) au bord.
+3. `dread_mount_body_fed.png` — même corps, gueule fermée, gorge gonflée (pour l'après-déglutition).
+
+Puis, dans le jeu, assembler un `Phaser.GameObjects.Container` :
+
+```text
+        [aile arrière]  (derrière, teinte assombrie)
+   [corps + cavalier + proie]
+        [aile avant]
+```
+
+Le battement se fait **par rotation continue** de chaque aile autour de son origine à l'épaule (`setOrigin` au point d'attache), pilotée par un sinus dans `update()` :
+- aile avant : angle = sin(phase) × ~38°
+- aile arrière : même sinus, léger décalage de phase (~0,25 rad) et amplitude un peu moindre pour l'effet de perspective
+- léger `scaleY` couplé au sinus pour simuler le repli de la membrane
+- le corps monte/descend en opposition avec le battement (déjà en place)
+
+Avantages : aucun rognage possible (les ailes sont des sprites libres), les deux ailes bougent forcément, amplitude réglable à volonté, animation fluide et non saccadée.
 
 ## Détails techniques
 
-- Script Python/PIL (hors dépôt, dans `/tmp`) régénérant les deux spritesheets à partir des originaux `/tmp/prey_orig.png` et `/tmp/fed_orig.png`.
-- Dimensions inchangées : 6 frames × 320×238 → 1920×238, donc **aucune modification** de `src/game/scenes/BootScene.ts` ni de `src/game/effects/DreadMount.ts` n'est nécessaire.
+- `src/game/effects/DreadMount.ts` : remplacer le sprite unique par un container (corps + 2 ailes), garder la logique existante de trajectoire, parallaxe (`scrollFactor 0.55`, `depth -7`), déglutition, particules de sang, planification des passages. Le flip de direction s'applique au container (`setScale(-1, 1)`).
+- `src/game/scenes/BootScene.ts` : remplacer les deux `load.spritesheet` de la monture par `load.image` des trois nouvelles textures ; supprimer les animations `dread-mount-prey-fly` / `dread-mount-fed-fly`.
+- Suppression des anciens fichiers `dread_mount_prey_spritesheet.png` et `dread_mount_fed_spritesheet.png`.
+- Vérification finale par capture in-game (plusieurs instants du battement) pour contrôler qu'aucune aile n'est coupée et que l'amplitude est lisible.
