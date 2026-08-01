@@ -65,18 +65,11 @@ export class BootScene extends Phaser.Scene {
       { frameWidth: 64, frameHeight: 48, spacing: 0 },
     );
 
-    // monture funebre : chauve-souris colossale et son cavalier, proie vivante
-    // dans la gueule puis proie avalee
-    this.load.spritesheet(
-      "dread-mount-prey",
-      "/assets/sprites/props/dread_mount_prey_spritesheet.png",
-      { frameWidth: 320, frameHeight: 238, spacing: 0 },
-    );
-    this.load.spritesheet(
-      "dread-mount-fed",
-      "/assets/sprites/props/dread_mount_fed_spritesheet.png",
-      { frameWidth: 320, frameHeight: 238, spacing: 0 },
-    );
+    // monture funebre : pieces separees assemblees et animees par pivot
+    this.load.image("dread-mount-body", "/assets/sprites/props/dread_mount_body.png");
+    this.load.image("dread-mount-wing", "/assets/sprites/props/dread_mount_wing.png");
+    this.load.image("dread-mount-tail", "/assets/sprites/props/dread_mount_tail.png");
+    this.load.image("dread-mount-victim", "/assets/sprites/props/dread_mount_victim.png");
 
 
     // chevalet d'ecartellement du corridor : bati, supplicie et bourreaux
