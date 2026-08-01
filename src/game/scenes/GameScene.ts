@@ -55,8 +55,7 @@ const TORTURE_RACK_X = 1320;
 
 
 
-/** enchainement des salles : la colonne mene a la suivante */
-import { ROOM_ORDER } from "../rooms";
+
 
 
 
