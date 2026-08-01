@@ -40,6 +40,9 @@ const ROOM_HEIGHT = 900;
 /** supplicie ecorche : decor anime au centre de la cathedrale */
 // Emplacement marque par la croix rouge : juste a droite de la zone de depart.
 const CRUCIFIED_X = 430;
+/** suppliciee (femme) : juste a droite du supplicie */
+const CRUCIFIED_WOMAN_X = 690;
+
 const FLOOR_Y = 880;
 /** soin par seconde en se reposant dans une flaque de sang */
 const POOL_REGEN_PER_SEC = 6;
