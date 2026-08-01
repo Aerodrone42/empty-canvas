@@ -26,9 +26,9 @@ function ensureGlow(scene: Phaser.Scene) {
   const ctx = canvas?.getContext();
   if (!ctx || !canvas) return;
   const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  g.addColorStop(0, "rgba(220,60,70,0.85)");
-  g.addColorStop(0.45, "rgba(150,25,35,0.35)");
-  g.addColorStop(1, "rgba(80,10,15,0)");
+  g.addColorStop(0, "rgba(140,28,28,0.7)");
+  g.addColorStop(0.45, "rgba(96,16,20,0.28)");
+  g.addColorStop(1, "rgba(50,6,8,0)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   canvas.refresh();
