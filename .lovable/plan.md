@@ -1,40 +1,24 @@
-## Objectif
+## Ce qui a raté
 
-Refaire entièrement le Vigile Muet à partir des planches fournies : capuche à masque de fer gravé, cape rouge sang lacérée, robe/bandes grises déchirées, croix et ornements dorés, greffe de chair bulbeuse, bottes ornées, long sabre cérémoniel courbe taché de sang. Style du jeu conservé à l'identique (pixel-art sombre, même palette, même lisibilité en jeu).
+Les planches ont été générées **au texte seul**, sans donner vos images en entrée : le modèle a réinventé le personnage. D'où la capuche rouge (elle doit être gris-ardoise/noir), la cape passée du bordeaux au rouge vif, la greffe de chair mal placée, et une incohérence de teinte d'une planche à l'autre.
 
-## Vues produites
+## Nouvelle méthode : partir de vos images, pas d'un prompt
 
-Le jeu montrera plus tard le héros **de dos** (autels, portes, cinématiques, montée d'escaliers). On produit donc deux jeux de planches cohérents entre eux :
+1. **Fixer une frame de référence unique.** Vos 4 planches (+ la vue de dos) sont passées en **entrée d'édition d'image**, pas en description. On en tire une seule pose de référence propre — le Vigile de profil, debout — qui devient la « source de vérité » du personnage.
+2. **Verrouiller la palette sur cette frame.** La palette est *extraite* des pixels de vos planches (capuche et robe gris-ardoise/noir, cape bordeaux sombre, or terne, chair rose grisé), pas écrite à la main. Toutes les frames suivantes sont ensuite quantifiées sur cette palette exacte : impossible qu'une planche dérive en couleur.
+3. **Dériver chaque frame par édition de la référence**, une frame à la fois, en ne demandant que le changement de pose (« même personnage, mêmes couleurs, jambe avant levée »). Le costume, le masque, la greffe et le sabre restent ceux de vos images.
+4. **Contrôle avant intégration.** Je vous montre les planches assemblées **avant** de toucher au code du jeu. Si le personnage ou les couleurs dérivent, on refait cette étape — aucune modification de `src/game` tant que vous n'avez pas validé.
 
-- **Vue de profil** (jeu principal) — idle, marche, attaque, esquive, saut.
-- **Vue de dos** (nouvelle) — idle et marche, d'après la planche dorsale : capuche relevée, grappe de chair tentaculaire remontant sur l'omoplate, cape en lambeaux tombant jusqu'aux bottes, sabre pendu à gauche avec chaînes et pendeloque dorée.
+## Contenu produit
 
-Les deux vues partagent silhouette, hauteur, palette et rythme d'animation, pour qu'un passage profil → dos ne fasse pas « changer de personnage ».
+- **Profil** : idle (4), marche (5), attaque (5), esquive (8), saut (6).
+- **Dos** : idle (4), marche (5), d'après votre planche dorsale (capuche relevée, grappe de chair tentaculaire sur l'omoplate, cape en lambeaux jusqu'aux bottes, sabre et chaînes dorées à gauche).
 
-## Référence par animation
+Aucun texte ni étiquette dans les planches, fond transparent, silhouette recalée frame par frame sur la même ligne de pieds.
 
-- **Idle profil** — fiche de face (planche 4) : pose droite, sabre au côté, cape retombante, léger flottement du tissu + pulsation de la greffe.
-- **Marche profil** — planche 1 : cape rouge déployée derrière, sabre traînant bas, cycle de 5 poses.
-- **Attaque** — planche 2 : sabre levé haut puis fauchée descendante, cape emportée.
-- **Esquive** — plongée puis roulade, cape écrasée vers l'arrière (8 frames).
-- **Saut** — appel, montée, apex, chute, réception (6 frames).
-- **Idle dos** — 4 frames : respiration, tentacules de chair qui ondulent, chaînes du fourreau qui balancent.
-- **Marche dos** — 5 frames : cape qui s'ouvre en alternance, sabre qui oscille.
+## Détails techniques (après votre validation seulement)
 
-Palette verrouillée : bordeaux `#7a1c22` / `#4a1014`, gris ardoise `#3a3a40`, os `#cfc4ae`, or `#c9a24c`, chair `#a4544f`.
-
-## Grille agrandie
-
-Cellule **256×192** (au lieu de 192×144) — le sabre long et la cape débordaient. Silhouette dessinée sur **150 px**, ligne de pieds à **y = 184**. Même gabarit pour les planches de dos.
-
-## Détails techniques
-
-- Génération des planches (image gen + découpe/normalisation Python), sortie `public/assets/sprites/vigile_muet_*_spritesheet.png` plus `vigile_muet_back_idle_spritesheet.png` et `vigile_muet_back_walk_spritesheet.png` ; alpha nettoyé, silhouette recalée sur la baseline frame par frame.
-- `src/game/assets.ts` : `HERO_FRAME_W/H` → 256/192, `HERO_CHAR_H` → 150, `HERO_BASELINE_Y` → 184 ; mise à jour des 5 entrées existantes + 2 nouvelles clés `vigile-back-idle` / `vigile-back-walk`.
-- `public/assets/sprites/vigile_muet_atlas.json` mis à jour aux mêmes dimensions, vues de dos incluses.
-- `src/game/entities/Player.ts` : `TARGET_H` reste 130 (taille en jeu inchangée), `SCALE` se recalcule seul ; vérification hitbox (`body.setSize`/`setOffset`) et portée de frappe. Les animations de dos sont chargées et jouables mais aucun changement de gameplay n'est introduit maintenant — elles seront déclenchées par les scènes futures.
-- Aucun changement de vitesses, dégâts, combos, chair ou mutations.
-
-## Vérification
-
-Capture automatisée en salle 1 : taille apparente identique, pieds au sol sur toutes les animations, aucune frange transparente sur la cape ; contrôle visuel séparé des deux planches de dos.
+- Sortie dans `public/assets/sprites/vigile_muet_*_spritesheet.png` + `vigile_muet_back_idle/walk_spritesheet.png`.
+- Cellule **256×192**, silhouette 150 px, pieds à y = 184 ; `src/game/assets.ts` mis à jour (`HERO_FRAME_W/H`, `HERO_CHAR_H`, `HERO_BASELINE_Y`) plus 2 clés `vigile-back-idle` / `vigile-back-walk`.
+- `vigile_muet_atlas.json` réaligné ; `Player.ts` garde `TARGET_H = 130` (taille en jeu inchangée), hitbox et portée revérifiées.
+- Zéro changement de gameplay.
