@@ -24,9 +24,13 @@ export function PauseMenu() {
 
 
 export function DeathScreen() {
-  const startNewRun = useGameStore((s) => s.startNewRun);
+  const respawn = useGameStore((s) => s.respawnAtCheckpoint);
   const toMenu = useGameStore((s) => s.toMenu);
   const kills = useGameStore((s) => s.kills);
+  const deaths = useGameStore((s) => s.deaths);
+  const stage = useGameStore((s) => s.stage);
+  const checkpoint = useGameStore((s) => s.checkpoint);
+  const sealed = checkpoint?.stage === stage;
 
   return (
     <Overlay>
@@ -34,10 +38,17 @@ export function DeathScreen() {
         Tu t&apos;es éteint
       </h2>
       <p className="mt-3 text-sm text-muted-foreground">
-        {kills} âme{kills > 1 ? "s" : ""} libérée{kills > 1 ? "s" : ""} avant la chute.
+        {kills} âme{kills > 1 ? "s" : ""} libérée{kills > 1 ? "s" : ""} avant la chute — mort n°
+        {deaths}.
+      </p>
+      <p className="mt-2 max-w-sm text-xs text-primary/80">
+        Toute la Chair accumulée se déverse dans la pierre. Les créatures de la salle se
+        relèvent. Tes greffes, elles, restent.
       </p>
       <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
-        <OverlayButton onClick={startNewRun}>Renaître</OverlayButton>
+        <OverlayButton onClick={respawn}>
+          {sealed ? "Se relever à l'autel" : "Reprendre la salle au début"}
+        </OverlayButton>
         <OverlayButton onClick={toMenu}>Retour au menu</OverlayButton>
       </div>
     </Overlay>

@@ -1,20 +1,39 @@
 ## Objectif
 
-Archiver la bible narrative « Sanguine Vigile : Les Neuf Cercles » dans le projet pour pouvoir y puiser à chaque étape, sans toucher au jeu maintenant.
+Supprimer la renaissance gratuite illimitée. À la mort, le héros repart au dernier **Autel de Sang** activé (juste avant le boss), en perdant toute sa Chair accumulée, et la zone se recharge en ennemis.
 
-J'ai déjà lu le document : ~60 000 caractères, structuré en postulat, arc du protagoniste en 6 actes, les neuf cercles de Dante en 100 niveaux, Mère-Suture révélée comme geôlière de Lucifer, système de choix moral (achever/épargner) menant à deux fins, le Phlégéthon comme cœur thématique.
+## Règles de mort
 
-## Ce que je vais faire
+- Plus de bouton « Renaître » qui relance une run neuve.
+- L'écran de mort propose : **Se relever à l'autel** (si un autel est activé dans la salle) et **Retour au menu**.
+- Si aucun autel n'a été activé dans la salle, la reprise se fait au début de la salle courante (pas au niveau 1).
+- Coût d'une mort :
+  - toute la Chair (`flesh`) est perdue ;
+  - la vie repart au maximum ;
+  - les ennemis de la salle (et le boss s'il n'est pas mort) réapparaissent au complet ;
+  - les mutations déjà greffées sont conservées (progression permanente).
+- Un compteur de morts est affiché sur l'écran de mort et dans le HUD de fin de salle.
 
-1. **`docs/bible-narrative.md`** — conversion Markdown complète et fidèle du document, versionnée dans le dépôt (donc récupérable sur ton GitHub). C'est la source de vérité que je relirai à chaque demande.
-2. **`docs/bible-index.md`** — un sommaire court : liste des cercles, des niveaux, des boss, des personnages et des mécaniques annoncées, avec renvois vers les sections de la bible. Ça me permet de retrouver instantanément la bonne partie sans relire 60 000 caractères à chaque fois.
-3. **Pointeur d'asset vers le .docx d'origine** (`src/assets/bible-narrative.docx.asset.json`) pour conserver le fichier source intact sans alourdir le dépôt.
-4. **Note dans `AGENTS.md`** : une ligne indiquant que toute évolution narrative/contenu doit se référer à `docs/bible-narrative.md`.
+## Autel de Sang (point de sauvegarde)
 
-## Ce que je ne fais pas maintenant
+- Nouveau décor interactif `src/game/effects/BloodAltar.ts` : vasque de pierre remplie de sang, braise et lueur pulsante, particules quand il est éteint → allumé.
+- Placement Salle I : à `x ≈ 1350`, juste avant le déclencheur de la Monture d'Effroi (`MOUNT_TRIGGER_X = 1500`), donc impossible de manquer l'autel avant le boss.
+- Placement Salle II : avant la machine d'écartèlement (`x ≈ 1150`).
+- Activation : en s'approchant, une invite « Sceller le sang » apparaît ; l'action d'interaction (touche/bouton déjà mappable) allume l'autel, soigne à bloc et enregistre le point de réapparition.
+- Une fois allumé, il reste allumé pour la salle et sert de point de retour à chaque mort.
 
-Aucune modification du jeu : pas de nouveaux niveaux, pas d'ennemis, pas de refonte du scénario en place. On avancera cercle par cercle, à ta demande.
+## Sauvegarde
+
+- Le store mémorise `checkpoint: { stage, x } | null` et `deaths`.
+- Sauvegardé en local avec le reste de la run, donc le checkpoint survit à un rechargement de page.
+- Le checkpoint est remis à zéro en entrant dans une nouvelle salle et à chaque nouvelle run.
 
 ## Détails techniques
 
-Conversion via `pandoc` (déjà validée), écriture des deux fichiers Markdown, création du pointeur avec `lovable-assets create`. Aucun code applicatif touché, aucun impact sur le build.
+- `src/store/gameStore.ts` : ajout de `checkpoint`, `deaths`, `setCheckpoint()`, `respawnAtCheckpoint()` (flesh → 0, health → maxHealth, phase → `playing`), sérialisation dans `SavedRun`, reset dans `startNewRun` / `continueAtStage` / `setStage`.
+- `src/game/scenes/GameScene.ts` : instanciation de l'autel selon `backdropKey`, appel `tick()` dans la boucle, écoute du passage en phase `dead` puis, à la reprise, `scene.restart({ backdrop, spawnX })` pour respawner à l'autel avec ennemis et boss régénérés.
+- `create()` accepte un `spawnX` optionnel ; si l'autel de la salle était déjà scellé, il démarre allumé.
+- `src/components/game/PauseMenu.tsx` : refonte de `DeathScreen` (bouton autel, mention de la Chair perdue, compteur de morts).
+- `src/components/game/Hud.tsx` : petit repère « autel scellé » quand un checkpoint est actif.
+
+Aucun changement d'équilibrage des dégâts ni des stats du boss.

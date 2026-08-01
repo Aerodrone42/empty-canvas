@@ -18,6 +18,7 @@ import { Profiler } from "../debug/Profiler";
 import { AmbientCritters } from "../effects/AmbientCritters";
 import { placeTorches, type FloorTorch } from "../effects/FloorTorch";
 import { BloodFX } from "../effects/Blood";
+import { BloodAltar } from "../effects/BloodAltar";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
 import { DreadMount } from "../effects/DreadMount";
 import { CorridorVein } from "../effects/CorridorVein";
@@ -56,6 +57,11 @@ const GATE_EXIT_X = GATE_X + 110;
 const MOUNT_TRIGGER_X = 1500;
 /** machine d'ecartellement du corridor */
 const TORTURE_RACK_X = 1320;
+/** autel de sang : point de sauvegarde place juste avant l'affrontement majeur */
+const ALTAR_X: Partial<Record<BackdropKey, number>> = {
+  cathedrale: 1350,
+  corridor: 1150,
+};
 
 
 
@@ -99,6 +105,12 @@ export class GameScene extends Phaser.Scene {
   /** torcheres sur pied : decor pur, aucune interaction */
   private torches: FloorTorch[] = [];
   private gateWall?: Phaser.GameObjects.Rectangle;
+  /** autel de sang : point de sauvegarde de la salle */
+  private altar?: BloodAltar;
+  /** position de depart du heros (autel scelle apres une mort) */
+  private spawnX = 180;
+  /** desabonnement du store (reapparition) */
+  private unsubRespawn?: () => void;
 
   
   /** bande-son adaptative (ambiance / combat) */
@@ -114,8 +126,9 @@ export class GameScene extends Phaser.Scene {
     super("game");
   }
 
-  init(data?: { backdrop?: BackdropKey }) {
+  init(data?: { backdrop?: BackdropKey; spawnX?: number }) {
     this.backdropKey = data?.backdrop ?? "cathedrale";
+    this.spawnX = data?.spawnX ?? 180;
     // memorise la salle atteinte : point de reprise du menu Continuer
     useGameStore.getState().setStage(this.backdropKey);
   }
@@ -134,6 +147,8 @@ export class GameScene extends Phaser.Scene {
     this.critters = undefined;
     this.mount?.destroy();
     this.mount = undefined;
+    this.altar?.destroy();
+    this.altar = undefined;
     for (const t of this.torches) t.destroy();
     this.torches = [];
 
@@ -159,7 +174,7 @@ export class GameScene extends Phaser.Scene {
     this.buildGeometry();
     this.buildGate();
 
-    this.player = new Player(this, 180, FLOOR_Y);
+    this.player = new Player(this, this.spawnX, FLOOR_Y);
     this.physics.add.collider(this.player, this.platforms);
 
     this.populateRoom();
@@ -174,6 +189,13 @@ export class GameScene extends Phaser.Scene {
     cam.setDeadzone(180, ROOM_HEIGHT);
 
     cam.setScroll(cam.scrollX, ROOM_HEIGHT - cam.height);
+
+    // mort puis reapparition : la salle est relancee depuis l'autel scelle
+    this.unsubRespawn = useGameStore.subscribe((state, prev) => {
+      if (state.respawnToken === prev.respawnToken) return;
+      const target = state.checkpoint?.stage === this.backdropKey ? state.checkpoint.x : 180;
+      this.scene.restart({ backdrop: this.backdropKey, spawnX: target });
+    });
 
     this.events.on("player-strike", this.resolvePlayerStrike, this);
     this.events.on("enemy-strike", this.resolveEnemyStrike, this);
@@ -193,6 +215,8 @@ export class GameScene extends Phaser.Scene {
       this.damageNumbers?.destroy();
       this.events.off("fx-heal", this.onHeal, this);
       this.events.off("enemy-died", this.onEnemyDied, this);
+      this.unsubRespawn?.();
+      this.unsubRespawn = undefined;
     });
   }
 
@@ -374,6 +398,17 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
+    // autel de sang : sauvegarde juste avant l'affrontement majeur de la salle
+    const altarX = ALTAR_X[this.backdropKey];
+    if (altarX !== undefined) {
+      const saved = useGameStore.getState().checkpoint;
+      this.altar = new BloodAltar(
+        this,
+        altarX,
+        FLOOR_Y,
+        saved?.stage === this.backdropKey,
+      );
+    }
   }
 
   /**
@@ -577,6 +612,7 @@ export class GameScene extends Phaser.Scene {
     this.wheel?.tick(this.player.x, time);
     this.critters?.tick(time, delta);
     this.mount?.update(time, delta);
+    this.altar?.tick(this.player.x, time);
     for (const t of this.torches) t.tick(time);
 
 

@@ -44,6 +44,12 @@ export type GameState = {
   altarHealUsed: boolean;
   /** salle courante : sert de point de reprise */
   stage: BackdropKey;
+  /** autel scelle dans la salle courante : point de reapparition */
+  checkpoint: { stage: BackdropKey; x: number } | null;
+  /** nombre de morts de la run en cours */
+  deaths: number;
+  /** incremente a chaque reapparition : la scene se relance dessus */
+  respawnToken: number;
 
   enter: () => void;
   startNewRun: () => void;
@@ -71,6 +77,10 @@ export type GameState = {
   setDodgeCooldown: (durationMs: number) => void;
   setAbsorb: (absorbing: boolean, progress: number) => void;
   consumeFleshForHealth: () => boolean;
+  /** l'autel de sang enregistre la position de reapparition */
+  setCheckpoint: (x: number) => void;
+  /** mort : on repart a l'autel (ou au debut de la salle), sans la Chair */
+  respawnAtCheckpoint: () => void;
   unlockMutation: (id: string) => void;
   clearLastUnlocked: () => void;
 };
@@ -94,6 +104,8 @@ type SavedRun = {
   kills: number;
   parries: number;
   mutations: string[];
+  checkpointX: number | null;
+  deaths: number;
 };
 
 function readSave(): SavedRun | null {
@@ -111,6 +123,8 @@ function readSave(): SavedRun | null {
       kills: typeof data.kills === "number" ? data.kills : 0,
       parries: typeof data.parries === "number" ? data.parries : 0,
       mutations: Array.isArray(data.mutations) ? data.mutations : [],
+      checkpointX: typeof data.checkpointX === "number" ? data.checkpointX : null,
+      deaths: typeof data.deaths === "number" ? data.deaths : 0,
     };
   } catch {
     return null;
@@ -128,6 +142,8 @@ function writeSave(state: GameState) {
       kills: state.kills,
       parries: state.parries,
       mutations: state.mutations,
+      checkpointX: state.checkpoint?.x ?? null,
+      deaths: state.deaths,
     };
     window.localStorage.setItem(SAVE_KEY, JSON.stringify(save));
   } catch {
@@ -154,6 +170,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   absorbing: false,
   altarHealUsed: false,
   stage: "cathedrale",
+  checkpoint: null,
+  deaths: 0,
+  respawnToken: 0,
 
   enter: () => set({ phase: "menu" }),
 
@@ -172,6 +191,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       absorbProgress: 0,
       altarHealUsed: false,
       stage: "cathedrale",
+      checkpoint: null,
+      deaths: 0,
     }),
 
   /** le bouton Continuer ouvre desormais la selection de salle */
@@ -187,9 +208,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       absorbing: false,
       absorbProgress: 0,
       altarHealUsed: false,
+      checkpoint: null,
     }),
 
-  setStage: (stage) => set({ stage, hasSave: true }),
+  // changer de salle invalide l'autel scelle dans la precedente
+  setStage: (stage) =>
+    set((s) => ({
+      stage,
+      hasSave: true,
+      checkpoint: s.checkpoint && s.checkpoint.stage === stage ? s.checkpoint : null,
+    })),
 
   hydrateRun: () => {
     const save = readSave();
@@ -205,6 +233,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       mutations: save.mutations,
       effects,
       hasSave: true,
+      deaths: save.deaths,
+      checkpoint:
+        save.checkpointX !== null ? { stage: save.stage, x: save.checkpointX } : null,
     });
   },
 
@@ -235,7 +266,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       const reduced = Math.max(1, Math.round(amount * (1 - s.effects.damageReduction)));
       const health = Math.max(0, s.health - reduced);
       const base = { health, absorbing: false, absorbProgress: 0 };
-      return health === 0 ? { ...base, phase: "dead" as Phase } : base;
+      return health === 0
+        ? { ...base, phase: "dead" as Phase, deaths: s.deaths + 1 }
+        : base;
     }),
 
   heal: (amount) => set((s) => ({ health: Math.min(s.maxHealth, s.health + amount) })),
@@ -278,6 +311,24 @@ export const useGameStore = create<GameState>((set, get) => ({
 
 
 
+
+  setCheckpoint: (x) => set((s) => ({ checkpoint: { stage: s.stage, x }, hasSave: true })),
+
+  /**
+   * Reapparition : plus de renaissance gratuite. Le heros repart a l'autel
+   * scelle (ou au debut de la salle si aucun), la Chair accumulee est perdue
+   * et la salle est repeuplee par le relancement de la scene.
+   */
+  respawnAtCheckpoint: () =>
+    set((s) => ({
+      phase: "playing" as Phase,
+      health: s.maxHealth,
+      flesh: 0,
+      absorbing: false,
+      absorbProgress: 0,
+      altarHealUsed: false,
+      respawnToken: s.respawnToken + 1,
+    })),
 
   unlockMutation: (id) => {
     const state = get();
