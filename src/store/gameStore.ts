@@ -296,3 +296,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
   },
 }));
+
+// sauvegarde locale : salle atteinte + etat du heros, ecrite a chaque changement
+let saveTimer: ReturnType<typeof setTimeout> | undefined;
+useGameStore.subscribe((state) => {
+  if (!state.hasSave) return;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => writeSave(useGameStore.getState()), 300);
+});
+
