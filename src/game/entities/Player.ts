@@ -391,7 +391,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.beginState("parry", time, PARRY.window + effects.parryWindowBonus + PARRY.recovery);
       body.setVelocityX(0);
       this.setTint(0xf2d9a0);
-      this.play("vigile-idle-anim", true);
+      this.play("vigile-parry-anim", true);
       return;
     }
 
