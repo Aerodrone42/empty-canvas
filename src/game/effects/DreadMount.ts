@@ -16,7 +16,7 @@ export const ANIM_MOUNT_FED = "dread-mount-fed-fly";
 /** envergure affichee de la bete */
 const MOUNT_W = 460;
 /** hauteur de croisiere dans le ciel */
-const CRUISE_Y = 300;
+const CRUISE_Y = 360;
 /** parallaxe : la bete est loin derriere l'architecture de premier plan */
 const SCROLL_FACTOR = 0.55;
 
