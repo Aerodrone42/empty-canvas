@@ -17,6 +17,7 @@ import { DamageNumbers, type DamageKind } from "../effects/DamageNumbers";
 import { Profiler } from "../debug/Profiler";
 import { AmbientCritters } from "../effects/AmbientCritters";
 import { placeTorches, type FloorTorch } from "../effects/FloorTorch";
+import { AbsorbPrompt } from "../effects/AbsorbPrompt";
 import { BloodFX } from "../effects/Blood";
 import { BloodAltar } from "../effects/BloodAltar";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
