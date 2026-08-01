@@ -328,6 +328,13 @@ export class GameScene extends Phaser.Scene {
     // supplicie ecorche : uniquement dans la cathedrale
     if (this.backdropKey === "cathedrale") {
       this.crucified = new CrucifiedProp(this, CRUCIFIED_X, FLOOR_Y);
+      this.crucifiedWoman = new CrucifiedProp(
+        this,
+        CRUCIFIED_WOMAN_X,
+        FLOOR_Y,
+        "crucifiee-idle",
+      );
+
       // mini-boss aerien : il surgit dans la seconde moitie de la salle
       this.mount = new DreadMount(this, {
         floorY: FLOOR_Y,
