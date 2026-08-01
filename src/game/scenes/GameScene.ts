@@ -274,7 +274,8 @@ export class GameScene extends Phaser.Scene {
     amount: number,
     kind: DamageKind = "normal",
   ) {
-    this.damageNumbers?.show(x, y, amount, kind);
+    const boosted = useGameStore.getState().effects.damageMult > 1;
+    this.damageNumbers?.show(x, y, amount, kind, boosted);
   }
 
   private onSparks(x: number, y: number) {

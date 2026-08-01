@@ -6,6 +6,7 @@ import {
   MUTATIONS,
   computeEffects,
   isAvailable,
+  mutationSummary,
   type MutationEffects,
 } from "@/game/mutations";
 
@@ -30,6 +31,8 @@ export type GameState = {
   hasSave: boolean;
   mutations: string[];
   effects: MutationEffects;
+  /** derniere greffe obtenue : sert au bandeau de confirmation en jeu */
+  lastUnlocked: { id: string; name: string; summary: string; at: number } | null;
   optionsReturnPhase: Phase;
   /** horodatage (Date.now) de fin de recharge de l'esquive */
   dodgeReadyAt: number;
@@ -69,6 +72,7 @@ export type GameState = {
   setAbsorb: (absorbing: boolean, progress: number) => void;
   consumeFleshForHealth: () => boolean;
   unlockMutation: (id: string) => void;
+  clearLastUnlocked: () => void;
 };
 
 const BASE_MAX_HEALTH = 100;
@@ -142,6 +146,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   hasSave: false,
   mutations: [],
   effects: BASE_EFFECTS,
+  lastUnlocked: null,
   optionsReturnPhase: "menu",
   dodgeReadyAt: 0,
   dodgeCooldownMs: 700,
@@ -293,8 +298,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       maxHealth,
       health: Math.min(maxHealth, state.health + Math.max(0, gainedHealth)),
       flesh: state.flesh - mutation.cost,
+      lastUnlocked: {
+        id: mutation.id,
+        name: mutation.name,
+        summary: mutationSummary(mutation, state.mutations),
+        at: Date.now(),
+      },
     });
   },
+
+  clearLastUnlocked: () => set({ lastUnlocked: null }),
 }));
 
 // sauvegarde locale : salle atteinte + etat du heros, ecrite a chaque changement

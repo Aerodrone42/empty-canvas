@@ -42,7 +42,7 @@ export class DamageNumbers {
     }
   }
 
-  show(x: number, y: number, amount: number, kind: DamageKind = "normal") {
+  show(x: number, y: number, amount: number, kind: DamageKind = "normal", boosted = false) {
     const slot = this.slots.find((s) => s.free);
     if (!slot) return;
 
@@ -52,9 +52,13 @@ export class DamageNumbers {
     const label = kind === "crit" ? `${Math.round(amount)}!` : `${Math.round(amount)}`;
     const jitter = Phaser.Math.Between(-14, 14);
 
+    // teinte distincte quand une greffe amplifie la frappe : la montee en
+    // puissance se lit coup apres coup
+    const color = boosted && kind !== "blocked" ? (kind === "crit" ? "#ff9d4d" : "#d97a86") : style.color;
+
     slot.text
       .setText(label)
-      .setColor(style.color)
+      .setColor(color)
       .setStroke(style.stroke, kind === "crit" ? 6 : 4)
       .setFontSize(style.size)
       .setPosition(x + jitter, y)
