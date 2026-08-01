@@ -495,16 +495,18 @@ export class EcorchePendu extends Enemy {
 export class Bourreau extends Enemy {
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, {
-      health: 78,
+      health: 96,
       speed: 40,
       chaseSpeed: 92,
-      damage: 19,
+      damage: 18,
       detectRange: 1000,
       attackRange: 104,
       attackCooldown: 1400,
       scale: 1.7,
-      bodyWidth: 64,
-      bodyHeight: 150,
+      // colosse a l'echelle 1.7 : hurtbox alignee sur la silhouette rendue
+      bodyWidth: 78,
+      bodyHeight: 158,
+
       fleshReward: 16,
       animPrefix: "bourreau",
     });
