@@ -37,8 +37,8 @@ HEAD_POLY = [
 NECK = (149, 216)
 
 # buste + haut de la robe : colonne centrale uniquement
-TORSO_POLY = [(112, 244), (188, 244), (200, 424), (100, 424)]
-TORSO_ANCHOR_Y = 424
+TORSO_POLY = [(120, 250), (178, 250), (184, 418), (114, 418)]
+TORSO_ANCHOR_Y = 418
 
 
 def soft_mask(points, feather):
@@ -88,7 +88,7 @@ def animate(source, index):
     fall, spasm = suffering(t)
 
     head_mask = soft_mask(HEAD_POLY, 3)
-    torso_mask = soft_mask(TORSO_POLY, 6)
+    torso_mask = soft_mask(TORSO_POLY, 4)
 
     # --- respiration : etirement vertical ancre sur le bassin ------------
     breath = 1.0 + 0.014 * ((sin(2.0 * pi * t + 0.9) + 1.0) / 2.0) + 0.006 * spasm
