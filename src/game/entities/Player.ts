@@ -136,6 +136,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return this.facing;
   }
 
+  /** Vrai uniquement pendant une absorption de chair. */
+  get isAbsorbing() {
+    return this.moveState === "absorb";
+  }
+
   get isAttacking() {
     return this.moveState === "attack" || this.moveState === "heavy" || this.moveState === "special";
   }
