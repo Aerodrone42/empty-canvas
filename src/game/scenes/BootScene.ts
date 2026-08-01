@@ -68,17 +68,17 @@ export class BootScene extends Phaser.Scene {
     // monture funebre : illustration complete par frame, deja a la taille affichee
     this.load.spritesheet(
       "dread-mount-fly",
-      "/assets/sprites/props/dread_mount_fly.png?v=5",
+      "/assets/sprites/props/dread_mount_fly.png?v=6",
       { frameWidth: 512, frameHeight: 336, spacing: 0 },
     );
     this.load.spritesheet(
       "dread-mount-fly-fed",
-      "/assets/sprites/props/dread_mount_fly_fed.png?v=5",
+      "/assets/sprites/props/dread_mount_fly_fed.png?v=6",
       { frameWidth: 512, frameHeight: 336, spacing: 0 },
     );
     this.load.spritesheet(
       "dread-mount-swallow",
-      "/assets/sprites/props/dread_mount_swallow.png?v=5",
+      "/assets/sprites/props/dread_mount_swallow.png?v=6",
       { frameWidth: 512, frameHeight: 336, spacing: 0 },
     );
 
