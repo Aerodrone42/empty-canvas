@@ -54,16 +54,6 @@ def animate_frame(source: Image.Image, phase: float) -> Image.Image:
     head_y = round(2.0 * sin(phase + pi / 2.0))
     result.alpha_composite(head, (0, head_y))
 
-    # Petite tension des poignets : les liens restent ancrés, seuls les mains
-    # et avant-bras frémissent d'un pixel.
-    wrist_mask = polygon_mask(
-        [(69, 94), (105, 125), (112, 193), (92, 198), (77, 139),
-         (177, 124), (214, 94), (207, 141), (191, 198), (171, 193)],
-        1,
-    )
-    wrists = masked_layer(source, wrist_mask)
-    wrist_shift = round(sin(phase * 2.0))
-    result.alpha_composite(wrists, (wrist_shift, 0))
     return result
 
 
