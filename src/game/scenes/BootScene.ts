@@ -129,6 +129,16 @@ export class BootScene extends Phaser.Scene {
       });
     }
 
+    // Bourreau : anticipation = les deux premieres frames de la planche
+    // d'attaque (le couperet part au-dessus de l'epaule), jouees lentement.
+    this.anims.create({
+      key: "bourreau-windup-anim",
+      frames: this.anims.generateFrameNumbers("bourreau-attack", { start: 0, end: 1 }),
+      frameRate: 7,
+      repeat: 0,
+    });
+
+
     // Torcheres sur pied : respiration de repos + sursaut d'embrasement.
     this.anims.create({
       key: "floor-torch-idle",
