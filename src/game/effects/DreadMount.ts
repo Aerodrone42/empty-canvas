@@ -194,24 +194,43 @@ export class DreadMount {
     return this.state === "dive" || this.state === "bite" || this.state === "claw";
   }
 
+  /** hurtbox rectangulaire de la bete, calee sur le sprite affiche */
+  get hurtbox() {
+    return {
+      cx: this.sprite.x,
+      cy: this.sprite.y,
+      halfW: this.sprite.displayWidth * 0.34,
+      halfH: this.sprite.displayHeight * 0.3,
+    };
+  }
+
   /** appele par la scene quand un coup du heros porte */
-  takeHit(damage: number, fromX: number) {
+  takeHit(damage: number, fromX: number, crit = false) {
     if (this.isDead || !this.isVulnerable) return false;
     this.hp -= damage;
-    this.sprite.setTint(0xffdcdc);
-    this.scene.time.delayedCall(70, () => {
+    this.sprite.setTint(crit ? 0xffd166 : 0xffdcdc);
+    this.scene.time.delayedCall(crit ? 120 : 70, () => {
       if (!this.destroyed) this.sprite.clearTint();
     });
     this.gore.setPosition(this.sprite.x, this.sprite.y + 20);
-    this.gore.explode(12);
+    this.gore.explode(crit ? 26 : 12);
     this.opts.onGore?.(this.sprite.x, this.sprite.y + 20);
+    this.scene.events.emit(
+      "fx-damage",
+      this.sprite.x,
+      this.sprite.y - 30,
+      damage,
+      crit ? "crit" : "normal",
+    );
+    if (crit) this.scene.cameras.main.shake(140, 0.009);
 
     const dir = Math.sign(this.sprite.x - fromX) || 1;
-    this.sprite.x += dir * 8;
+    this.sprite.x += dir * (crit ? 14 : 8);
 
     if (this.hp <= 0) this.die();
     return true;
   }
+
 
   private setState(next: MountState) {
     this.state = next;

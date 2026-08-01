@@ -1,7 +1,18 @@
 import Phaser from "phaser";
 
 import { MusicDirector } from "../audio/Music";
-import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat";
+import {
+  CRIT_CHANCE,
+  CRIT_MULT,
+  FLESH_HEAVY_BONUS,
+  FLESH_PER_HIT,
+  PARRY,
+  boxHitsBody,
+  strikeBox,
+  type Strike,
+} from "../combat";
+import { DamageNumbers, type DamageKind } from "../effects/DamageNumbers";
+
 
 import { Profiler } from "../debug/Profiler";
 import { AmbientCritters } from "../effects/AmbientCritters";
@@ -54,6 +65,8 @@ export class GameScene extends Phaser.Scene {
   private hands: GraspingHands[] = [];
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
   private blood!: BloodFX;
+  /** chiffres de degats flottants */
+  private damageNumbers!: DamageNumbers;
   private parallax!: Parallax;
   private pickups: Pickup[] = [];
   /** panneau de diagnostic des performances (F3) */
@@ -126,6 +139,7 @@ export class GameScene extends Phaser.Scene {
     this.music = new MusicDirector(this);
 
     this.blood = new BloodFX(this, FLOOR_Y);
+    this.damageNumbers = new DamageNumbers(this);
 
     this.buildBackdrop();
     this.buildGeometry();
@@ -152,6 +166,7 @@ export class GameScene extends Phaser.Scene {
     this.events.on("fx-blood", this.onBlood, this);
     this.events.on("fx-gore", this.onGore, this);
     this.events.on("fx-sparks", this.onSparks, this);
+    this.events.on("fx-damage", this.onDamageNumber, this);
     this.events.on("fx-heal", this.onHeal, this);
     this.events.on("enemy-died", this.onEnemyDied, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -160,6 +175,8 @@ export class GameScene extends Phaser.Scene {
       this.events.off("fx-blood", this.onBlood, this);
       this.events.off("fx-gore", this.onGore, this);
       this.events.off("fx-sparks", this.onSparks, this);
+      this.events.off("fx-damage", this.onDamageNumber, this);
+      this.damageNumbers?.destroy();
       this.events.off("fx-heal", this.onHeal, this);
       this.events.off("enemy-died", this.onEnemyDied, this);
     });
@@ -235,6 +252,15 @@ export class GameScene extends Phaser.Scene {
 
   private onGore(x: number, y: number, intensity: number) {
     this.blood.gore(x, y, intensity);
+  }
+
+  private onDamageNumber(
+    x: number,
+    y: number,
+    amount: number,
+    kind: DamageKind = "normal",
+  ) {
+    this.damageNumbers?.show(x, y, amount, kind);
   }
 
   private onSparks(x: number, y: number) {
@@ -438,32 +464,41 @@ export class GameScene extends Phaser.Scene {
   private resolvePlayerStrike(strike: Strike, damageScale = 1) {
     const store = useGameStore.getState();
     const effects = store.effects;
-    const reach = strike.reach + effects.bonusReach;
-    const damage = strike.damage * effects.damageMult * damageScale;
-    const radial = strike.shape === "radial";
-    const originX = radial ? this.player.x : this.player.x + this.player.facingDirection * (reach / 2);
+    const base = strike.damage * effects.damageMult * damageScale;
+    const box = strikeBox(
+      strike,
+      this.player.x,
+      this.player.y,
+      this.player.facingDirection,
+      effects.bonusReach,
+    );
 
     let hits = 0;
     for (const enemy of this.enemies) {
       if (!enemy.active || enemy.isDead) continue;
-      const withinX = Math.abs(enemy.x - originX) < reach;
-      const withinY = Math.abs(enemy.y - this.player.y) < strike.vertical;
-      if (withinX && withinY) {
-        hits += 1;
-        enemy.takeHit(damage, {
-          knockback: strike.knockback,
-          breakGuard: strike.breakGuard,
-          fromX: this.player.x,
-        });
-      }
+      const hb = enemy.hurtbox;
+      if (!boxHitsBody(box, hb.cx, hb.cy, hb.halfW, hb.halfH)) continue;
+
+      hits += 1;
+      // zone faible (tete / haut du torse) ou tirage a 5 % : critique
+      const weakSpot = box.top <= enemy.weakPointY && box.bottom >= enemy.weakPointY;
+      const crit = Math.random() < CRIT_CHANCE || (weakSpot && Math.random() < CRIT_CHANCE);
+      enemy.takeHit(crit ? base * CRIT_MULT : base, {
+        knockback: strike.knockback,
+        breakGuard: strike.breakGuard,
+        fromX: this.player.x,
+        crit,
+      });
     }
 
     // la monture d'effroi n'encaisse que lorsqu'elle descend au contact
     if (this.mount && this.mount.isVulnerable) {
-      const withinX = Math.abs(this.mount.x - originX) < reach + 90;
-      const withinY = Math.abs(this.mount.y - this.player.y) < strike.vertical + 90;
-      if (withinX && withinY && this.mount.takeHit(damage, this.player.x)) {
-        hits += 1;
+      const hb = this.mount.hurtbox;
+      if (boxHitsBody(box, hb.cx, hb.cy, hb.halfW, hb.halfH)) {
+        const crit = Math.random() < CRIT_CHANCE;
+        if (this.mount.takeHit(crit ? base * CRIT_MULT : base, this.player.x, crit)) {
+          hits += 1;
+        }
       }
     }
 
@@ -475,6 +510,7 @@ export class GameScene extends Phaser.Scene {
 
     this.cameras.main.shake(70, 0.004);
   }
+
 
 
   private resolveEnemyStrike(amount: number, source?: Enemy) {

@@ -84,10 +84,29 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     return this.dying;
   }
 
+  /** hurtbox reelle de la creature (centre + demi-dimensions) */
+  get hurtbox() {
+    return {
+      cx: this.x,
+      cy: this.y - this.stats.bodyHeight / 2,
+      halfW: this.stats.bodyWidth / 2,
+      halfH: this.stats.bodyHeight / 2,
+    };
+  }
+
+  /** hauteur de la zone faible (tete / haut du torse) : critique garanti */
+  get weakPointY() {
+    return this.y - this.stats.bodyHeight * 0.82;
+  }
 
   takeHit(
     amount: number,
-    options: { knockback?: number; breakGuard?: boolean; fromX?: number } = {},
+    options: {
+      knockback?: number;
+      breakGuard?: boolean;
+      fromX?: number;
+      crit?: boolean;
+    } = {},
   ) {
     if (this.dying) return;
 
@@ -101,26 +120,41 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (options.breakGuard) this.guardBrokenUntil = time + 1500;
 
     const dir = options.fromX !== undefined ? Math.sign(this.x - options.fromX) || 1 : 1;
+    const crit = !!options.crit && !guarding;
+
+    // chiffre flottant : dore et agrandi sur critique, grise sur garde
+    this.scene.events.emit(
+      "fx-damage",
+      this.x,
+      this.y - this.stats.bodyHeight * 0.95,
+      dealt,
+      guarding ? "blocked" : crit ? "crit" : "normal",
+    );
 
     if (guarding) {
       this.scene.events.emit("fx-sparks", this.x + dir * 20, this.y - 60);
     } else {
-      // gerbe proportionnelle aux degats encaisses
+      // gerbe proportionnelle aux degats encaisses, renforcee sur critique
       this.scene.events.emit(
         "fx-blood",
         this.x + dir * 14,
         this.y - this.stats.bodyHeight * 0.55,
         dir,
-        Phaser.Math.Clamp(0.7 + dealt / 22, 0.7, 2.4),
+        Phaser.Math.Clamp((crit ? 1.4 : 0.7) + dealt / 22, 0.7, 3),
       );
+      if (crit) {
+        this.scene.cameras.main.shake(120, 0.008);
+        this.scene.events.emit("fx-sparks", this.x + dir * 16, this.weakPointY);
+      }
     }
 
-    this.setTint(guarding ? 0x9aa7b5 : 0xd94b4b);
-    this.scene.time.delayedCall(90, () => {
+    this.setTint(guarding ? 0x9aa7b5 : crit ? 0xffd166 : 0xd94b4b);
+    this.scene.time.delayedCall(crit ? 130 : 90, () => {
       if (this.active && !this.dying) this.clearTint();
     });
 
-    const knockback = (options.knockback ?? 0) * (guarding ? 0.25 : 1);
+    const knockback =
+      (options.knockback ?? 0) * (guarding ? 0.25 : 1) * (crit ? 1.35 : 1);
     if (knockback > 0 && this.body) {
       const body = this.body as Phaser.Physics.Arcade.Body;
       body.setVelocityX(dir * knockback);
@@ -131,6 +165,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.die(Phaser.Math.Clamp(dealt / 20, 0.8, 2.2));
     }
   }
+
 
   /** Etourdissement (parade réussie) : l'ennemi reste ouvert. */
   stun(durationMs: number) {
@@ -256,17 +291,18 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 export class PenitentGreffe extends Enemy {
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, {
-      health: 60,
+      health: 72,
       speed: 28,
       chaseSpeed: 52,
-      damage: 18,
+      damage: 16,
       detectRange: 320,
       attackRange: 90,
       attackCooldown: 1700,
       // silhouette de 118 px dans la cellule -> ~150 px a l'ecran
       scale: 1.27,
-      bodyWidth: 56,
-      bodyHeight: 118,
+      // masse large : hurtbox elargie pour coller au torse et a la chaine
+      bodyWidth: 68,
+      bodyHeight: 122,
       fleshReward: 14,
       animPrefix: "penitent",
       guarded: true,
@@ -277,20 +313,22 @@ export class PenitentGreffe extends Enemy {
 export class SuppliantRampant extends Enemy {
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, {
-      health: 24,
+      health: 30,
       speed: 70,
       chaseSpeed: 170,
-      damage: 7,
+      damage: 6,
       detectRange: 420,
       attackRange: 62,
       attackCooldown: 800,
       // creature rampante : silhouette de 62 px -> ~70 px a l'ecran
       scale: 1.13,
-      bodyWidth: 70,
-      bodyHeight: 58,
+      // quadrupede : boite basse et allongee, plus haute que large
+      bodyWidth: 80,
+      bodyHeight: 46,
       fleshReward: 6,
       animPrefix: "suppliant",
     });
+
   }
 }
 
@@ -310,19 +348,20 @@ export class EcorchePendu extends Enemy {
 
   constructor(scene: Phaser.Scene, x: number, floorY: number, ceilingY = 40) {
     super(scene, x, ceilingY, {
-      health: 46,
+      health: 52,
       speed: 34,
       chaseSpeed: 118,
-      damage: 14,
+      damage: 12,
       detectRange: 420,
       attackRange: 120,
       attackCooldown: 1900,
       scale: 1.2,
-      bodyWidth: 52,
-      bodyHeight: 126,
+      bodyWidth: 58,
+      bodyHeight: 120,
       fleshReward: 12,
       animPrefix: "ecorche",
     });
+
 
     this.floorY = floorY;
     this.triggerRange = 200;
@@ -335,8 +374,29 @@ export class EcorchePendu extends Enemy {
     this.play("ecorche-hang-anim", true);
   }
 
+  /** suspendu, le corps pend vers le bas : la hurtbox suit la silhouette */
+  get hurtbox() {
+    const base = super.hurtbox;
+    if (this.phase !== "hanging") return base;
+    return { ...base, cy: this.y + base.halfH };
+  }
+
+  get weakPointY() {
+    return this.phase === "hanging" ? this.y + 100 : super.weakPointY;
+  }
+
+  /** le frapper au plafond le decroche immediatement */
+  takeHit(
+    amount: number,
+    options: { knockback?: number; breakGuard?: boolean; fromX?: number; crit?: boolean } = {},
+  ) {
+    if (this.phase === "hanging" && !this.isDead) this.drop();
+    super.takeHit(amount, options);
+  }
+
   private drop() {
     this.phase = "falling";
+
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(true);
     body.setVelocityY(120);
@@ -435,16 +495,18 @@ export class EcorchePendu extends Enemy {
 export class Bourreau extends Enemy {
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, {
-      health: 78,
+      health: 96,
       speed: 40,
       chaseSpeed: 92,
-      damage: 19,
+      damage: 18,
       detectRange: 1000,
       attackRange: 104,
       attackCooldown: 1400,
       scale: 1.7,
-      bodyWidth: 64,
-      bodyHeight: 150,
+      // colosse a l'echelle 1.7 : hurtbox alignee sur la silhouette rendue
+      bodyWidth: 78,
+      bodyHeight: 158,
+
       fleshReward: 16,
       animPrefix: "bourreau",
     });

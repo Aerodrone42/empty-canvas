@@ -16,70 +16,135 @@ export type Strike = {
   shape: StrikeShape;
   /** durée d'immobilisation du joueur pendant l'attaque */
   duration: number;
+  /** décalage vertical du centre de la zone par rapport aux pieds du héros */
+  centerY?: number;
+  /** marge derrière le héros (les coups d'arc ne touchent pas dans le dos) */
+  backReach?: number;
 };
+
 
 export const STRIKES: Record<string, Strike> = {
   combo1: {
     id: "combo1",
-    reach: 96,
-    vertical: 130,
-    damage: 20,
+    reach: 104,
+    vertical: 118,
+    damage: 14,
     knockback: 90,
     breakGuard: false,
     shape: "arc",
     duration: 300,
+    centerY: -76,
+    backReach: 14,
   },
   combo2: {
     id: "combo2",
-    reach: 104,
-    vertical: 130,
-    damage: 22,
+    reach: 112,
+    vertical: 118,
+    damage: 16,
     knockback: 110,
     breakGuard: false,
     shape: "arc",
     duration: 300,
+    centerY: -76,
+    backReach: 14,
   },
   combo3: {
     id: "combo3",
-    reach: 124,
-    vertical: 140,
-    damage: 38,
+    reach: 132,
+    vertical: 132,
+    damage: 34,
     knockback: 260,
     breakGuard: false,
     shape: "arc",
     duration: 460,
+    centerY: -74,
+    backReach: 22,
   },
   heavy: {
     id: "heavy",
-    reach: 136,
-    vertical: 150,
-    damage: 48,
+    reach: 148,
+    vertical: 142,
+    damage: 46,
     knockback: 300,
     breakGuard: true,
     shape: "arc",
     duration: 520,
+    centerY: -72,
+    backReach: 26,
   },
   dive: {
     id: "dive",
-    reach: 130,
-    vertical: 110,
-    damage: 34,
+    reach: 118,
+    vertical: 84,
+    damage: 28,
     knockback: 200,
     breakGuard: false,
     shape: "slam",
     duration: 260,
+    centerY: -40,
+    backReach: 96,
   },
   special: {
     id: "special",
     reach: 220,
     vertical: 190,
-    damage: 60,
+    damage: 58,
     knockback: 420,
     breakGuard: true,
     shape: "radial",
     duration: 620,
+    centerY: -84,
   },
 };
+
+/** Chance de critique de base (les talents viendront s'y ajouter plus tard). */
+export const CRIT_CHANCE = 0.05;
+/** Multiplicateur de dégâts d'un critique. */
+export const CRIT_MULT = 2;
+
+export type HitBox = { left: number; right: number; top: number; bottom: number };
+
+/**
+ * Zone de frappe reelle d'un coup : rectangle devant le heros (ou centre sur
+ * lui pour les coups radiaux), au lieu d'un simple test de distance.
+ */
+export function strikeBox(
+  strike: Strike,
+  x: number,
+  footY: number,
+  facing: number,
+  bonusReach = 0,
+): HitBox {
+  const reach = strike.reach + bonusReach;
+  const cy = footY + (strike.centerY ?? -80);
+  const half = strike.vertical;
+
+  if (strike.shape === "radial") {
+    return { left: x - reach, right: x + reach, top: cy - half, bottom: cy + half };
+  }
+
+  const back = strike.backReach ?? 16;
+  const front = facing >= 0 ? reach : back;
+  const rear = facing >= 0 ? back : reach;
+  return { left: x - rear, right: x + front, top: cy - half, bottom: cy + half };
+}
+
+/** Intersection rectangle de frappe / hurtbox (centre + demi-dimensions). */
+export function boxHitsBody(
+  box: HitBox,
+  cx: number,
+  cy: number,
+  halfW: number,
+  halfH: number,
+): boolean {
+  return (
+    cx + halfW > box.left &&
+    cx - halfW < box.right &&
+    cy + halfH > box.top &&
+    cy - halfH < box.bottom
+  );
+}
+
 
 /** Durée maximale entre deux coups pour enchaîner le combo. */
 export const COMBO_WINDOW = 500;
