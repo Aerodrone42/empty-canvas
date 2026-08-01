@@ -1,39 +1,35 @@
-## Objectif
+## Problème
 
-La Monture d'Effroi cesse d'être un décor qui traverse le ciel. Elle devient un **mini-boss aérien** dans la seconde moitié de la salle 1 (avant la colonne de sortie, située à x=2150). L'humain avalé disparaît complètement.
+À la mort, la monture part en fondu (`alpha: 0`) puis est masquée : elle disparaît en plein vol au lieu de s'écraser. Confirmé dans `src/game/effects/DreadMount.ts` (`die()` tween `alpha: 0` + `setVisible(false)`).
 
-## Comportement
+## Ce qu'on veut
 
-- **Déclenchement** : quand le héros dépasse ~x=1500 (moitié de salle, avant la colonne), la monture arrive en vol depuis le fond, rugit et engage le combat.
-- **Elle reste en vol** en permanence, oscillant au-dessus du héros à hauteur variable.
-- **Attaques** :
-  - *Piqué* : elle plonge en charge horizontale au niveau du héros, dégâts au contact, puis remonte.
-  - *Morsure* : en vol stationnaire bas, la gueule se referme sur le héros (portée courte, télégraphiée).
-  - *Griffes* : passage rapide, les serres balaient devant elle.
-- **Télégraphe** avant chaque attaque (montée + éclat rouge) pour laisser la parade/esquive jouables.
-- **Vulnérabilité** : touchable par les attaques du héros seulement quand elle descend (piqué, morsure, griffes) ; hors de portée pendant la remontée.
-- **Mort** : PV élevés (mini-boss), phase enragée en dessous de 35 % (attaques plus rapides), puis chute au sol, gerbe de sang et disparition.
-- La **colonne de sortie ne s'ouvre qu'après sa mort**, en plus des ennemis au sol.
+La bête est abattue → elle chute, s'écrase au sol dans un éclat de sang, et **reste visible en cadavre** pour le reste de la salle.
 
-## Suppression de l'humain
+## Plan
 
-- Retrait de la victime dans toutes les planches : plus d'humain dans la gueule, plus d'animation d'avalement.
-- Les séquences `fly-fed` et `swallow` sont supprimées ; la gueule ouverte/fermée sert désormais à la morsure.
+1. **Créer une pose de cadavre**
+   - Nouvel asset `dread_mount_corpse.png` (frame unique, même gabarit 512x360) : squelette effondré sur le flanc, ailes brisées repliées, cou et mâchoire retombés au sol, flaque de sang sous la carcasse.
+   - Généré à partir de l'illustration source déjà validée (deux ailes, pas d'humain), sans redimensionnement fractionnaire.
 
-## Animations régénérées
+2. **Réécrire la séquence de mort dans `DreadMount.ts`**
+   - Phase 1 (~600 ms) : animation `death`, chute en piqué vers le sol, rotation vers l'avant, aucune perte d'opacité.
+   - Impact : secousse caméra forte, gerbe de sang, tache de sang persistante au sol via le système `Blood`, poussière.
+   - Phase 2 : bascule sur la texture `dread-mount-corpse`, posée au sol (ancrage bas sur `floorY`), légère inclinaison, petit rebond d'impact.
+   - Le cadavre reste affiché indéfiniment (état `dead` au lieu de `gone`) : plus de `setVisible(false)`, plus de fondu.
 
-Reconstruction des planches à partir de l'illustration source, gueule vide :
-- `fly` : vol en boucle, deux ailes battant + queue ondulante + flexion du cou.
-- `dive` : piqué corps incliné, ailes repliées.
-- `bite` : gueule qui s'ouvre puis claque.
-- `claw` : serres avancées.
-- `death` : chute, ailes brisées.
+3. **Ambiance post-mortem**
+   - Gouttes de sang lentes depuis la carcasse pendant quelques secondes.
+   - Jauge de boss qui se vide puis s'efface en fondu après l'impact.
 
-Chaque planche est contrôlée frame par frame avant intégration (deux ailes en mouvement, queue mobile, aucune anatomie parasite).
+4. **Ne rien casser côté progression**
+   - `isDefeated` passe à vrai dès l'impact, donc la colonne de sortie s'ouvre normalement.
+   - Le cadavre est purement décoratif : pas de collision, pas de dégâts, profondeur derrière le héros pour qu'il puisse passer devant.
+
+5. **Vérification**
+   - Test en jeu : tuer la monture, contrôler par capture que la carcasse est bien au sol, visible, et que la sortie s'ouvre.
 
 ## Détails techniques
 
-- `DreadMount.ts` refondu en entité de combat : machine à états (`idle` / `telegraph` / `dive` / `bite` / `claw` / `recover` / `enraged` / `dying`), PV, hitbox de contact, réception des coups du héros via `resolvePlayerStrike`.
-- `GameScene.ts` : instanciation liée à un déclencheur de position dans la cathédrale, ajout de la monture à la condition d'ouverture de `openGate()`, dégâts routés par `resolveEnemyStrike` (parade possible).
-- `BootScene.ts` : chargement des nouvelles planches (`v=7`), suppression de `dread-mount-fly-fed` et `dread-mount-swallow`.
-- Le sprite passe en scrollFactor 1 et profondeur devant le décor pendant le combat, pour que les collisions soient lisibles.
+- Fichiers touchés : `src/game/effects/DreadMount.ts` (séquence `die()`, nouvel état `dead`, gestion jauge), `src/game/scenes/BootScene.ts` (chargement de `dread_mount_corpse.png?v=1`), nouvel asset dans `public/assets/sprites/props/`.
+- L'état `gone` est conservé uniquement pour la logique interne (plus d'attaques, plus de vulnérabilité) ; le rendu reste actif.

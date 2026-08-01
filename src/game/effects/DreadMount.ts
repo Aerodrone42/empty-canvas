@@ -18,6 +18,7 @@ export const TEX_MOUNT_DIVE = "dread-mount-dive";
 export const TEX_MOUNT_BITE = "dread-mount-bite";
 export const TEX_MOUNT_CLAW = "dread-mount-claw";
 export const TEX_MOUNT_DEATH = "dread-mount-death";
+export const TEX_MOUNT_CORPSE = "dread-mount-corpse";
 
 export const ANIM_MOUNT_FLY = "dread-mount-fly-anim";
 export const ANIM_MOUNT_DIVE = "dread-mount-dive-anim";
@@ -291,25 +292,81 @@ export class DreadMount {
     this.opts.onGore?.(this.sprite.x, this.sprite.y + 30);
     this.scene.cameras.main.shake(420, 0.012);
 
+    // chute lourde : elle s'ecrase, pas de fondu
+    const crashX = Phaser.Math.Clamp(
+      this.sprite.x + (this.sprite.flipX ? -60 : 60),
+      160,
+      this.opts.roomWidth - 160,
+    );
     this.scene.tweens.add({
       targets: this.sprite,
-      y: this.opts.floorY - 60,
-      angle: 32,
-      alpha: 0,
-      duration: 1300,
+      x: crashX,
+      y: this.opts.floorY - 70,
+      angle: this.sprite.flipX ? -24 : 24,
+      duration: 620,
       ease: "Quad.easeIn",
       onComplete: () => {
         if (this.destroyed) return;
-        this.gore.setPosition(this.sprite.x, this.opts.floorY - 40);
-        this.gore.explode(50);
-        this.opts.onGore?.(this.sprite.x, this.opts.floorY - 20);
-        this.sprite.setVisible(false);
-        this.bar.clear();
-        this.bar.setVisible(false);
-        this.setState("gone");
+        this.slamIntoGround(crashX);
       },
     });
   }
+
+  /** impact au sol puis carcasse permanente */
+  private slamIntoGround(crashX: number) {
+    const groundY = this.opts.floorY;
+    this.scene.cameras.main.shake(520, 0.02);
+    this.gore.setPosition(crashX, groundY - 40);
+    this.gore.explode(70);
+    this.opts.onGore?.(crashX, groundY - 16);
+    this.opts.onGore?.(crashX - 70, groundY - 10);
+    this.opts.onGore?.(crashX + 70, groundY - 10);
+
+    // bascule sur la pose de carcasse, posee sur le sol
+    this.sprite.stop();
+    this.sprite.setTexture(TEX_MOUNT_CORPSE);
+    this.sprite.setOrigin(0.5, 1);
+    this.sprite.setAngle(0);
+    this.sprite.setAlpha(1);
+    this.sprite.setVisible(true);
+    this.sprite.setDepth(8);
+    this.sprite.setPosition(crashX, groundY + 6);
+    this.sprite.setScale(MOUNT_W / FRAME_W);
+
+    // petit rebond d'impact
+    this.scene.tweens.add({
+      targets: this.sprite,
+      scaleY: (MOUNT_W / FRAME_W) * 0.88,
+      duration: 110,
+      yoyo: true,
+      ease: "Quad.easeOut",
+    });
+
+    // saignements lents de la carcasse
+    let drips = 0;
+    this.scene.time.addEvent({
+      delay: 420,
+      repeat: 11,
+      callback: () => {
+        if (this.destroyed) return;
+        drips += 1;
+        const ox = Phaser.Math.Between(-140, 140);
+        this.gore.setPosition(crashX + ox, groundY - 40);
+        this.gore.explode(3);
+        if (drips % 3 === 0) this.opts.onGore?.(crashX + ox, groundY - 12);
+      },
+    });
+
+    // la jauge se vide puis s'efface
+    this.scene.time.delayedCall(520, () => {
+      if (this.destroyed) return;
+      this.bar.clear();
+      this.bar.setVisible(false);
+    });
+
+    this.setState("gone");
+  }
+
 
   update(_time: number, delta: number) {
     if (this.destroyed || this.state === "gone") return;

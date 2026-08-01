@@ -92,6 +92,12 @@ export class BootScene extends Phaser.Scene {
       "/assets/sprites/props/dread_mount_death.png?v=7",
       mountFrame,
     );
+    // carcasse au sol : la bete abattue reste visible dans la salle
+    this.load.image(
+      "dread-mount-corpse",
+      "/assets/sprites/props/dread_mount_corpse.png?v=1",
+    );
+
 
 
     // chevalet d'ecartellement du corridor : bati, supplicie et bourreaux
