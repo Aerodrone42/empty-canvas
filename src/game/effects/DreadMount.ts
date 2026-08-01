@@ -18,6 +18,7 @@ export const TEX_MOUNT_DIVE = "dread-mount-dive";
 export const TEX_MOUNT_BITE = "dread-mount-bite";
 export const TEX_MOUNT_CLAW = "dread-mount-claw";
 export const TEX_MOUNT_DEATH = "dread-mount-death";
+export const TEX_MOUNT_CORPSE = "dread-mount-corpse";
 
 export const ANIM_MOUNT_FLY = "dread-mount-fly-anim";
 export const ANIM_MOUNT_DIVE = "dread-mount-dive-anim";
