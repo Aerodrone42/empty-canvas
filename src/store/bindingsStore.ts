@@ -8,6 +8,7 @@ export type ActionId =
   | "dodge"
   | "parry"
   | "special"
+  | "interact"
   | "pause"
   | "flesh";
 
