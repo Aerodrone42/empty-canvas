@@ -1,7 +1,18 @@
 import Phaser from "phaser";
 
 import { MusicDirector } from "../audio/Music";
-import { FLESH_HEAVY_BONUS, FLESH_PER_HIT, PARRY, type Strike } from "../combat";
+import {
+  CRIT_CHANCE,
+  CRIT_MULT,
+  FLESH_HEAVY_BONUS,
+  FLESH_PER_HIT,
+  PARRY,
+  boxHitsBody,
+  strikeBox,
+  type Strike,
+} from "../combat";
+import { DamageNumbers } from "../effects/DamageNumbers";
+
 
 import { Profiler } from "../debug/Profiler";
 import { AmbientCritters } from "../effects/AmbientCritters";
