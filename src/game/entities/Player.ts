@@ -299,7 +299,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // ---------- absorption de chair (soin) ----------
     if (this.moveState === "absorb") {
-      const holding = this.actions.isDown("parry");
+      const holding = this.actions.isDown("absorb");
       if (!holding || !onGround || left || right) {
         this.cancelAbsorb();
       } else if (time >= this.stateUntil) {
@@ -365,8 +365,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // ---------- parade / absorption de chair ----------
-    if (this.actions.justDown("parry") && onGround) {
+    // ---------- absorption de chair (touche dediee) ----------
+    if (this.actions.justDown("absorb") && onGround) {
       const canHeal =
         this.canAbsorb && store.flesh >= ABSORB_COST && store.health < store.maxHealth;
 
@@ -378,6 +378,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.play("vigile-idle-anim", true);
         return;
       }
+    }
+
+    // ---------- parade ----------
+    if (this.actions.justDown("parry") && onGround) {
 
       this.parryUntil = time + PARRY.window + effects.parryWindowBonus;
       this.beginState("parry", time, PARRY.window + effects.parryWindowBonus + PARRY.recovery);
