@@ -70,11 +70,9 @@ def plate(source, mask):
             channel[hole] = channel[idx[0][hole], idx[1][hole]]
             rgba[..., c] = channel
 
-    # le remplissage ne doit jamais inventer de matiere opaque en plein vide
+    # jamais de matiere inventee hors de la silhouette d'origine
     alpha = np.array(source.getchannel("A"), dtype=np.float32)
-    kept = alpha * (1.0 - weight)
-    filled = rgba[..., 3].astype(np.float32) * weight
-    rgba[..., 3] = np.clip(kept + filled * 0.85, 0, 255).astype(np.uint8)
+    rgba[..., 3] = np.minimum(alpha, rgba[..., 3].astype(np.float32)).astype(np.uint8)
     return Image.fromarray(rgba, "RGBA")
 
 
@@ -90,17 +88,24 @@ def animate(source, index):
     fall, spasm = suffering(t)
 
     head_mask = soft_mask(HEAD_POLY, 3)
-    torso_mask = soft_mask(TORSO_POLY, 5)
-
-    result = plate(source, head_mask)
+    torso_mask = soft_mask(TORSO_POLY, 6)
 
     # --- respiration : etirement vertical ancre sur le bassin ------------
-    torso = extract(result, torso_mask)
-    breath = 1.0 + 0.018 * ((sin(2.0 * pi * t + 0.9) + 1.0) / 2.0) + 0.008 * spasm
+    breath = 1.0 + 0.014 * ((sin(2.0 * pi * t + 0.9) + 1.0) / 2.0) + 0.006 * spasm
+    torso = extract(source, torso_mask)
     stretched = torso.resize((FRAME_W, round(FRAME_H * breath)), Image.Resampling.BICUBIC)
-    torso_plate = plate(result, torso_mask)
-    torso_plate.alpha_composite(stretched, (0, TORSO_ANCHOR_Y - round(TORSO_ANCHOR_Y * breath)))
-    result = torso_plate
+    result = source.copy()
+    result.alpha_composite(stretched, (0, TORSO_ANCHOR_Y - round(TORSO_ANCHOR_Y * breath)))
+
+    # --- tete : la nuque tombe puis se redresse par saccade --------------
+    result = plate(result, head_mask)
+    head = extract(source, head_mask)
+    angle = -6.5 * (fall / 2.0) + 3.0 * spasm
+    head = head.rotate(angle, resample=Image.Resampling.BICUBIC, center=NECK)
+    dy = round(4.0 * (fall / 2.0) - 2.0 * spasm)
+    dx = round(1.5 * sin(2.0 * pi * t + pi / 3.0) + spasm)
+    result.alpha_composite(head, (dx, dy))
+
 
     # --- tete : la nuque tombe puis se redresse par saccade --------------
     head = extract(source, head_mask)
