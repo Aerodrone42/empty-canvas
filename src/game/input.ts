@@ -77,6 +77,7 @@ const TRACKED: ActionId[] = [
   "attack",
   "dodge",
   "parry",
+  "absorb",
   "special",
 ];
 

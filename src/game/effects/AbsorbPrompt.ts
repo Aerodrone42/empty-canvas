@@ -60,11 +60,11 @@ export class AbsorbPrompt {
 
     if (visible) {
       const pad = this.root.scene.input.gamepad?.getPad(0);
-      const binding = useBindingsStore.getState().bindings.parry;
+      const binding = useBindingsStore.getState().bindings.absorb;
       const raw = pad?.connected
         ? padLabel(binding.pad, detectPadBrand())
         : keyLabel(binding.key);
-      const label = raw && raw.trim() && raw.trim() !== "—" ? raw.trim() : "S";
+      const label = raw && raw.trim() && raw.trim() !== "—" ? raw.trim() : "C";
       if (label !== this.label) this.redraw(label);
     }
     this.shown = visible;

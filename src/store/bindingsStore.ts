@@ -7,6 +7,7 @@ export type ActionId =
   | "attack"
   | "dodge"
   | "parry"
+  | "absorb"
   | "special"
   | "interact"
   | "pause"
@@ -28,6 +29,7 @@ export const ACTION_LABELS: Record<ActionId, string> = {
   attack: "Frapper (maintenir = coup lourd)",
   dodge: "Esquive / roulade",
   parry: "Parade",
+  absorb: "Absorber le sang (soin)",
   special: "Rugissement de Chair",
   interact: "Interagir (autel de sang)",
   pause: "Pause",
@@ -41,6 +43,7 @@ export const ACTION_ORDER: ActionId[] = [
   "attack",
   "dodge",
   "parry",
+  "absorb",
   "special",
   "interact",
   "pause",
@@ -54,6 +57,7 @@ export const DEFAULT_BINDINGS: Bindings = {
   attack: { key: "KeyE", pad: 2 },
   dodge: { key: "ShiftLeft", pad: 1 },
   parry: { key: "KeyA", pad: 4 },
+  absorb: { key: "KeyC", pad: 6 },
   special: { key: "KeyR", pad: 5 },
   interact: { key: "KeyS", pad: 3 },
   pause: { key: "Escape", pad: 9 },
