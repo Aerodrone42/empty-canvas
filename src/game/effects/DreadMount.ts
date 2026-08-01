@@ -48,7 +48,7 @@ const PIVOTS: Record<string, { x: number; y: number }> = {
 /** largeur affichee de la bete entiere, ailes deployees */
 const MOUNT_W = 470;
 /** hauteur de croisiere dans le ciel */
-const CRUISE_Y = 330;
+const CRUISE_Y = 400;
 /** parallaxe : la bete est loin derriere l'architecture de premier plan */
 const SCROLL_FACTOR = 0.55;
 /** cadence du battement : lente et pesante, c'est une carcasse */
