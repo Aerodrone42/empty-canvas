@@ -30,7 +30,7 @@ const FRAME_W = 512;
 /** largeur affichee de la bete, ailes deployees */
 const MOUNT_W = 620;
 /** altitude de croisiere (hors de portee) */
-const HIGH_Y = 300;
+const HIGH_Y = 480;
 /** altitude d'attaque : a hauteur du heros */
 const LOW_OFFSET = 150;
 
