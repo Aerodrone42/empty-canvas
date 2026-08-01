@@ -438,32 +438,41 @@ export class GameScene extends Phaser.Scene {
   private resolvePlayerStrike(strike: Strike, damageScale = 1) {
     const store = useGameStore.getState();
     const effects = store.effects;
-    const reach = strike.reach + effects.bonusReach;
-    const damage = strike.damage * effects.damageMult * damageScale;
-    const radial = strike.shape === "radial";
-    const originX = radial ? this.player.x : this.player.x + this.player.facingDirection * (reach / 2);
+    const base = strike.damage * effects.damageMult * damageScale;
+    const box = strikeBox(
+      strike,
+      this.player.x,
+      this.player.y,
+      this.player.facingDirection,
+      effects.bonusReach,
+    );
 
     let hits = 0;
     for (const enemy of this.enemies) {
       if (!enemy.active || enemy.isDead) continue;
-      const withinX = Math.abs(enemy.x - originX) < reach;
-      const withinY = Math.abs(enemy.y - this.player.y) < strike.vertical;
-      if (withinX && withinY) {
-        hits += 1;
-        enemy.takeHit(damage, {
-          knockback: strike.knockback,
-          breakGuard: strike.breakGuard,
-          fromX: this.player.x,
-        });
-      }
+      const hb = enemy.hurtbox;
+      if (!boxHitsBody(box, hb.cx, hb.cy, hb.halfW, hb.halfH)) continue;
+
+      hits += 1;
+      // zone faible (tete / haut du torse) ou tirage a 5 % : critique
+      const weakSpot = box.top <= enemy.weakPointY && box.bottom >= enemy.weakPointY;
+      const crit = Math.random() < CRIT_CHANCE || (weakSpot && Math.random() < CRIT_CHANCE);
+      enemy.takeHit(crit ? base * CRIT_MULT : base, {
+        knockback: strike.knockback,
+        breakGuard: strike.breakGuard,
+        fromX: this.player.x,
+        crit,
+      });
     }
 
     // la monture d'effroi n'encaisse que lorsqu'elle descend au contact
     if (this.mount && this.mount.isVulnerable) {
-      const withinX = Math.abs(this.mount.x - originX) < reach + 90;
-      const withinY = Math.abs(this.mount.y - this.player.y) < strike.vertical + 90;
-      if (withinX && withinY && this.mount.takeHit(damage, this.player.x)) {
-        hits += 1;
+      const hb = this.mount.hurtbox;
+      if (boxHitsBody(box, hb.cx, hb.cy, hb.halfW, hb.halfH)) {
+        const crit = Math.random() < CRIT_CHANCE;
+        if (this.mount.takeHit(crit ? base * CRIT_MULT : base, this.player.x, crit)) {
+          hits += 1;
+        }
       }
     }
 
@@ -475,6 +484,7 @@ export class GameScene extends Phaser.Scene {
 
     this.cameras.main.shake(70, 0.004);
   }
+
 
 
   private resolveEnemyStrike(amount: number, source?: Enemy) {
