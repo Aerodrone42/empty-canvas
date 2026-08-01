@@ -169,17 +169,17 @@ export class BloodAltar {
     const g = this.blood;
     g.clear();
 
-    const surface = this.lit ? 0xb52230 : 0x4a161a;
-    const stream = this.lit ? 0x8e1c26 : 0x2c1013;
-    const shine = this.lit ? 0xff8a92 : 0x6a2a2f;
+    const surface = this.lit ? 0x6e1218 : 0x2e0d10;
+    const stream = this.lit ? 0x4a0d12 : 0x1b080a;
+    const shine = this.lit ? 0xa8434a : 0x4a1a1e;
 
     // surface du sang dans la vasque : ondulation lente
     const wob = 1 + Math.sin(time / 520) * 0.02;
-    g.fillStyle(surface, this.lit ? 0.95 : 0.8);
-    g.fillEllipse(0, this.bowlY + 2, this.bowlRx * 1.42 * wob, this.bowlRx * 0.42 * wob);
-    const sx = Math.sin(time / 1400) * this.bowlRx * 0.35;
-    g.fillStyle(shine, this.lit ? 0.4 : 0.14);
-    g.fillEllipse(sx, this.bowlY, this.bowlRx * 0.34, 3);
+    g.fillStyle(surface, this.lit ? 0.9 : 0.75);
+    g.fillEllipse(0, this.bowlY + 2, this.bowlRx * 1.1 * wob, this.bowlRx * 0.4 * wob);
+    const sx = Math.sin(time / 1400) * this.bowlRx * 0.3;
+    g.fillStyle(shine, this.lit ? 0.18 : 0.08);
+    g.fillEllipse(sx, this.bowlY, this.bowlRx * 0.3, 3);
 
     for (const r of this.rivulets) {
       const breathe = 0.7 + Math.sin(time * r.speed + r.phase) * 0.3;
