@@ -66,10 +66,11 @@ export class BootScene extends Phaser.Scene {
     );
 
     // monture funebre : pieces separees assemblees et animees par pivot
-    this.load.image("dread-mount-body", "/assets/sprites/props/dread_mount_body.png");
-    this.load.image("dread-mount-wing", "/assets/sprites/props/dread_mount_wing.png");
-    this.load.image("dread-mount-tail", "/assets/sprites/props/dread_mount_tail.png");
-    this.load.image("dread-mount-victim", "/assets/sprites/props/dread_mount_victim.png");
+    this.load.image("dread-body", "/assets/sprites/props/dread_body.png");
+    this.load.image("dread-wing-top", "/assets/sprites/props/dread_wing_top.png");
+    this.load.image("dread-wing-bot", "/assets/sprites/props/dread_wing_bot.png");
+    this.load.image("dread-tail", "/assets/sprites/props/dread_tail.png");
+    this.load.image("dread-victim", "/assets/sprites/props/dread_victim.png");
 
 
     // chevalet d'ecartellement du corridor : bati, supplicie et bourreaux
