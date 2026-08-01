@@ -39,10 +39,10 @@ export const PENITENT_CHAR_H = 118;
 export const SUPPLIANT_CHAR_H = 62;
 
 export const SHEETS: SheetDef[] = [
-  // --- Vigile Muet (heros) ---
+  // --- Vigile Muet (heros) : feuilles 256x192 decoupees des planches v2 ---
   {
     key: "vigile-idle",
-    path: `${SPRITES}/vigile_muet_idle_spritesheet.png`,
+    path: `${HERO}/vigile_muet_idle_spritesheet.png`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
     frameCount: 4,
@@ -52,44 +52,75 @@ export const SHEETS: SheetDef[] = [
   },
   {
     key: "vigile-walk",
-    path: `${SPRITES}/vigile_muet_walk_spritesheet.png`,
+    path: `${HERO}/vigile_muet_walk_spritesheet.png`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
-    frameCount: 5,
+    frameCount: 6,
     frameRate: 10,
     repeat: -1,
     spacing: 0,
   },
   {
     key: "vigile-attack",
-    path: `${SPRITES}/vigile_muet_attack_spritesheet.png`,
+    path: `${HERO}/vigile_muet_attack_spritesheet.png`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
-    frameCount: 5,
+    frameCount: 4,
     frameRate: 14,
     repeat: 0,
     spacing: 0,
   },
   {
     key: "vigile-dodge",
-    path: `${SPRITES}/vigile_muet_dodge_spritesheet.png`,
+    path: `${HERO}/vigile_muet_dodge_spritesheet.png`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
-    frameCount: 8,
+    frameCount: 5,
     frameRate: 20,
     repeat: 0,
     spacing: 0,
   },
   {
     key: "vigile-jump",
-    path: `${SPRITES}/vigile_muet_jump_spritesheet.png`,
+    path: `${HERO}/vigile_muet_jump_spritesheet.png`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
-    frameCount: 6,
+    frameCount: 3,
     frameRate: 12,
     repeat: 0,
     spacing: 0,
   },
+  {
+    key: "vigile-parry",
+    path: `${HERO}/vigile_muet_parry_spritesheet.png`,
+    frameWidth: HERO_FRAME_W,
+    frameHeight: HERO_FRAME_H,
+    frameCount: 3,
+    frameRate: 18,
+    repeat: 0,
+    spacing: 0,
+  },
+  {
+    key: "vigile-hurt",
+    path: `${HERO}/vigile_muet_hurt_spritesheet.png`,
+    frameWidth: HERO_FRAME_W,
+    frameHeight: HERO_FRAME_H,
+    frameCount: 2,
+    frameRate: 12,
+    repeat: 0,
+    spacing: 0,
+  },
+  {
+    key: "vigile-death",
+    path: `${HERO}/vigile_muet_death_spritesheet.png`,
+    frameWidth: HERO_FRAME_W,
+    frameHeight: HERO_FRAME_H,
+    frameCount: 5,
+    frameRate: 9,
+    repeat: 0,
+    spacing: 0,
+  },
+
 
 
   // --- Penitent-Greffe (lourd, lent, resistant) ---
