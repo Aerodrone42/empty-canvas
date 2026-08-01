@@ -25,8 +25,8 @@ const BASE_H = 220;
 export const FLAME_W = 81;
 export const FLAME_H = 102;
 /** decalage de la flamme par rapport au coin haut-gauche du socle */
-const FLAME_DX = 40;
-const FLAME_DY = -55;
+const FLAME_DX = 37;
+const FLAME_DY = -46;
 /** hauteur du foyer au-dessus du pied, en px source */
 const FIRE_UP = 180;
 
