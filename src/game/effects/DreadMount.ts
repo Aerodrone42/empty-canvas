@@ -2,73 +2,71 @@ import Phaser from "phaser";
 
 /**
  * Monture funebre : le dragon squelettique monte par son cavalier encapuchonne,
- * decoupe directement dans l'illustration de reference.
+ * avec le supplicie coince dans la gueule.
  *
- * Les cinq calques (corps+cavalier+crane, aile haute, aile basse, queue,
- * supplicie dans la gueule) proviennent du meme dessin et conservent leurs
- * coordonnees d'origine : au repos, l'assemblage reproduit l'illustration au
- * pixel pres. L'animation ne fait que pivoter chaque calque autour de son
- * articulation reelle, avec une amplitude assez faible pour que la silhouette
- * du dessin ne soit jamais trahie.
+ * C'est un sprite unique : chaque frame est l'illustration complete, deformee
+ * pour produire le battement des ailes et l'ondulation de la queue. Le cadre de
+ * la feuille englobe tout le mouvement, donc rien ne peut etre rogne, et la
+ * silhouette du dessin d'origine est conservee telle quelle.
  *
  * Purement decoratif : aucun corps physique, aucune collision.
  */
 
-export const TEX_MOUNT_BODY = "dread-body";
-export const TEX_MOUNT_WING_TOP = "dread-wing-top";
-export const TEX_MOUNT_WING_BOT = "dread-wing-bot";
-export const TEX_MOUNT_TAIL = "dread-tail";
-export const TEX_MOUNT_VICTIM = "dread-victim";
+export const TEX_MOUNT_FLY = "dread-mount-fly";
+export const TEX_MOUNT_FLY_FED = "dread-mount-fly-fed";
+export const TEX_MOUNT_SWALLOW = "dread-mount-swallow";
 
-/** cadre source de l'illustration */
-const SRC_W = 1200;
-const SRC_H = 896;
-/** centre de reference de la bete dans ce cadre */
-const CX = 603;
-const CY = 463;
+export const ANIM_MOUNT_FLY = "dread-mount-fly-anim";
+export const ANIM_MOUNT_FLY_FED = "dread-mount-fly-fed-anim";
+export const ANIM_MOUNT_SWALLOW = "dread-mount-swallow-anim";
 
-/** coin haut-gauche de chaque calque dans le cadre source (issu de la decoupe) */
-const OFFSETS: Record<string, { x: number; y: number }> = {
-  [TEX_MOUNT_BODY]: { x: 11, y: 37 },
-  [TEX_MOUNT_WING_TOP]: { x: 13, y: 39 },
-  [TEX_MOUNT_WING_BOT]: { x: 225, y: 596 },
-  [TEX_MOUNT_TAIL]: { x: 43, y: 560 },
-  [TEX_MOUNT_VICTIM]: { x: 1033, y: 476 },
-};
-
-/** articulation reelle de chaque calque, en coordonnees source */
-const PIVOTS: Record<string, { x: number; y: number }> = {
-  [TEX_MOUNT_BODY]: { x: CX, y: CY },
-  [TEX_MOUNT_WING_TOP]: { x: 601, y: 249 },
-  [TEX_MOUNT_WING_BOT]: { x: 1014, y: 608 },
-  [TEX_MOUNT_TAIL]: { x: 516, y: 648 },
-  [TEX_MOUNT_VICTIM]: { x: 1072, y: 508 },
-};
-
+/** cadre d'une frame de la feuille */
+const FRAME_W = 696;
 /** largeur affichee de la bete entiere, ailes deployees */
-const MOUNT_W = 470;
+const MOUNT_W = 500;
 /** hauteur de croisiere dans le ciel */
 const CRUISE_Y = 400;
 /** parallaxe : la bete est loin derriere l'architecture de premier plan */
 const SCROLL_FACTOR = 0.55;
-/** cadence du battement : lente et pesante, c'est une carcasse */
-const FLAP_SPEED = 1.9;
+
+/** enregistre les trois animations, une seule fois pour la scene */
+export function registerDreadMountAnims(scene: Phaser.Scene) {
+  if (!scene.anims.exists(ANIM_MOUNT_FLY)) {
+    scene.anims.create({
+      key: ANIM_MOUNT_FLY,
+      frames: scene.anims.generateFrameNumbers(TEX_MOUNT_FLY, { start: 0, end: 7 }),
+      frameRate: 9,
+      repeat: -1,
+    });
+  }
+  if (!scene.anims.exists(ANIM_MOUNT_FLY_FED)) {
+    scene.anims.create({
+      key: ANIM_MOUNT_FLY_FED,
+      frames: scene.anims.generateFrameNumbers(TEX_MOUNT_FLY_FED, { start: 0, end: 7 }),
+      frameRate: 9,
+      repeat: -1,
+    });
+  }
+  if (!scene.anims.exists(ANIM_MOUNT_SWALLOW)) {
+    scene.anims.create({
+      key: ANIM_MOUNT_SWALLOW,
+      frames: scene.anims.generateFrameNumbers(TEX_MOUNT_SWALLOW, { start: 0, end: 4 }),
+      frameRate: 8,
+      repeat: 0,
+    });
+  }
+}
 
 export class DreadMount {
   private readonly scene: Phaser.Scene;
-  private readonly root: Phaser.GameObjects.Container;
-  private readonly wingTop: Phaser.GameObjects.Image;
-  private readonly wingBot: Phaser.GameObjects.Image;
-  private readonly tail: Phaser.GameObjects.Image;
-  private readonly victim: Phaser.GameObjects.Image;
+  private readonly sprite: Phaser.GameObjects.Sprite;
   private readonly gore: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly viewWidth: number;
-  private readonly scale: number;
   private timer?: Phaser.Time.TimerEvent;
   private flying = false;
   private vx = 0;
   private baseY = CRUISE_Y;
-  private flap = 0;
+  private bob = 0;
   private swallowAt = 0;
   private swallowed = false;
   private destroyed = false;
@@ -76,24 +74,13 @@ export class DreadMount {
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     this.viewWidth = scene.scale.width;
-    this.scale = MOUNT_W / SRC_W;
 
-    const body = this.piece(TEX_MOUNT_BODY);
-    this.wingTop = this.piece(TEX_MOUNT_WING_TOP);
-    this.wingBot = this.piece(TEX_MOUNT_WING_BOT);
-    this.tail = this.piece(TEX_MOUNT_TAIL);
-    this.victim = this.piece(TEX_MOUNT_VICTIM);
+    registerDreadMountAnims(scene);
 
-    // ordre de profondeur : l'aile haute passe derriere le cavalier, la
-    // membrane basse drape devant le poitrail.
-    this.root = scene.add
-      .container(-9999, CRUISE_Y, [
-        this.wingTop,
-        this.tail,
-        body,
-        this.wingBot,
-        this.victim,
-      ])
+    this.sprite = scene.add
+      .sprite(-9999, CRUISE_Y, TEX_MOUNT_FLY, 0)
+      .setOrigin(0.5, 0.5)
+      .setScale(MOUNT_W / FRAME_W)
       .setScrollFactor(SCROLL_FACTOR)
       .setDepth(-7)
       .setVisible(false);
@@ -114,29 +101,18 @@ export class DreadMount {
       .setScrollFactor(SCROLL_FACTOR)
       .setDepth(-6);
 
+    this.sprite.on(
+      Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIM_MOUNT_SWALLOW,
+      () => {
+        if (!this.destroyed) this.sprite.play(ANIM_MOUNT_FLY_FED);
+      },
+    );
+
     this.timer = scene.time.addEvent({
       delay: 2500,
       callback: () => this.launch(),
       loop: false,
     });
-  }
-
-  /**
-   * Positionne un calque : son pivot local tombe exactement sur l'articulation
-   * du dessin, et sa position replace le calque a sa place d'origine.
-   */
-  private piece(key: string): Phaser.GameObjects.Image {
-    const tex = this.scene.textures.get(key).getSourceImage();
-    const off = OFFSETS[key];
-    const piv = PIVOTS[key];
-    return this.scene.add
-      .image(
-        (piv.x - CX) * this.scale,
-        (piv.y - CY) * this.scale,
-        key,
-      )
-      .setOrigin((piv.x - off.x) / tex.width, (piv.y - off.y) / tex.height)
-      .setScale(this.scale);
   }
 
   private ensureGoreTexture() {
@@ -167,20 +143,19 @@ export class DreadMount {
     const left = cam.scrollX * SCROLL_FACTOR - margin;
     const right = cam.scrollX * SCROLL_FACTOR + this.viewWidth + margin;
 
-    this.root.x = toRight ? left : right;
+    this.sprite.x = toRight ? left : right;
     this.vx = (toRight ? 1 : -1) * Phaser.Math.Between(95, 130);
     this.baseY = Phaser.Math.Between(CRUISE_Y - 40, CRUISE_Y + 60);
-    this.flap = 0;
+    this.bob = 0;
     this.swallowed = false;
     this.swallowAt = Phaser.Math.Between(1800, 3400);
 
-    // le dessin regarde vers la droite : on retourne tout le groupe si besoin
-    this.root.setScale(toRight ? 1 : -1, 1);
+    // le dessin regarde vers la droite : on retourne le sprite si besoin
+    this.sprite.setFlipX(!toRight);
+    this.sprite.play(ANIM_MOUNT_FLY);
 
-    this.victim.setVisible(true).setAlpha(1).setScale(this.scale);
-    this.root.setAlpha(0);
-    this.root.setVisible(true);
-    this.scene.tweens.add({ targets: this.root, alpha: 1, duration: 900 });
+    this.sprite.setAlpha(0).setAngle(0).setVisible(true);
+    this.scene.tweens.add({ targets: this.sprite, alpha: 1, duration: 900 });
 
     this.flying = true;
   }
@@ -188,26 +163,18 @@ export class DreadMount {
   /** la gueule se referme : gerbe de sang, le supplicie est aspire */
   private swallow() {
     this.swallowed = true;
+    this.sprite.play(ANIM_MOUNT_SWALLOW);
 
-    const dir = this.root.scaleX >= 0 ? 1 : -1;
-    const mouthX = this.root.x + dir * (1090 - CX) * this.scale;
-    const mouthY = this.root.y + (560 - CY) * this.scale;
+    const dir = this.sprite.flipX ? -1 : 1;
+    const s = this.sprite.scaleX;
+    const mouthX = this.sprite.x + dir * 200 * Math.abs(s);
+    const mouthY = this.sprite.y + 40 * Math.abs(s);
     this.gore.setPosition(mouthX, mouthY);
     this.gore.explode(34);
 
-    this.scene.tweens.add({
-      targets: this.victim,
-      alpha: 0,
-      scaleX: this.scale * 0.35,
-      scaleY: this.scale * 0.5,
-      duration: 220,
-      ease: "Quad.easeIn",
-      onComplete: () => this.victim.setVisible(false),
-    });
-
     // coup de machoire : la bete pique du nez puis se redresse
     this.scene.tweens.add({
-      targets: this.root,
+      targets: this.sprite,
       angle: { from: 0, to: dir * 4 },
       duration: 140,
       yoyo: true,
@@ -220,23 +187,12 @@ export class DreadMount {
     if (!this.flying || this.destroyed) return;
 
     const dt = delta / 1000;
-    this.root.x += this.vx * dt;
-    this.flap += dt * FLAP_SPEED;
-
-    const beat = Math.sin(this.flap);
-    // Battement contenu : les deux membranes travaillent en opposition autour
-    // de la pose exacte du dessin.
-    this.wingTop.setAngle(beat * 5.5);
-    this.wingBot.setAngle(Math.sin(this.flap + Math.PI) * 4);
-    // La queue ondule a contretemps, tres legerement.
-    this.tail.setAngle(Math.sin(this.flap - 1.0) * 3);
-    // Tangage du corps sur la poussee des ailes.
-    this.root.y = this.baseY - beat * 7;
+    this.sprite.x += this.vx * dt;
+    this.bob += dt * 1.9;
+    this.sprite.y = this.baseY - Math.sin(this.bob) * 7;
 
     if (!this.swallowed) {
       this.swallowAt -= delta;
-      // le supplicie se debat par soubresauts
-      this.victim.setAngle(Math.sin(this.flap * 6.3) * 5);
       if (this.swallowAt <= 0) this.swallow();
     }
 
@@ -245,10 +201,10 @@ export class DreadMount {
     const left = cam.scrollX * SCROLL_FACTOR - margin;
     const right = cam.scrollX * SCROLL_FACTOR + this.viewWidth + margin;
 
-    if (this.root.x < left - 40 || this.root.x > right + 40) {
+    if (this.sprite.x < left - 40 || this.sprite.x > right + 40) {
       this.flying = false;
-      this.root.setVisible(false);
-      this.root.setAngle(0);
+      this.sprite.setVisible(false).setAngle(0);
+      this.sprite.stop();
       this.scheduleNext();
     }
   }
@@ -257,9 +213,8 @@ export class DreadMount {
     this.destroyed = true;
     this.timer?.remove();
     this.timer = undefined;
-    this.scene.tweens.killTweensOf(this.root);
-    this.scene.tweens.killTweensOf(this.victim);
-    this.root.destroy(true);
+    this.scene.tweens.killTweensOf(this.sprite);
+    this.sprite.destroy();
     this.gore.destroy();
   }
 }
