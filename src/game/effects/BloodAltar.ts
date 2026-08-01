@@ -137,21 +137,21 @@ export class BloodAltar {
 
   private setLit(lit: boolean, silent = false) {
     this.lit = lit;
-    // eteint : pierre assombrie ; scelle : teinte normale
-    this.sprite.setTint(lit ? 0xffffff : 0x7a6e72);
-    this.glow.setAlpha(lit ? 0.8 : 0.16);
+    // pierre chaude accordee au dallage/balustrade ; eteinte = plus sombre
+    this.sprite.setTint(lit ? 0x8a7f70 : 0x6b6158);
+    this.glow.setAlpha(lit ? 0.4 : 0.1);
     if (lit) this.haze?.start();
     else this.haze?.stop();
     if (lit && !silent) {
-      this.scene.cameras.main.flash(160, 120, 20, 30);
+      this.scene.cameras.main.flash(140, 70, 12, 18);
       this.scene.tweens.add({
         targets: this.glow,
-        scale: { from: 1.8, to: 0.8 },
+        scale: { from: 1.1, to: 0.55 },
         duration: 520,
         ease: "Cubic.easeOut",
       });
       const ring = this.scene.add.circle(0, this.bowlY, 8);
-      ring.setStrokeStyle(3, 0xd23a44, 0.9);
+      ring.setStrokeStyle(3, 0x8e1c26, 0.8);
       this.root.add(ring);
       this.scene.tweens.add({
         targets: ring,
