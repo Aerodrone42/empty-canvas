@@ -37,6 +37,7 @@ export class DreadMount {
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     this.viewWidth = scene.scale.width;
+    console.log('MOUNT ctor', scene.textures.exists(TEX_MOUNT_PREY));
 
     const tex = scene.textures.get(TEX_MOUNT_PREY).get(0);
     const scale = MOUNT_W / tex.width;
