@@ -67,7 +67,7 @@ export class DreadMount {
 
     // premier passage rapidement apres l'entree dans la salle
     this.timer = scene.time.addEvent({
-      delay: 4000,
+      delay: 2500,
       callback: () => this.launch(),
       loop: false,
     });
@@ -104,7 +104,7 @@ export class DreadMount {
     const right = cam.scrollX * SCROLL_FACTOR + this.viewWidth + margin;
 
     this.sprite.x = toRight ? left : right;
-    this.vx = (toRight ? 1 : -1) * Phaser.Math.Between(34, 52);
+    this.vx = (toRight ? 1 : -1) * Phaser.Math.Between(120, 155);
     this.baseY = Phaser.Math.Between(CRUISE_Y - 60, CRUISE_Y + 70);
     this.phase = Math.random() * Math.PI * 2;
     this.swallowed = false;
