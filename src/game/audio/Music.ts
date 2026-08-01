@@ -25,10 +25,13 @@ export type MusicOptions = {
   suspense?: boolean;
 };
 
+/** duree du fondu enchaine entre deux salles (ms) */
+const CROSSFADE_MS = 1200;
+
 /**
  * Bande-son : une piste en boucle par salle, persistante d'un restart a
- * l'autre. Le son est attache au jeu (pas a la scene) pour ne jamais se
- * couper lors d'un changement de salle.
+ * l'autre. Le passage d'une salle a l'autre se fait en fondu enchaine :
+ * l'ancienne piste descend pendant que la nouvelle monte.
  */
 export class MusicDirector {
   private track?: Phaser.Sound.BaseSound;
@@ -45,20 +48,37 @@ export class MusicDirector {
       volume = SUSPENSE_VOLUME;
     }
 
-    // coupe les pistes des autres salles si elles tournent encore
+    // fondu sortant des pistes des autres salles encore en cours
     for (const other of ROOM_TRACKS) {
       if (other === key) continue;
-      const sound = manager.get(other);
-      if (sound?.isPlaying) sound.stop();
+      const sound = manager.get(other) as Phaser.Sound.BaseSound & {
+        volume?: number;
+      };
+      if (!sound?.isPlaying) continue;
+      scene.tweens.add({
+        targets: sound,
+        volume: 0,
+        duration: CROSSFADE_MS,
+        onComplete: () => sound.stop(),
+      });
     }
 
     // reprend la piste deja en cours si elle existe
     const existing = manager.get(key);
-    this.track = existing ?? manager.add(key, { loop: true, volume });
+    this.track = existing ?? manager.add(key, { loop: true, volume: 0 });
 
     const start = () => {
-      if (!this.track) return;
-      if (!this.track.isPlaying) this.track.play({ loop: true, volume });
+      const track = this.track as
+        | (Phaser.Sound.BaseSound & { volume: number })
+        | undefined;
+      if (!track) return;
+      if (!track.isPlaying) track.play({ loop: true, volume: 0 });
+      // fondu entrant vers le volume cible de la salle
+      scene.tweens.add({
+        targets: track,
+        volume,
+        duration: CROSSFADE_MS,
+      });
     };
 
     if (manager.locked) {
@@ -70,6 +90,7 @@ export class MusicDirector {
     // relance automatique si la piste se termine (fin de buffer, perte de boucle)
     this.track.on(Phaser.Sound.Events.COMPLETE, start);
   }
+
 
   /** conserve pour compatibilite : la musique ne change pas selon le combat */
   setCombat(_active: boolean) {
