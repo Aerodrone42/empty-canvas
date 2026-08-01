@@ -18,6 +18,14 @@ export function Hud() {
   const absorbing = useGameStore((s) => s.absorbing);
   const absorbProgress = useGameStore((s) => s.absorbProgress);
   const bindings = useBindingsStore((s) => s.bindings);
+  const lastUnlocked = useGameStore((s) => s.lastUnlocked);
+  const clearLastUnlocked = useGameStore((s) => s.clearLastUnlocked);
+
+  useEffect(() => {
+    if (!lastUnlocked) return;
+    const id = window.setTimeout(clearLastUnlocked, 6000);
+    return () => window.clearTimeout(id);
+  }, [lastUnlocked, clearLastUnlocked]);
 
   const dodgePct = useDodgeCharge(dodgeReadyAt, dodgeCooldownMs);
   const specialCost = Math.round(SPECIAL_COST * effects.specialCostMult);
@@ -38,6 +46,17 @@ export function Hud() {
           animation: critical ? "pulse 1.6s ease-in-out infinite" : undefined,
         }}
       />
+
+      {lastUnlocked && (
+        <div className="pointer-events-none absolute inset-x-0 top-6 z-20 flex justify-center">
+          <div className="border border-accent/60 bg-card/90 px-6 py-2 text-center">
+            <p className="font-display text-[0.6rem] tracking-[0.4em] text-accent uppercase">
+              Greffe · {lastUnlocked.name}
+            </p>
+            <p className="mt-1 text-[0.7rem] text-bone/80">{lastUnlocked.summary}</p>
+          </div>
+        </div>
+      )}
 
       {absorbing && (
         <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 flex justify-center">
@@ -67,13 +86,40 @@ export function Hud() {
 
       <div className="pointer-events-none absolute top-0 left-0 z-10 flex flex-col gap-2 p-5">
 
-        <Gauge
-          label="Vitalité"
-          value={health}
-          max={maxHealth}
-          barClass={critical ? "bg-destructive animate-pulse" : "bg-primary"}
-          width="w-56"
-        />
+        <div className="w-56">
+          <p className="font-display text-[0.55rem] tracking-[0.4em] text-muted-foreground uppercase">
+            Vitalité{" "}
+            {effects.bonusHealth > 0 && (
+              <span className="text-accent">+{effects.bonusHealth} greffés</span>
+            )}
+          </p>
+          <div className="relative mt-1 h-2 border border-border bg-card/80">
+            <div
+              className={`h-full transition-[width] duration-200 ${
+                critical ? "bg-destructive animate-pulse" : "bg-primary"
+              }`}
+              style={{ width: `${Math.max(0, Math.min(100, (health / maxHealth) * 100))}%` }}
+            />
+            {effects.bonusHealth > 0 && (
+              <>
+                {/* portion de vitalite issue des greffes, teintee a part */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 bg-accent/60"
+                  style={{
+                    left: `${(100 / maxHealth) * 100}%`,
+                    width: `${Math.max(0, ((Math.min(health, maxHealth) - 100) / maxHealth) * 100)}%`,
+                  }}
+                />
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 w-px bg-bone/70"
+                  style={{ left: `${(100 / maxHealth) * 100}%` }}
+                />
+              </>
+            )}
+          </div>
+        </div>
         <Gauge label="Chair" value={flesh} max={maxFlesh} barClass="bg-accent" width="w-40" />
         <Gauge
           label="Esquive"
