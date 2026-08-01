@@ -1,10 +1,11 @@
 import Phaser from "phaser";
 
 import { BACKDROPS, FRAME_SPACING, SHEETS } from "../assets";
-import { MUSIC_AMBIENT, MUSIC_CHOIR, MUSIC_COMBAT } from "../audio/Music";
+import { MUSIC_AMBIENT, MUSIC_CHOIR, MUSIC_COMBAT, MUSIC_SUSPENSE } from "../audio/Music";
 import ambientTrack from "@/assets/music_obscura_piano.mp3.asset.json";
 import combatTrack from "@/assets/music_sinister_power.mp3.asset.json";
 import choirTrack from "@/assets/music_gothic_choir.mp3.asset.json";
+import suspenseTrack from "@/assets/music_gothic_suspense.mp3.asset.json";
 
 
 export class BootScene extends Phaser.Scene {
@@ -114,6 +115,7 @@ export class BootScene extends Phaser.Scene {
     this.load.audio(MUSIC_AMBIENT, ambientTrack.url);
     this.load.audio(MUSIC_COMBAT, combatTrack.url);
     this.load.audio(MUSIC_CHOIR, choirTrack.url);
+    this.load.audio(MUSIC_SUSPENSE, suspenseTrack.url);
   }
 
 
