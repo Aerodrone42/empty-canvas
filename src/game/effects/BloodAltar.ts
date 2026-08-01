@@ -2,6 +2,12 @@ import Phaser from "phaser";
 
 import { isKeyJustDown } from "../input";
 import { padFor } from "../input";
+import {
+  detectPadBrand,
+  keyLabel,
+  padLabel,
+  useBindingsStore,
+} from "@/store/bindingsStore";
 import { useGameStore } from "@/store/gameStore";
 
 /**
@@ -15,7 +21,7 @@ const TEX_ALTAR = "blood-altar";
 const RANGE = 170;
 
 /** hauteur affichee de l'autel (le heros fait ~130px) */
-const PROP_H = 190;
+const PROP_H = 152;
 /** profondeur : sous le heros (depth 5) comme les autres props de sol */
 const DEPTH = -2;
 
@@ -89,11 +95,14 @@ export class BloodAltar {
       .setBlendMode(Phaser.BlendModes.ADD);
 
     this.prompt = scene.add
-      .text(0, -PROP_H - 34, "", {
-        fontFamily: "Georgia, serif",
-        fontSize: "18px",
-        color: "#e0b6ba",
+      .text(0, -PROP_H - 22, "", {
+        fontFamily: "Arial, sans-serif",
+        fontSize: "16px",
+        fontStyle: "bold",
+        color: "#d8c9bb",
+        backgroundColor: "#211b18",
         align: "center",
+        padding: { x: 7, y: 4 },
       })
       .setOrigin(0.5)
       .setAlpha(0);
@@ -137,6 +146,10 @@ export class BloodAltar {
 
   private setLit(lit: boolean, silent = false) {
     this.lit = lit;
+    if (lit) {
+      this.prompt.setText("");
+      this.prompt.setAlpha(0);
+    }
     // pierre chaude accordee au dallage/balustrade ; eteinte = plus sombre
     this.sprite.setTint(lit ? 0x8a7f70 : 0x6b6158);
     this.glow.setAlpha(lit ? 0.4 : 0.1);
@@ -244,7 +257,12 @@ export class BloodAltar {
       return;
     }
 
-    this.prompt.setText(near ? "Sceller le sang" : "");
+    const pad = this.scene.input.gamepad?.getPad(0);
+    const binding = useBindingsStore.getState().bindings.interact;
+    const command = pad?.connected
+      ? padLabel(binding.pad, detectPadBrand())
+      : keyLabel(binding.key);
+    this.prompt.setText(near ? command : "");
     this.prompt.setAlpha(near ? 0.9 : 0);
     if (!near) return;
 
