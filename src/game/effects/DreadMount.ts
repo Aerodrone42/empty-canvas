@@ -20,10 +20,10 @@ export const ANIM_MOUNT_FLY = "dread-mount-fly-anim";
 export const ANIM_MOUNT_FLY_FED = "dread-mount-fly-fed-anim";
 export const ANIM_MOUNT_SWALLOW = "dread-mount-swallow-anim";
 
-/** cadre d'une frame de la feuille */
-const FRAME_W = 696;
+/** cadre d'une frame de la feuille : deja a la taille d'affichage (aucun rescale) */
+const FRAME_W = 512;
 /** largeur affichee de la bete entiere, ailes deployees */
-const MOUNT_W = 500;
+const MOUNT_W = 512;
 /** hauteur de croisiere dans le ciel */
 const CRUISE_Y = 400;
 /** parallaxe : la bete est loin derriere l'architecture de premier plan */
@@ -50,11 +50,8 @@ export function registerDreadMountAnims(scene: Phaser.Scene) {
   if (!scene.anims.exists(ANIM_MOUNT_SWALLOW)) {
     scene.anims.create({
       key: ANIM_MOUNT_SWALLOW,
-      // Les frames 2–4 de l'ancienne feuille déformaient la victime et
-      // pouvaient encore provenir du cache du navigateur. La fermeture nette
-      // utilise les deux poses propres, puis passe directement à la gueule vide.
-      frames: scene.anims.generateFrameNumbers(TEX_MOUNT_SWALLOW, { start: 0, end: 1 }),
-      frameRate: 5,
+      frames: scene.anims.generateFrameNumbers(TEX_MOUNT_SWALLOW, { start: 0, end: 3 }),
+      frameRate: 6,
       repeat: 0,
     });
   }
