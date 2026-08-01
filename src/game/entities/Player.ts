@@ -253,6 +253,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.actions.justDown("jump") ||
       (this.cursors.up ? Phaser.Input.Keyboard.JustDown(this.cursors.up) : false);
     const downHeld = !!this.cursors.down?.isDown || (pad?.axes[1]?.getValue() ?? 0) > 0.5;
+    const upHeld = !!this.cursors.up?.isDown || (pad?.axes[1]?.getValue() ?? 0) < -0.5;
 
     // ---------- etats verrouilles ----------
     if (this.moveState === "dodge") {
@@ -438,10 +439,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // ---------- combo 3 coups (relachement court) ----------
     const lightAttack = releasedHeld > 0 && releasedHeld < HEAVY_CHARGE_MS;
+
+    // coup ascendant : haut maintenu + frappe, au sol comme en l'air
+    if (lightAttack && upHeld && time - this.lastAttackAt >= cooldown) {
+      this.lastAttackAt = time;
+      this.comboStep = 0;
+      this.beginState("attack", time, STRIKES.upper.duration);
+      body.setVelocityX(this.facing * 20);
+      if (onGround) body.setVelocityY(-jumpPower * 0.45);
+      this.play("vigile-attack-anim", true);
+      this.setTint(0xffd7a0);
+      this.emitStrike(STRIKES.upper);
+      this.scene.events.emit("fx-sparks", this.x, this.y - 150);
+      this.rumble(0.45, 150);
+      return;
+    }
+
     if (lightAttack && time - this.lastAttackAt >= cooldown) {
       this.lastAttackAt = time;
       this.comboStep = time <= this.comboExpiresAt ? Math.min(this.comboStep + 1, 2) : 0;
-      const strike = [STRIKES.combo1, STRIKES.combo2, STRIKES.combo3][this.comboStep];
+      const base = [STRIKES.combo1, STRIKES.combo2, STRIKES.combo3][this.comboStep];
+      // en l'air, la zone est relevee pour atteindre les creatures volantes
+      const strike = onGround ? base : { ...base, centerY: (base.centerY ?? -76) - 34 };
       this.comboExpiresAt = time + strike.duration + COMBO_WINDOW;
       this.beginState("attack", time, strike.duration);
       body.setVelocityX(this.facing * (this.comboStep === 2 ? 90 : 30));
@@ -499,9 +518,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // second saut : acquis de base, la mutation en offre un troisieme
         this.jumpBufferedAt = -Infinity;
         this.airJumpsUsed += 1;
-        body.setVelocityY(-jumpPower * 0.9);
+        // la chute en cours est annulee, sinon l'impulsion parait ecrasee
+        body.setVelocityY(0);
+        const power = this.airJumpsUsed === 1 ? jumpPower * 1.1 : jumpPower * 0.95;
+        body.setVelocityY(-power);
         this.play("vigile-jump", true);
         this.scene.events.emit("fx-sparks", this.x, this.y + 30);
+        this.scene.events.emit("fx-sparks", this.x, this.y - 10);
+        this.rumble(0.25, 90);
       }
     }
 
