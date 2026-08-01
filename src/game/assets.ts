@@ -83,7 +83,7 @@ export const SHEETS: SheetDef[] = [
   },
   {
     key: "vigile-jump",
-    path: `${HERO}/vigile_muet_jump_spritesheet.png?v=3`,
+    path: `${HERO}/vigile_muet_jump_spritesheet.png?v=4`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
     frameCount: 3,
