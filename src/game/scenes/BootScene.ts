@@ -145,8 +145,7 @@ export class BootScene extends Phaser.Scene {
       repeat: -1,
     });
 
-    // Monture funebre : plus d'animation de planche, les ailes et la queue sont
-    // pivotees en direct dans DreadMount.
+    // Monture funebre : animations enregistrees dans DreadMount.ts.
 
 
     // Saut du Vigile : la feuille est decoupee en trois phases.
