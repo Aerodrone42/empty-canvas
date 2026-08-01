@@ -164,6 +164,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.events.emit("fx-blood", this.x, this.y - 70, -this.facing, 1.6);
     this.scene.cameras.main.flash(110, 90, 0, 8);
 
+    // reaction visuelle : agonie si les points de vie tombent a zero, sinon recul
+    if (useGameStore.getState().health <= 0) {
+      this.play("vigile-death-anim", true);
+    } else if (this.moveState === "idle" || this.moveState === "run" || this.moveState === "air") {
+      this.play("vigile-hurt-anim", true);
+    }
+
+
 
     this.setTint(0xff6b6b);
     this.scene.tweens.add({
