@@ -1,22 +1,28 @@
-## Correction complète du héros
+## Correction du Vigile
 
-1. **Nettoyer les spritesheets**
-   - Supprimer le halo et les pixels blancs résiduels sur `idle`, `walk` et `attack` en corrigeant l’alpha, sans effacer les vrais détails clairs du masque ou de la lame.
-   - Conserver le style, les couleurs et le design validés du Vigile.
+### Constat vérifié
+- Les feuilles `idle`, `walk` et `attack` contiennent encore des pixels clairs parasites sur les contours, notamment autour du sabre et des pieds.
+- Les poses n’ont pas une échelle visuelle homogène : les frames d’attaque descendent de 150 px à 122–127 px, et la première frame de saut ne mesure que 91 px contre 145–150 px pour les suivantes.
+- Phaser applique une échelle constante, mais il ne peut pas compenser ces différences déjà présentes à l’intérieur des images.
 
-2. **Corriger l’attaque doublée**
-   - Refaire la 4ᵉ cellule de la planche d’attaque : elle contient actuellement deux Vigiles dans une seule frame.
-   - Garder uniquement la pose d’attaque correcte et son effet de lame, centrés dans une cellule 256×192.
+### Travail prévu
+1. **Reprendre le détourage des sprites sources**
+   - Supprimer le fond clair et les franges blanches par décontamination des couleurs de bord, pas par une simple suppression des pixels blancs.
+   - Nettoyer spécialement le contour du sabre, de la cape, des bottes et les pixels semi-transparents.
+   - Préserver les véritables reflets métalliques du masque et de la lame.
 
-3. **Uniformiser la taille pendant le saut**
-   - Renormaliser chaque pose de saut sur la même hauteur visuelle et la même ligne de référence que les autres animations.
-   - Préserver les différences de posture (accroupi, montée, chute) sans donner l’impression que le héros rétrécit.
-   - Corriger le double saut pour utiliser une animation existante valide plutôt qu’une clé de texture incorrecte.
+2. **Normaliser l’échelle visuelle frame par frame**
+   - Recaler chaque pose sur une silhouette de référence issue de l’idle.
+   - Garder une ligne de pieds commune à `y = 184`.
+   - Corriger les frames d’attaque trop petites.
+   - Remplacer/corriger la pose de saut comprimée de 91 px afin que le corps conserve la même stature pendant l’impulsion, la montée, l’apogée et la chute.
 
-4. **Stabiliser le rendu Phaser**
-   - Garder une échelle et une origine constantes lors de tous les changements d’animation.
-   - Vérifier que la hitbox et les pieds restent alignés au sol après chaque transition.
+3. **Sécuriser le rendu Phaser**
+   - Conserver une échelle et une origine uniques dans `Player.ts`.
+   - Vérifier que chaque état de saut utilise la bonne frame et qu’aucune animation ne modifie temporairement la taille.
+   - Incrémenter la version des assets pour empêcher le navigateur de conserver les anciennes feuilles en cache.
 
-5. **Contrôle visuel en jeu**
-   - Tester repos, marche, attaque, saut et double saut dans la salle.
-   - Vérifier visuellement l’absence de bordure blanche, de personnage dupliqué et de variation incohérente de taille.
+4. **Validation en jeu**
+   - Comparer au même zoom : idle, marche, attaque, départ du saut, montée, apogée, chute et double saut.
+   - Contrôler visuellement l’absence de halo sur fond sombre et l’absence de variation de taille.
+   - Vérifier les transitions et l’alignement de la hitbox au sol.
