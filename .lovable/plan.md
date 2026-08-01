@@ -1,33 +1,24 @@
 ## Objectif
 
-Remplacer le bouton « Continuer » (qui reprend simplement la partie) par un écran de sélection de salle listant les 4 stages, tous accessibles en permanence, pour tester n'importe quel niveau sans refaire les précédents.
+Ajouter un second décor animé de croix dans la nef (salle 1), à droite du supplicié écorché existant : une femme en robe déchirée, ensanglantée, animée (respiration/balancement + gouttes de sang).
 
-## Ce qui existe aujourd'hui
+## Ce qui sera fait
 
-- Le jeu enchaîne 4 décors : `cathedrale`, `corridor`, `throne`, `exterieur` (`ROOM_ORDER` dans `GameScene.ts`).
-- `BootScene` lance toujours `game` sans paramètre : la partie démarre forcément à la cathédrale.
-- Le store (`gameStore.ts`) ne mémorise ni la salle courante ni la progression ; `continueRun()` se contente de repasser en phase `playing`.
-- Rien n'est persisté entre deux rechargements (vie, chair, mutations, salle).
+1. **Nouvel asset**
+   - Génération d'une spritesheet `crucifiee_femme_spritesheet.png` dans `public/assets/sprites/props/`, au même gabarit que l'existante (cellule 223x665, 8 frames, fond transparent, même palette et même style pixel art gothique).
+   - Sujet : femme suppliciée clouée sur une croix en X, robe en lambeaux, corps ensanglanté, tête tombante, léger mouvement d'agonie entre les frames.
 
-## Ce qui sera construit
+2. **Déclaration de l'asset**
+   - Entrée `crucifiee-femme-idle` dans `src/game/assets.ts` (mêmes dimensions/frameRate que `crucifie-idle`, boucle infinie), donc chargement et animation automatiques via `BootScene`.
 
-1. **Suivi de la salle courante dans le store**
-   - Nouveau champ `stage` (clé de décor) mis à jour à chaque entrée dans une salle.
-   - Sauvegarde de l'état de run (salle, vie, vie max, chair, mutations, kills, parades) dans le stockage local du navigateur, restaurée au lancement.
+3. **Rendu**
+   - `src/game/effects/CrucifiedProp.ts` prend un paramètre optionnel de clé de texture (défaut : l'existant) pour réutiliser la même logique d'animation, balancement et particules de sang, sans toucher au comportement actuel.
 
-2. **Écran de sélection de salle**
-   - Le bouton « Continuer » ouvre un panneau listant les 4 salles avec leur nom lisible (I — La Nef Suppurante, II — Le Corridor de Chair, III — Le Trône, IV — L'Extérieur), toutes cliquables en permanence.
-   - La salle où l'on s'était arrêté est mise en avant (« reprise ici »).
-   - Bouton Retour vers le menu principal.
-
-3. **Chargement de la salle choisie**
-   - Le clic démarre/redémarre la scène de jeu sur le décor choisi, en conservant l'état sauvegardé du héros (vie, chair, mutations) — pas de remise à zéro.
-   - « Nouvelle partie » reste inchangée : salle 1, état neuf.
+4. **Placement**
+   - Dans `src/game/scenes/GameScene.ts` : seconde instance placée à droite du supplicié (environ `CRUCIFIED_X + 260`), même ligne de sol, même profondeur (derrière la balustrade, le héros passe devant). Aucune collision.
 
 ## Détails techniques
 
-- `gameStore` : ajout de `stage`, `setStage`, `continueAtStage(key)`, plus persistance localStorage (clé dédiée, hydratation au montage comme `bindingsStore.hydrate()`).
-- Nouvelle phase UI `stages` (ou état local du menu) pour l'écran de sélection ; nouveau composant `src/components/game/StageSelect.tsx` rendu depuis la même zone que `MainMenu`.
-- `PhaserCanvas` / `BootScene` : lancement de la scène `game` avec `{ backdrop: stage }` ; côté React, changer de salle depuis le menu déclenche un `scene.restart({ backdrop })` sur l'instance Phaser existante.
-- `GameScene.init/create` : appelle `setStage(this.backdropKey)` pour que la progression suive aussi les transitions in-game via `exitRoom()`.
-- Les noms de salles sont définis dans une petite table à côté de `ROOM_ORDER` pour être partagés avec l'UI.
+- Aucun impact sur le gameplay, le combat, l'audio ou les autres salles.
+- La machine de torture et le supplicié existant ne sont pas modifiés.
+- Vérification finale en runtime (capture Playwright de la salle 1) pour confirmer l'échelle, l'alignement au sol et la transparence.
