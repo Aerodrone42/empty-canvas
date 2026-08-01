@@ -1,19 +1,24 @@
-## Problème
+## Objectif
 
-Le socle `floor_torch_base.png` (154x220) n'a aucun pixel opaque au-dessus de la couronne : tout ce qui se trouve entre la lèvre de la vasque (y≈50) et le haut de l'image est transparent. La flamme étant ancrée à 56 px du haut du socle, on voit le décor du fond à travers la zone que devrait occuper la vasque et son lit de braises — d'où le trou signalé par la flèche.
+Remplir le grand vide du ciel de la salle 1 (cathédrale) par une créature volante monumentale qui traverse lentement l'arrière-plan : une chauve-souris démoniaque montée par un cavalier terrifiant, tenant un humain vivant dans sa gueule et le gobant progressivement.
 
-## Correction
+## Assets à produire
 
-1. **Retoucher `public/assets/sprites/props/floor_torch_base.png`** (script Python/PIL, pas de régénération IA) :
-   - Peindre une vasque opaque en fer forgé fermée au niveau de la couronne (y ≈ 44-64), avec la lèvre déjà présente comme repère.
-   - Ajouter à l'intérieur un lit de braises statique (charbons sombres + rougeoiement) qui remplit la coupe, entièrement opaque.
-   - Ne toucher à rien en dessous : le fût et le pied restent inchangés.
+1. `public/assets/sprites/props/dread_mount_spritesheet.png` — vol de la monture, 8 frames (grande cellule, ~320x256), pixel art cohérent avec le reste (palette ocre/os/sang, fond transparent).
+   - Ailes membranaires déchirées, ossature apparente, chaînes et encensoirs pendants (référence image 2, mais plus détaillée et plus sombre).
+   - Cavalier retravaillé pour faire peur : silhouette haute encapuchonnée, masque d'os cornu, bras filiformes tenant des rênes de tendons, cape en lambeaux qui claque au vent.
+2. `public/assets/sprites/props/dread_mount_prey_spritesheet.png` — la proie humaine dans la gueule, 6 frames : gigote (jambes qui battent, bras qui griffent) → happée plus profond → deux dernières frames = déglutition (jambes qui disparaissent, gorge de la bête qui se gonfle), puis boucle de repos.
 
-2. **Réaligner la flamme dans `src/game/effects/FloorTorch.ts`** :
-   - Ajuster `FLAME_DY` pour que le bas de la flamme repose exactement sur le lit de braises nouvellement peint (aucun vide, aucun chevauchement).
+## Code
 
-3. **Vérification** : capture Playwright de la salle cathédrale et de la salle 2 pour confirmer qu'aucun fond ne transparaît sous la flamme, à petite comme à grande échelle.
+3. Nouveau `src/game/effects/DreadMount.ts` :
+   - Sprite unique recyclé, `setScrollFactor` ~0.55 (parallaxe de fond, derrière les colonnes, devant le décor lointain), profondeur négative, aucune physique ni collision.
+   - Traversée lente de gauche à droite ou inversement, ondulation verticale sinusoïdale, légère variation d'échelle pour l'effet d'éloignement.
+   - Sprite de proie ancré à la gueule (offset suivi frame par frame), joue le cycle de gigotage puis, une fois par traversée, la séquence d'avalement (gerbe de sang + secousse de tête), après quoi la gueule reste vide jusqu'au passage suivant.
+   - Cri lointain / battements d'ailes optionnels via événements existants (pas de nouvel audio si non fourni).
+4. `src/game/scenes/BootScene.ts` : chargement des deux spritesheets et déclaration des animations.
+5. `src/game/scenes/GameScene.ts` : instanciation uniquement pour `backdropKey === "cathedrale"`, passage toutes les ~18-25 s, destruction dans le cleanup existant à côté de `critters`/`crucified`.
 
-## Détails techniques
+## Vérification
 
-Aucune modification de gameplay, de collision ou de scène. Seuls l'asset PNG du socle et les constantes d'offset de flamme changent ; les dimensions du socle (BASE_W/BASE_H) et des frames de flamme (81x102) restent identiques, donc `BootScene.ts` n'a pas besoin d'être modifié.
+Capture Playwright de la salle 1 pour confirmer que la bête occupe bien la zone vide entourée en rouge, qu'elle passe derrière les colonnes du premier plan et que la proie est visible puis avalée.
