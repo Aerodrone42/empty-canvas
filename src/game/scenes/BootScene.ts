@@ -2,6 +2,7 @@ import Phaser from "phaser";
 
 import { BACKDROPS, FRAME_SPACING, SHEETS } from "../assets";
 import { MUSIC_AMBIENT, MUSIC_CHOIR, MUSIC_COMBAT, MUSIC_SUSPENSE } from "../audio/Music";
+import { useGameStore } from "@/store/gameStore";
 import ambientTrack from "@/assets/music_obscura_piano.mp3.asset.json";
 import combatTrack from "@/assets/music_sinister_power.mp3.asset.json";
 import choirTrack from "@/assets/music_gothic_choir.mp3.asset.json";
