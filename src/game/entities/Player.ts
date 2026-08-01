@@ -518,9 +518,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // second saut : acquis de base, la mutation en offre un troisieme
         this.jumpBufferedAt = -Infinity;
         this.airJumpsUsed += 1;
-        body.setVelocityY(-jumpPower * 0.9);
+        // la chute en cours est annulee, sinon l'impulsion parait ecrasee
+        body.setVelocityY(0);
+        const power = this.airJumpsUsed === 1 ? jumpPower * 1.1 : jumpPower * 0.95;
+        body.setVelocityY(-power);
         this.play("vigile-jump", true);
         this.scene.events.emit("fx-sparks", this.x, this.y + 30);
+        this.scene.events.emit("fx-sparks", this.x, this.y - 10);
+        this.rumble(0.25, 90);
       }
     }
 
