@@ -291,17 +291,18 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 export class PenitentGreffe extends Enemy {
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, {
-      health: 60,
+      health: 72,
       speed: 28,
       chaseSpeed: 52,
-      damage: 18,
+      damage: 16,
       detectRange: 320,
       attackRange: 90,
       attackCooldown: 1700,
       // silhouette de 118 px dans la cellule -> ~150 px a l'ecran
       scale: 1.27,
-      bodyWidth: 56,
-      bodyHeight: 118,
+      // masse large : hurtbox elargie pour coller au torse et a la chaine
+      bodyWidth: 68,
+      bodyHeight: 122,
       fleshReward: 14,
       animPrefix: "penitent",
       guarded: true,
@@ -312,20 +313,22 @@ export class PenitentGreffe extends Enemy {
 export class SuppliantRampant extends Enemy {
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, {
-      health: 24,
+      health: 30,
       speed: 70,
       chaseSpeed: 170,
-      damage: 7,
+      damage: 6,
       detectRange: 420,
       attackRange: 62,
       attackCooldown: 800,
       // creature rampante : silhouette de 62 px -> ~70 px a l'ecran
       scale: 1.13,
-      bodyWidth: 70,
-      bodyHeight: 58,
+      // quadrupede : boite basse et allongee, plus haute que large
+      bodyWidth: 80,
+      bodyHeight: 46,
       fleshReward: 6,
       animPrefix: "suppliant",
     });
+
   }
 }
 
