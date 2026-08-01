@@ -50,11 +50,8 @@ export function registerDreadMountAnims(scene: Phaser.Scene) {
   if (!scene.anims.exists(ANIM_MOUNT_SWALLOW)) {
     scene.anims.create({
       key: ANIM_MOUNT_SWALLOW,
-      // Les frames 2–4 de l'ancienne feuille déformaient la victime et
-      // pouvaient encore provenir du cache du navigateur. La fermeture nette
-      // utilise les deux poses propres, puis passe directement à la gueule vide.
-      frames: scene.anims.generateFrameNumbers(TEX_MOUNT_SWALLOW, { start: 0, end: 1 }),
-      frameRate: 5,
+      frames: scene.anims.generateFrameNumbers(TEX_MOUNT_SWALLOW, { start: 0, end: 3 }),
+      frameRate: 6,
       repeat: 0,
     });
   }
