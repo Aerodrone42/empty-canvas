@@ -20,7 +20,7 @@ const INVULN_MS = 750;
 
 /**
  * Les feuilles du Vigile ont ete regenerees sur un gabarit unique : meme
- * cellule 192x144, silhouette de 110 px et ligne de pieds a y=138 sur toutes
+ * cellule 256x192, silhouette de 150 px et ligne de pieds a y=184 sur toutes
  * les frames. L'echelle et l'origine sont donc constantes.
  */
 
@@ -163,6 +163,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.rumble(0.6, 180);
     this.scene.events.emit("fx-blood", this.x, this.y - 70, -this.facing, 1.6);
     this.scene.cameras.main.flash(110, 90, 0, 8);
+
+    // reaction visuelle : agonie si les points de vie tombent a zero, sinon recul
+    if (useGameStore.getState().health <= 0) {
+      this.play("vigile-death-anim", true);
+    } else if (this.moveState === "idle" || this.moveState === "run" || this.moveState === "air") {
+      this.play("vigile-hurt-anim", true);
+    }
+
 
 
     this.setTint(0xff6b6b);
@@ -383,7 +391,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.beginState("parry", time, PARRY.window + effects.parryWindowBonus + PARRY.recovery);
       body.setVelocityX(0);
       this.setTint(0xf2d9a0);
-      this.play("vigile-idle-anim", true);
+      this.play("vigile-parry-anim", true);
       return;
     }
 
