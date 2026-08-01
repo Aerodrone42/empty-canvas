@@ -65,12 +65,22 @@ export class BootScene extends Phaser.Scene {
       { frameWidth: 64, frameHeight: 48, spacing: 0 },
     );
 
-    // monture funebre : pieces separees assemblees et animees par pivot
-    this.load.image("dread-body", "/assets/sprites/props/dread_body.png");
-    this.load.image("dread-wing-top", "/assets/sprites/props/dread_wing_top.png");
-    this.load.image("dread-wing-bot", "/assets/sprites/props/dread_wing_bot.png");
-    this.load.image("dread-tail", "/assets/sprites/props/dread_tail.png");
-    this.load.image("dread-victim", "/assets/sprites/props/dread_victim.png");
+    // monture funebre : une seule image par frame, cadre complet avec marge
+    this.load.spritesheet(
+      "dread-mount-fly",
+      "/assets/sprites/props/dread_mount_fly.png",
+      { frameWidth: 696, frameHeight: 544, spacing: 0 },
+    );
+    this.load.spritesheet(
+      "dread-mount-fly-fed",
+      "/assets/sprites/props/dread_mount_fly_fed.png",
+      { frameWidth: 696, frameHeight: 544, spacing: 0 },
+    );
+    this.load.spritesheet(
+      "dread-mount-swallow",
+      "/assets/sprites/props/dread_mount_swallow.png",
+      { frameWidth: 696, frameHeight: 544, spacing: 0 },
+    );
 
 
     // chevalet d'ecartellement du corridor : bati, supplicie et bourreaux
