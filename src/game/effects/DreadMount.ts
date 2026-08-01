@@ -304,6 +304,8 @@ export class DreadMount {
         this.gore.explode(50);
         this.opts.onGore?.(this.sprite.x, this.opts.floorY - 20);
         this.sprite.setVisible(false);
+        this.bar.clear();
+        this.bar.setVisible(false);
         this.setState("gone");
       },
     });
