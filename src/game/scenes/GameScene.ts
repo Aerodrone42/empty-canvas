@@ -8,6 +8,7 @@ import { AmbientCritters } from "../effects/AmbientCritters";
 import { placeTorches, type FloorTorch } from "../effects/FloorTorch";
 import { BloodFX } from "../effects/Blood";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
+import { DreadMount } from "../effects/DreadMount";
 import { CorridorVein } from "../effects/CorridorVein";
 import { scatterFleshBlobs, type FleshBlob } from "../effects/FleshBlob";
 import { WeepingStatue } from "../effects/WeepingStatue";
@@ -61,6 +62,8 @@ export class GameScene extends Phaser.Scene {
   private gateColumn?: GateColumn;
   /** supplicie ecorche du fond de la cathedrale */
   private crucified?: CrucifiedProp;
+  /** monture funebre qui traverse le ciel de la cathedrale */
+  private mount?: DreadMount;
   /** veine geante animee du corridor */
   private vein?: CorridorVein;
   private statues: WeepingStatue[] = [];
@@ -104,6 +107,8 @@ export class GameScene extends Phaser.Scene {
     this.wheel = undefined;
     this.critters?.destroy();
     this.critters = undefined;
+    this.mount?.destroy();
+    this.mount = undefined;
     for (const t of this.torches) t.destroy();
     this.torches = [];
 
@@ -281,6 +286,7 @@ export class GameScene extends Phaser.Scene {
     // supplicie ecorche : uniquement dans la cathedrale
     if (this.backdropKey === "cathedrale") {
       this.crucified = new CrucifiedProp(this, CRUCIFIED_X, FLOOR_Y);
+      this.mount = new DreadMount(this);
     } else if (this.backdropKey === "corridor") {
       // grosse veine qui bat le long du couloir, derriere les statues
       this.vein = new CorridorVein(this, FLOOR_Y, ROOM_WIDTH);
@@ -493,6 +499,7 @@ export class GameScene extends Phaser.Scene {
     for (const blob of this.blobs) blob.tick(time);
     this.wheel?.tick(this.player.x, time);
     this.critters?.tick(time, delta);
+    this.mount?.update(time, delta);
     for (const t of this.torches) t.tick(time);
 
 

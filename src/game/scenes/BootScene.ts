@@ -65,6 +65,19 @@ export class BootScene extends Phaser.Scene {
       { frameWidth: 64, frameHeight: 48, spacing: 0 },
     );
 
+    // monture funebre : chauve-souris colossale et son cavalier, proie vivante
+    // dans la gueule puis proie avalee
+    this.load.spritesheet(
+      "dread-mount-prey",
+      "/assets/sprites/props/dread_mount_prey_spritesheet.png",
+      { frameWidth: 320, frameHeight: 238, spacing: 0 },
+    );
+    this.load.spritesheet(
+      "dread-mount-fed",
+      "/assets/sprites/props/dread_mount_fed_spritesheet.png",
+      { frameWidth: 320, frameHeight: 238, spacing: 0 },
+    );
+
 
     // chevalet d'ecartellement du corridor : bati, supplicie et bourreaux
     this.load.image("torture-rack", "/assets/sprites/props/torture_rack_frame.png");
@@ -125,6 +138,24 @@ export class BootScene extends Phaser.Scene {
       key: "ambient-bat-fly",
       frames: this.anims.generateFrameNumbers("ambient-bat", { start: 0, end: 5 }),
       frameRate: 14,
+      repeat: -1,
+    });
+
+    // Monture funebre : battement d'ailes lent (bas / milieu / haut / milieu).
+    this.anims.create({
+      key: "dread-mount-prey-fly",
+      frames: this.anims.generateFrameNumbers("dread-mount-prey", {
+        frames: [0, 1, 2, 1],
+      }),
+      frameRate: 6,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: "dread-mount-fed-fly",
+      frames: this.anims.generateFrameNumbers("dread-mount-fed", {
+        frames: [0, 1, 2, 1],
+      }),
+      frameRate: 6,
       repeat: -1,
     });
 
