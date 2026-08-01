@@ -22,12 +22,12 @@ const SPRITES = "/assets/sprites";
 const ENEMIES = `${SPRITES}/enemies`;
 
 /** gabarit commun des feuilles du Vigile Muet, regenerees et normalisees */
-export const HERO_FRAME_W = 192;
-export const HERO_FRAME_H = 144;
+export const HERO_FRAME_W = 256;
+export const HERO_FRAME_H = 192;
 /** hauteur de silhouette dessinee, identique sur toutes les frames */
-export const HERO_CHAR_H = 110;
+export const HERO_CHAR_H = 150;
 /** ligne de pieds dans la cellule */
-export const HERO_BASELINE_Y = 138;
+export const HERO_BASELINE_Y = 184;
 
 /** gabarit commun des feuilles d'ennemis, regenerees et normalisees */
 export const ENEMY_FRAME_W = 224;
