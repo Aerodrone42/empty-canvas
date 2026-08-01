@@ -1,22 +1,24 @@
-## Refonte complète de la monture (une seule illustration, pas de collage)
+## Correction de la monture — deux ailes réellement animées
 
-Le flou vient du fait que la victime a été bricolée dans des frames déformées puis réduites. Pas de sprite rapporté par-dessus : on repart de l'illustration originale et on regénère toute la planche, monture + cavalier + victime peints ensemble.
+Le diagnostic est confirmé : les 8 frames actuelles modifient surtout la moitié gauche de l’image (`x ≈ 0–320`), tandis que l’aile opposée reste pratiquement identique. Le code Phaser lit bien les 8 frames ; le défaut est donc dans la spritesheet générée, pas dans la lecture de l’animation.
 
-### 1. Générer la monture à la bonne taille
-- Générer les frames directement à la résolution d'affichage réelle (environ 500 px de large), et non plus en 696 px réduits ensuite.
-- Une seule passe de rendu : plus aucun ré-échantillonnage successif, donc plus de perte de détail sur la victime.
-- La victime fait partie du dessin, tenue dans la gueule, dans le même style et le même niveau de détail que le reste de la bête.
+1. **Refaire les frames complètes à partir de l’illustration native**
+   - Conserver un dragon entier par frame, sans élément collé par-dessus.
+   - Redessiner les deux ailes dans chaque pose : montée, extension, descente et retour.
+   - Donner aux deux ailes une amplitude cohérente avec la perspective, l’aile arrière restant visible mais bougeant réellement.
 
-### 2. Séquences d'animation cohérentes
-- **Vol** : battement d'ailes, ondulation de la queue, victime qui se débat dans la gueule — chaque frame est une illustration complète et nette, pas une déformation de la précédente.
-- **Avalement** : la mâchoire se referme, la victime disparaît progressivement dans la gorge, gerbe de sang.
-- **Après repas** : même monture, gueule ensanglantée et vide.
+2. **Protéger les zones détaillées**
+   - Ne déformer ni la tête, ni la gueule, ni l’humain, ni le cavalier.
+   - Limiter les transformations aux ailes et à une légère ondulation de la queue.
+   - Garder chaque frame à la taille d’affichage 512 × 336 pour éviter tout nouveau flou.
 
-### 3. Nettoyage technique
-- Remplacer les trois planches actuelles et supprimer les frames défectueuses.
-- Adapter le chargement et l'échelle à la nouvelle taille (affichage au ratio natif, sans réduction fractionnaire).
-- Nouvelle version d'asset pour éliminer tout reste de cache.
+3. **Remplacer toutes les séquences concernées**
+   - Régénérer les versions `fly` et `fly-fed` avec le même cycle bilatéral.
+   - Harmoniser `swallow` avec la même position d’ailes afin d’éviter un saut visuel au changement d’animation.
+   - Incrémenter la version des assets pour empêcher l’ancien sprite de rester en cache.
 
-### 4. Validation
-- Capture rapprochée de la gueule à l'échelle réelle du jeu, en vol et pendant l'avalement.
-- Validation seulement si la victime reste nette et lisible sur toute la séquence, y compris quand la monture est retournée.
+4. **Contrôle visuel obligatoire**
+   - Extraire et comparer les 8 frames côte à côte.
+   - Vérifier séparément que chaque aile change de silhouette et de hauteur au cours du cycle.
+   - Tester l’animation dans le jeu, y compris le demi-tour horizontal et la transition avalement → vol nourri.
+   - Ne valider que si les deux ailes battent, que l’humain reste net et qu’aucun rectangle ou raccord n’apparaît.
