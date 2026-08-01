@@ -134,24 +134,9 @@ export class BootScene extends Phaser.Scene {
       repeat: -1,
     });
 
-    // Monture funebre : boucle fermee sur les quatre poses stables. Les poses
-    // extremes 0 et 5 deformeraient brutalement l'aile et la queue au raccord.
-    this.anims.create({
-      key: "dread-mount-prey-fly",
-      frames: this.anims.generateFrameNumbers("dread-mount-prey", {
-        frames: [1, 2, 3, 4, 3, 2],
-      }),
-      frameRate: 7,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "dread-mount-fed-fly",
-      frames: this.anims.generateFrameNumbers("dread-mount-fed", {
-        frames: [1, 2, 3, 4, 3, 2],
-      }),
-      frameRate: 7,
-      repeat: -1,
-    });
+    // Monture funebre : plus d'animation de planche, les ailes et la queue sont
+    // pivotees en direct dans DreadMount.
+
 
     // Saut du Vigile : la feuille est decoupee en trois phases.
     this.anims.create({
