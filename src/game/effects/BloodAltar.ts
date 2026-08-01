@@ -235,12 +235,12 @@ export class BloodAltar {
 
     this.drawBlood(time, delta);
 
-    const pulse = this.lit ? 0.74 + Math.sin(time / 380) * 0.13 : 0.14 + Math.sin(time / 900) * 0.05;
+    const pulse = this.lit ? 0.38 + Math.sin(time / 520) * 0.06 : 0.1 + Math.sin(time / 900) * 0.03;
     this.glow.setAlpha(pulse);
 
     if (this.lit) {
-      this.prompt.setText(near ? "Autel scellé" : "");
-      this.prompt.setAlpha(near ? 0.55 : 0);
+      this.prompt.setText("");
+      this.prompt.setAlpha(0);
       return;
     }
 
