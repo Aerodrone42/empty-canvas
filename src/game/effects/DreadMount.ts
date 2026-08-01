@@ -348,7 +348,9 @@ export class DreadMount {
     this.sprite.setAngle(0);
     this.sprite.setAlpha(1);
     this.sprite.setVisible(true);
-    this.sprite.setDepth(8);
+    // la carcasse est une depouille au sol : elle passe derriere le heros
+    // (profondeur 0 par defaut) tout en restant devant le decor (-2 et moins)
+    this.sprite.setDepth(-1);
     this.sprite.setPosition(crashX, groundY + 6);
     this.sprite.setScale(MOUNT_W / FRAME_W);
 
