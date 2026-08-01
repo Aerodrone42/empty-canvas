@@ -151,6 +151,7 @@ export function Hud() {
           {keyLabel(bindings.dodge.key)} esquive · {keyLabel(bindings.parry.key)} parade ·{" "}
           {keyLabel(bindings.flesh.key)} autel
         </p>
+        <AltarLine />
         <p className="font-display text-[0.55rem] tracking-[0.3em] text-muted-foreground/60 uppercase">
           Haut + frappe · coup ascendant — Bas + frappe en l'air · piquée
         </p>
@@ -203,5 +204,25 @@ function Gauge({
         />
       </div>
     </div>
+  );
+}
+
+/** Rappel du point de sauvegarde : autel scelle ou non dans la salle courante. */
+function AltarLine() {
+  const stage = useGameStore((s) => s.stage);
+  const checkpoint = useGameStore((s) => s.checkpoint);
+  const bindings = useBindingsStore((s) => s.bindings);
+  const sealed = checkpoint?.stage === stage;
+
+  return (
+    <p
+      className={`font-display text-[0.55rem] tracking-[0.3em] uppercase ${
+        sealed ? "text-accent" : "text-muted-foreground/60"
+      }`}
+    >
+      {sealed
+        ? "Autel de sang scellé · réapparition assurée"
+        : `Autel de sang non scellé · ${keyLabel(bindings.interact.key)} devant la vasque`}
+    </p>
   );
 }
