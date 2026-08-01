@@ -76,6 +76,7 @@ export class GameScene extends Phaser.Scene {
   private hands: GraspingHands[] = [];
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
   private blood!: BloodFX;
+  private absorbPrompt?: AbsorbPrompt;
   /** chiffres de degats flottants */
   private damageNumbers!: DamageNumbers;
   private parallax!: Parallax;
