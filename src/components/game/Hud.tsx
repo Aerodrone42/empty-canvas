@@ -105,6 +105,9 @@ export function Hud() {
           {keyLabel(bindings.dodge.key)} esquive · {keyLabel(bindings.parry.key)} parade ·{" "}
           {keyLabel(bindings.flesh.key)} autel
         </p>
+        <p className="font-display text-[0.55rem] tracking-[0.3em] text-muted-foreground/60 uppercase">
+          Haut + frappe · coup ascendant — Bas + frappe en l'air · piquée
+        </p>
       </div>
     </>
   );
