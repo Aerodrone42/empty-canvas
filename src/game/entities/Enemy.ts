@@ -348,19 +348,20 @@ export class EcorchePendu extends Enemy {
 
   constructor(scene: Phaser.Scene, x: number, floorY: number, ceilingY = 40) {
     super(scene, x, ceilingY, {
-      health: 46,
+      health: 52,
       speed: 34,
       chaseSpeed: 118,
-      damage: 14,
+      damage: 12,
       detectRange: 420,
       attackRange: 120,
       attackCooldown: 1900,
       scale: 1.2,
-      bodyWidth: 52,
-      bodyHeight: 126,
+      bodyWidth: 58,
+      bodyHeight: 120,
       fleshReward: 12,
       animPrefix: "ecorche",
     });
+
 
     this.floorY = floorY;
     this.triggerRange = 200;
