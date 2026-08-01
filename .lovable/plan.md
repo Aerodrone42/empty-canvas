@@ -1,32 +1,19 @@
-## Constat
+## Problème
 
-En inspectant `floor_torch_flame_spritesheet.png`, chaque vignette contient encore **la couronne métallique du brasero** (les pointes claires en bas de chaque frame), en plus du feu. Comme les 10 vignettes de la planche de référence ont été rendues indépendamment, cette couronne n'est pas identique au pixel près d'une frame à l'autre : en animation, c'est elle qui tremble autour de la flamme.
+Le socle `floor_torch_base.png` (154x220) n'a aucun pixel opaque au-dessus de la couronne : tout ce qui se trouve entre la lèvre de la vasque (y≈50) et le haut de l'image est transparent. La flamme étant ancrée à 56 px du haut du socle, on voit le décor du fond à travers la zone que devrait occuper la vasque et son lit de braises — d'où le trou signalé par la flèche.
 
-Le socle statique, lui, est correct et ne bouge pas.
+## Correction
 
-## Plan
+1. **Retoucher `public/assets/sprites/props/floor_torch_base.png`** (script Python/PIL, pas de régénération IA) :
+   - Peindre une vasque opaque en fer forgé fermée au niveau de la couronne (y ≈ 44-64), avec la lèvre déjà présente comme repère.
+   - Ajouter à l'intérieur un lit de braises statique (charbons sombres + rougeoiement) qui remplit la coupe, entièrement opaque.
+   - Ne toucher à rien en dessous : le fût et le pied restent inchangés.
 
-1. **Régénérer `floor_torch_flame_spritesheet.png` avec un masque strictement chromatique**
-   - Ne conserver que les pixels réellement en feu : teinte orange/rouge/jaune (rouge dominant, saturation élevée, luminance élevée).
-   - Éliminer tous les pixels gris/métalliques/bruns sombres (là où R ≈ V ≈ B, ou saturation faible) — c'est ce qui supprime la couronne et les éclats de fer.
-   - Nettoyage des pixels isolés (petit filtre de taille de composante) pour éviter les points parasites blancs visibles autour des flammes actuelles.
-   - Léger adoucissement du canal alpha en bordure pour éviter l'aliasing dur.
+2. **Réaligner la flamme dans `src/game/effects/FloorTorch.ts`** :
+   - Ajuster `FLAME_DY` pour que le bas de la flamme repose exactement sur le lit de braises nouvellement peint (aucun vide, aucun chevauchement).
 
-2. **Régénérer `floor_torch_base.png` en y intégrant la couronne**
-   - La couronne + les pointes appartiennent au socle : les inclure dans l'image fixe pour qu'elles restent parfaitement immobiles.
-   - Prendre la frame de référence à flamme la plus faible pour minimiser la lumière projetée figée sur le métal.
-
-3. **Recaler l'ancrage dans `src/game/effects/FloorTorch.ts`**
-   - Ajuster `FLAME_H` / la position `topY` pour que la base du feu se pose sur la lèvre de la vasque désormais incluse dans le socle.
-   - Aucun changement de logique d'animation : la boucle repos + sursaut restent en place.
-
-4. **`BootScene.ts`** : mettre à jour `frameWidth` / `frameHeight` de la spritesheet de flamme si le recadrage change les dimensions.
-
-5. **Vérification** : capture en jeu pour confirmer que le métal est strictement immobile et que seules les langues de feu vivent.
+3. **Vérification** : capture Playwright de la salle cathédrale et de la salle 2 pour confirmer qu'aucun fond ne transparaît sous la flamme, à petite comme à grande échelle.
 
 ## Détails techniques
 
-Masque de feu appliqué par pixel (Python/PIL) :
-- garder si `R > 90` et `R - B > 45` et `max(R,G,B) > 100`
-- rejeter si `max-min < 40` (gris/métal)
-- alpha proportionnel à l'intensité du rouge pour un fondu naturel des bords
+Aucune modification de gameplay, de collision ou de scène. Seuls l'asset PNG du socle et les constantes d'offset de flamme changent ; les dimensions du socle (BASE_W/BASE_H) et des frames de flamme (81x102) restent identiques, donc `BootScene.ts` n'a pas besoin d'être modifié.
