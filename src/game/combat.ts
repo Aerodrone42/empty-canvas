@@ -16,7 +16,12 @@ export type Strike = {
   shape: StrikeShape;
   /** durée d'immobilisation du joueur pendant l'attaque */
   duration: number;
+  /** décalage vertical du centre de la zone par rapport aux pieds du héros */
+  centerY?: number;
+  /** marge derrière le héros (les coups d'arc ne touchent pas dans le dos) */
+  backReach?: number;
 };
+
 
 export const STRIKES: Record<string, Strike> = {
   combo1: {
