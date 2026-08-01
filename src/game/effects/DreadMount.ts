@@ -35,7 +35,7 @@ const HIGH_Y = 480;
 /** altitude d'attaque : a hauteur du heros */
 const LOW_OFFSET = 150;
 
-export const MOUNT_MAX_HP = 420;
+export const MOUNT_MAX_HP = 760;
 /** en dessous de ce ratio, la bete s'enrage */
 const ENRAGE_AT = 0.35;
 
@@ -447,7 +447,7 @@ export class DreadMount {
         this.sprite.x += this.vx * dt;
         this.sprite.y = Phaser.Math.Linear(this.sprite.y, this.targetY, 1 - Math.pow(0.005, dt));
         this.sprite.setAngle(this.vx > 0 ? 8 : -8);
-        this.tryStrike(150, 130, 16);
+        this.tryStrike(150, 130, 21);
         const beyond = this.vx > 0
           ? this.sprite.x > player.x + 520
           : this.sprite.x < player.x - 520;
@@ -468,7 +468,7 @@ export class DreadMount {
           this.tryStrike(
             this.state === "bite" ? 175 : 210,
             this.state === "bite" ? 110 : 135,
-            this.state === "bite" ? 18 : 13,
+            this.state === "bite" ? 24 : 18,
           );
         }
         if (this.stateTime > 900) this.setState("recover");
