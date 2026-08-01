@@ -9,7 +9,12 @@ export function createGameConfig(parent: HTMLElement): Phaser.Types.Core.GameCon
     parent,
     width: 960,
     height: 540,
-    pixelArt: true,
+    pixelArt: false,
+    render: {
+      antialias: true,
+      antialiasGL: true,
+      roundPixels: true,
+    },
     backgroundColor: "#14090b",
     input: {
       gamepad: true,
