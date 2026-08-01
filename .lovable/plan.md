@@ -1,40 +1,35 @@
-## Ce qui a foiré
+## Tu as raison
 
-J'ai assemblé des pièces génériques (une aile dessinée à part, une queue à part) qui n'ont rien à voir avec ton illustration. Résultat : une bête bricolée, ailes qui recouvrent le cavalier, proportions fausses. Ce n'est pas ce que tu as demandé.
+Découper en petites pièces, c'est exactement ce qui produit les ailes en trop et les bords coupés. On arrête ça net : **une seule image, un seul sprite**.
 
-## Le principe de la correction
+## Le principe
 
-**Ton illustration devient la vérité absolue.** On ne redessine rien, on ne rajoute aucune pièce venue d'ailleurs. La monture à l'écran doit être, au repos, **pixel pour pixel ton image de référence**.
+Ta monture reste **ton illustration entière, jamais découpée, jamais recadrée**. On en fabrique une **feuille de sprite** : chaque frame est le **cadre complet 1200x896**, avec une marge tout autour. Comme le cadre ne change jamais et qu'aucun pixel ne sort de la marge, **rien ne peut être rogné** — c'est ce qui cassait avant, quand chaque pièce avait son propre petit cadre serré.
 
-## Méthode
+Le sprite affiché en jeu, c'est une seule image par frame : plus de container, plus d'assemblage de morceaux, plus de superposition possible. Trois ailes deviennent physiquement impossibles.
 
-**1. L'illustration devient l'asset source**
-Ton image est découpée (script PIL) en calques **le long de ses propres contours**, à leurs coordonnées d'origine :
-- corps + cavalier + crâne + chaînes + encensoirs (le bloc central intact)
-- aile gauche haute (celle déployée vers le haut-arrière)
-- aile droite basse (celle qui balaye sous le ventre)
-- queue à épines
-- l'humain hurlant déjà présent dans la gueule
+## Comment les ailes bougent alors
 
-Chaque calque garde sa position exacte dans le cadre d'origine. Réassemblés sans aucune rotation, ils reforment ton dessin à l'identique — vérifié par comparaison pixel à pixel avec le fichier source avant d'aller plus loin.
+À l'intérieur du cadre complet, le battement est produit par **déformation de l'image d'origine** (script PIL) : les zones d'ailes sont fléchies autour de l'épaule par transformation progressive, le reste du dessin — squelette, cavalier, chaînes, encensoirs, l'humain dans la gueule — reste **strictement intact**. C'est le même dessin, plié, pas un dessin recomposé.
 
-**2. Pivots posés sur les articulations réelles du dessin**
-Le point de rotation de chaque aile est placé sur son os d'épaule tel qu'il apparaît dans l'illustration, pas au centre d'un rectangle. Idem pour la queue, sur sa vertèbre de base.
+- 8 frames de cycle de vol, battement lent et pesant.
+- Les deux ailes bougent, en opposition comme sur ton image.
+- La queue ondule très légèrement sur le même cycle.
 
-**3. Animation retenue, pas cartoon**
-- Battement d'ailes de faible amplitude autour de la pose du dessin (l'aile haute et l'aile basse en opposition, comme sur l'image), lent et pesant — une créature morte et lourde, pas un oiseau.
-- Ondulation minime de la queue, décalée du battement.
-- Léger tangage vertical du corps synchronisé sur la poussée.
-- L'humain dans la gueule se débat par soubresauts brefs, puis les mâchoires se referment : gerbe de sang, il est aspiré vers l'intérieur du crâne et disparaît.
+## L'humain dans la gueule
 
-Aucune pose de l'animation ne s'éloigne assez du dessin d'origine pour casser sa silhouette.
+Il fait partie de l'image, donc il est **toujours là**. Une seconde séquence courte (5 frames) rejoue, sur ce même cadre complet : il se débat, les mâchoires se referment, gerbe de sang, il disparaît vers l'intérieur du crâne. Après l'avalement le vol reprend sur un cycle « repue ». À chaque nouveau passage de la bête, il est de retour.
 
-**4. Contrôle**
-Capture image par image de la traversée, comparée côte à côte avec ta référence : si une pose déforme la bête ou masque le cavalier, l'amplitude est réduite jusqu'à ce que ça tienne.
+## Contrôle avant livraison
+
+- Frame 0 comparée pixel à pixel à ton illustration : doit être identique.
+- Chaque frame vérifiée pour qu'aucun pixel opaque ne touche le bord du cadre (preuve qu'aucune aile n'est coupée).
+- Capture en jeu de la traversée pour valider la silhouette.
 
 ## Détails techniques
 
-- Découpe par script PIL depuis l'illustration fournie vers `public/assets/sprites/props/` (les anciens `dread_mount_wing.png` / `dread_mount_tail.png` génériques sont supprimés).
-- `src/game/effects/DreadMount.ts` : offsets et origines recalculés depuis les coordonnées réelles de découpe, plus amplitudes de battement réduites.
-- `src/game/scenes/BootScene.ts` : chargement des nouveaux calques.
-- Aucun changement de gameplay, la monture reste purement décorative.
+- Script PIL : génère `dread_mount_fly.png` (8 frames) et `dread_mount_swallow.png` (5 frames), cadre uniforme avec marge, depuis ton illustration source uniquement.
+- Suppression des calques `dread_body/wing_top/wing_bot/tail/victim.png`.
+- `src/game/effects/DreadMount.ts` : réécrit en **un seul `Phaser.GameObjects.Sprite`** jouant `fly` puis `swallow` puis `fly-fed` — le container et les pivots disparaissent.
+- `src/game/scenes/BootScene.ts` : chargement des deux feuilles et création des trois animations.
+- Aucun impact gameplay, la monture reste décorative.
