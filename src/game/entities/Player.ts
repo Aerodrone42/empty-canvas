@@ -253,6 +253,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.actions.justDown("jump") ||
       (this.cursors.up ? Phaser.Input.Keyboard.JustDown(this.cursors.up) : false);
     const downHeld = !!this.cursors.down?.isDown || (pad?.axes[1]?.getValue() ?? 0) > 0.5;
+    const upHeld = !!this.cursors.up?.isDown || (pad?.axes[1]?.getValue() ?? 0) < -0.5;
 
     // ---------- etats verrouilles ----------
     if (this.moveState === "dodge") {
