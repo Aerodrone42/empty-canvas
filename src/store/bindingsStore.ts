@@ -29,6 +29,7 @@ export const ACTION_LABELS: Record<ActionId, string> = {
   dodge: "Esquive / roulade",
   parry: "Parade",
   special: "Rugissement de Chair",
+  interact: "Interagir (autel de sang)",
   pause: "Pause",
   flesh: "Voie de la Chair",
 };
@@ -41,6 +42,7 @@ export const ACTION_ORDER: ActionId[] = [
   "dodge",
   "parry",
   "special",
+  "interact",
   "pause",
   "flesh",
 ];
@@ -53,6 +55,7 @@ export const DEFAULT_BINDINGS: Bindings = {
   dodge: { key: "ShiftLeft", pad: 1 },
   parry: { key: "KeyA", pad: 4 },
   special: { key: "KeyR", pad: 5 },
+  interact: { key: "KeyS", pad: 3 },
   pause: { key: "Escape", pad: 9 },
   flesh: { key: "KeyF", pad: 8 },
 };
