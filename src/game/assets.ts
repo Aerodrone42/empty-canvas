@@ -20,6 +20,7 @@ export type SheetDef = {
 
 const SPRITES = "/assets/sprites";
 const ENEMIES = `${SPRITES}/enemies`;
+const HERO = `${SPRITES}/hero`;
 
 /** gabarit commun des feuilles du Vigile Muet, regenerees et normalisees */
 export const HERO_FRAME_W = 256;
