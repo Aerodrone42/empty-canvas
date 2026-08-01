@@ -26,9 +26,9 @@ function ensureGlow(scene: Phaser.Scene) {
   const ctx = canvas?.getContext();
   if (!ctx || !canvas) return;
   const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  g.addColorStop(0, "rgba(220,60,70,0.85)");
-  g.addColorStop(0.45, "rgba(150,25,35,0.35)");
-  g.addColorStop(1, "rgba(80,10,15,0)");
+  g.addColorStop(0, "rgba(140,28,28,0.7)");
+  g.addColorStop(0.45, "rgba(96,16,20,0.28)");
+  g.addColorStop(1, "rgba(50,6,8,0)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   canvas.refresh();
@@ -73,18 +73,19 @@ export class BloodAltar {
 
     const src = scene.textures.get(TEX_ALTAR).getSourceImage();
     const scale = PROP_H / src.height;
+    const wScale = scale * 0.62;
 
-    this.sprite = scene.add.image(0, 0, TEX_ALTAR).setOrigin(0.5, 1).setScale(scale);
+    this.sprite = scene.add.image(0, 0, TEX_ALTAR).setOrigin(0.5, 1).setScale(wScale, scale);
 
     // la vasque occupe environ le quart superieur du sprite
     this.bowlY = -PROP_H * 0.9;
-    this.bowlRx = (src.width * scale) / 2 - 6;
+    this.bowlRx = (src.width * wScale) / 2 - 5;
 
     this.blood = scene.add.graphics();
 
     this.glow = scene.add
       .image(0, this.bowlY, TEX_GLOW)
-      .setScale(0.8)
+      .setScale(0.55)
       .setBlendMode(Phaser.BlendModes.ADD);
 
     this.prompt = scene.add
@@ -114,15 +115,14 @@ export class BloodAltar {
 
     if (scene.textures.exists("__WHITE")) {
       this.haze = scene.add.particles(x, floorY + this.bowlY - 4, "__WHITE", {
-        speed: { min: 6, max: 20 },
+        speed: { min: 6, max: 18 },
         angle: { min: 250, max: 290 },
         lifespan: 1100,
         quantity: 1,
-        frequency: 200,
-        scale: { start: 1.4, end: 0 },
-        alpha: { start: 0.45, end: 0 },
-        tint: 0xd23a44,
-        blendMode: Phaser.BlendModes.ADD,
+        frequency: 240,
+        scale: { start: 1.1, end: 0 },
+        alpha: { start: 0.22, end: 0 },
+        tint: 0x7d1c22,
       });
       this.haze.setDepth(DEPTH);
       this.haze.stop();
@@ -137,21 +137,21 @@ export class BloodAltar {
 
   private setLit(lit: boolean, silent = false) {
     this.lit = lit;
-    // eteint : pierre assombrie ; scelle : teinte normale
-    this.sprite.setTint(lit ? 0xffffff : 0x7a6e72);
-    this.glow.setAlpha(lit ? 0.8 : 0.16);
+    // pierre chaude accordee au dallage/balustrade ; eteinte = plus sombre
+    this.sprite.setTint(lit ? 0x8a7f70 : 0x6b6158);
+    this.glow.setAlpha(lit ? 0.4 : 0.1);
     if (lit) this.haze?.start();
     else this.haze?.stop();
     if (lit && !silent) {
-      this.scene.cameras.main.flash(160, 120, 20, 30);
+      this.scene.cameras.main.flash(140, 70, 12, 18);
       this.scene.tweens.add({
         targets: this.glow,
-        scale: { from: 1.8, to: 0.8 },
+        scale: { from: 1.1, to: 0.55 },
         duration: 520,
         ease: "Cubic.easeOut",
       });
       const ring = this.scene.add.circle(0, this.bowlY, 8);
-      ring.setStrokeStyle(3, 0xd23a44, 0.9);
+      ring.setStrokeStyle(3, 0x8e1c26, 0.8);
       this.root.add(ring);
       this.scene.tweens.add({
         targets: ring,
@@ -169,17 +169,17 @@ export class BloodAltar {
     const g = this.blood;
     g.clear();
 
-    const surface = this.lit ? 0xb52230 : 0x4a161a;
-    const stream = this.lit ? 0x8e1c26 : 0x2c1013;
-    const shine = this.lit ? 0xff8a92 : 0x6a2a2f;
+    const surface = this.lit ? 0x6e1218 : 0x2e0d10;
+    const stream = this.lit ? 0x4a0d12 : 0x1b080a;
+    const shine = this.lit ? 0xa8434a : 0x4a1a1e;
 
     // surface du sang dans la vasque : ondulation lente
     const wob = 1 + Math.sin(time / 520) * 0.02;
-    g.fillStyle(surface, this.lit ? 0.95 : 0.8);
-    g.fillEllipse(0, this.bowlY + 2, this.bowlRx * 1.42 * wob, this.bowlRx * 0.42 * wob);
-    const sx = Math.sin(time / 1400) * this.bowlRx * 0.35;
-    g.fillStyle(shine, this.lit ? 0.4 : 0.14);
-    g.fillEllipse(sx, this.bowlY, this.bowlRx * 0.34, 3);
+    g.fillStyle(surface, this.lit ? 0.9 : 0.75);
+    g.fillEllipse(0, this.bowlY + 2, this.bowlRx * 1.1 * wob, this.bowlRx * 0.4 * wob);
+    const sx = Math.sin(time / 1400) * this.bowlRx * 0.3;
+    g.fillStyle(shine, this.lit ? 0.18 : 0.08);
+    g.fillEllipse(sx, this.bowlY, this.bowlRx * 0.3, 3);
 
     for (const r of this.rivulets) {
       const breathe = 0.7 + Math.sin(time * r.speed + r.phase) * 0.3;
@@ -235,12 +235,12 @@ export class BloodAltar {
 
     this.drawBlood(time, delta);
 
-    const pulse = this.lit ? 0.74 + Math.sin(time / 380) * 0.13 : 0.14 + Math.sin(time / 900) * 0.05;
+    const pulse = this.lit ? 0.38 + Math.sin(time / 520) * 0.06 : 0.1 + Math.sin(time / 900) * 0.03;
     this.glow.setAlpha(pulse);
 
     if (this.lit) {
-      this.prompt.setText(near ? "Autel scellé" : "");
-      this.prompt.setAlpha(near ? 0.55 : 0);
+      this.prompt.setText("");
+      this.prompt.setAlpha(0);
       return;
     }
 
