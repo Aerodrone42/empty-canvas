@@ -193,19 +193,21 @@ export function placeTorches(
   const torches: FloorTorch[] = [];
 
   if (backdropKey === "corridor") {
-    // perspective fuyante : plus petites vers le centre du couloir
+    // adossees au mur du fond : elles ne debordent jamais sur l'allee centrale
+    const WALL_LIFT = 120;
     const count = 6;
     const mid = roomWidth / 2;
     for (let i = 0; i < count; i++) {
       const x = 260 + (i * (roomWidth - 520)) / (count - 1);
       const t = 1 - Math.min(1, Math.abs(x - mid) / mid);
-      const scale = 0.46 - t * 0.2;
-      // le pied suit la ligne de sol qui remonte vers le point de fuite
-      const y = floorY - t * 46;
+      // plus on approche du point de fuite, plus la torche est petite et haute
+      const scale = 0.34 - t * 0.16;
+      const y = floorY - WALL_LIFT - t * 60;
       torches.push(new FloorTorch(scene, x, y, scale, -6));
     }
     return torches;
   }
+
 
   // cathedrale : quatre torcheres reparties, loin du crucifie et de la sortie
   for (const x of [180, 1080, 1720, 2380]) {
