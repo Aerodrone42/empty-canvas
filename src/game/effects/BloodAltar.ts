@@ -115,15 +115,14 @@ export class BloodAltar {
 
     if (scene.textures.exists("__WHITE")) {
       this.haze = scene.add.particles(x, floorY + this.bowlY - 4, "__WHITE", {
-        speed: { min: 6, max: 20 },
+        speed: { min: 6, max: 18 },
         angle: { min: 250, max: 290 },
         lifespan: 1100,
         quantity: 1,
-        frequency: 200,
-        scale: { start: 1.4, end: 0 },
-        alpha: { start: 0.45, end: 0 },
-        tint: 0xd23a44,
-        blendMode: Phaser.BlendModes.ADD,
+        frequency: 240,
+        scale: { start: 1.1, end: 0 },
+        alpha: { start: 0.22, end: 0 },
+        tint: 0x7d1c22,
       });
       this.haze.setDepth(DEPTH);
       this.haze.stop();
