@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import type { BackdropKey } from "@/game/assets";
 import {
   BASE_EFFECTS,
   MUTATIONS,
@@ -11,6 +12,7 @@ import {
 export type Phase =
   | "warning"
   | "menu"
+  | "stages"
   | "playing"
   | "paused"
   | "flesh"
