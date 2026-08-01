@@ -173,6 +173,7 @@ export class GameScene extends Phaser.Scene {
 
     this.blood = new BloodFX(this, FLOOR_Y);
     this.damageNumbers = new DamageNumbers(this);
+    this.absorbPrompt = new AbsorbPrompt(this);
 
     this.buildBackdrop();
     this.buildGeometry();
