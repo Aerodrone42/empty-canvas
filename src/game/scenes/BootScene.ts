@@ -1,9 +1,10 @@
 import Phaser from "phaser";
 
 import { BACKDROPS, FRAME_SPACING, SHEETS } from "../assets";
-import { MUSIC_AMBIENT, MUSIC_COMBAT } from "../audio/Music";
+import { MUSIC_AMBIENT, MUSIC_CHOIR, MUSIC_COMBAT } from "../audio/Music";
 import ambientTrack from "@/assets/music_obscura_piano.mp3.asset.json";
 import combatTrack from "@/assets/music_sinister_power.mp3.asset.json";
+import choirTrack from "@/assets/music_gothic_choir.mp3.asset.json";
 
 
 export class BootScene extends Phaser.Scene {
@@ -109,9 +110,10 @@ export class BootScene extends Phaser.Scene {
     );
     this.load.image("bourreau-crank", "/assets/sprites/enemies/bourreau_crank.png");
 
-    // bande-son : ambiance piano + theme de combat
+    // bande-son : ambiance piano + theme de combat + choeur de la salle 1
     this.load.audio(MUSIC_AMBIENT, ambientTrack.url);
     this.load.audio(MUSIC_COMBAT, combatTrack.url);
+    this.load.audio(MUSIC_CHOIR, choirTrack.url);
   }
 
 
