@@ -11,7 +11,7 @@ import {
   strikeBox,
   type Strike,
 } from "../combat";
-import { DamageNumbers } from "../effects/DamageNumbers";
+import { DamageNumbers, type DamageKind } from "../effects/DamageNumbers";
 
 
 import { Profiler } from "../debug/Profiler";
@@ -65,6 +65,8 @@ export class GameScene extends Phaser.Scene {
   private hands: GraspingHands[] = [];
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
   private blood!: BloodFX;
+  /** chiffres de degats flottants */
+  private damageNumbers!: DamageNumbers;
   private parallax!: Parallax;
   private pickups: Pickup[] = [];
   /** panneau de diagnostic des performances (F3) */
@@ -137,6 +139,7 @@ export class GameScene extends Phaser.Scene {
     this.music = new MusicDirector(this);
 
     this.blood = new BloodFX(this, FLOOR_Y);
+    this.damageNumbers = new DamageNumbers(this);
 
     this.buildBackdrop();
     this.buildGeometry();
@@ -163,6 +166,7 @@ export class GameScene extends Phaser.Scene {
     this.events.on("fx-blood", this.onBlood, this);
     this.events.on("fx-gore", this.onGore, this);
     this.events.on("fx-sparks", this.onSparks, this);
+    this.events.on("fx-damage", this.onDamageNumber, this);
     this.events.on("fx-heal", this.onHeal, this);
     this.events.on("enemy-died", this.onEnemyDied, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -171,6 +175,8 @@ export class GameScene extends Phaser.Scene {
       this.events.off("fx-blood", this.onBlood, this);
       this.events.off("fx-gore", this.onGore, this);
       this.events.off("fx-sparks", this.onSparks, this);
+      this.events.off("fx-damage", this.onDamageNumber, this);
+      this.damageNumbers?.destroy();
       this.events.off("fx-heal", this.onHeal, this);
       this.events.off("enemy-died", this.onEnemyDied, this);
     });
@@ -246,6 +252,15 @@ export class GameScene extends Phaser.Scene {
 
   private onGore(x: number, y: number, intensity: number) {
     this.blood.gore(x, y, intensity);
+  }
+
+  private onDamageNumber(
+    x: number,
+    y: number,
+    amount: number,
+    kind: DamageKind = "normal",
+  ) {
+    this.damageNumbers?.show(x, y, amount, kind);
   }
 
   private onSparks(x: number, y: number) {
