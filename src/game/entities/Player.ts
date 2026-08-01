@@ -208,10 +208,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** Interrompt l'absorption de chair en cours. */
   private cancelAbsorb() {
+    // le flag du HUD est toujours remis a zero, meme si l'etat a deja change
+    useGameStore.getState().setAbsorb(false, 0);
     if (this.moveState !== "absorb") return;
     this.moveState = "idle";
     this.clearTint();
-    useGameStore.getState().setAbsorb(false, 0);
   }
 
 
