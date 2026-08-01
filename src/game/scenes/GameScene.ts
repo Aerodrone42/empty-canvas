@@ -82,6 +82,9 @@ export class GameScene extends Phaser.Scene {
   private gateColumn?: GateColumn;
   /** supplicie ecorche du fond de la cathedrale */
   private crucified?: CrucifiedProp;
+  /** suppliciee (femme) a droite du supplicie */
+  private crucifiedWoman?: CrucifiedProp;
+
   /** monture funebre qui traverse le ciel de la cathedrale */
   private mount?: DreadMount;
   /** veine geante animee du corridor */
