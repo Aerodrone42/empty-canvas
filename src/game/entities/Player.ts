@@ -112,6 +112,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.cursors = scene.input.keyboard!.createCursorKeys();
     this.play("vigile-idle-anim");
+    // nouvelle salle / nouveau heros : aucun residu d'absorption a l'ecran
+    useGameStore.getState().setAbsorb(false, 0);
   }
 
   /** Echelle et origine fixes (gabarit normalise), hitbox constante. */
