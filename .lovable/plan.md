@@ -1,24 +1,21 @@
-## Objectif
+## Constat vérifié
 
-Remplir le grand vide du ciel de la salle 1 (cathédrale) par une créature volante monumentale qui traverse lentement l'arrière-plan : une chauve-souris démoniaque montée par un cavalier terrifiant, tenant un humain vivant dans sa gueule et le gobant progressivement.
+En décomposant `public/assets/sprites/props/dread_mount_prey_spritesheet.png` (6 frames de 320x238), la zone de l'aile arrière (droite, derrière le cavalier) est :
+- **vide sur les frames 1, 2, 5, 6**
+- **dessinée uniquement sur les frames 3 et 4**
 
-## Assets à produire
+Résultat à l'écran : l'aile droite « clignote » — elle surgit puis disparaît, au lieu de battre. La cause est le script de génération (`order=[0,1,2,2,1,0]`) : seule l'image source n°2 contient cette aile, les deux autres sources n'en ont pas.
 
-1. `public/assets/sprites/props/dread_mount_spritesheet.png` — vol de la monture, 8 frames (grande cellule, ~320x256), pixel art cohérent avec le reste (palette ocre/os/sang, fond transparent).
-   - Ailes membranaires déchirées, ossature apparente, chaînes et encensoirs pendants (référence image 2, mais plus détaillée et plus sombre).
-   - Cavalier retravaillé pour faire peur : silhouette haute encapuchonnée, masque d'os cornu, bras filiformes tenant des rênes de tendons, cape en lambeaux qui claque au vent.
-2. `public/assets/sprites/props/dread_mount_prey_spritesheet.png` — la proie humaine dans la gueule, 6 frames : gigote (jambes qui battent, bras qui griffent) → happée plus profond → deux dernières frames = déglutition (jambes qui disparaissent, gorge de la bête qui se gonfle), puis boucle de repos.
+## Correction proposée
 
-## Code
+1. **Extraire l'aile arrière** depuis la frame source qui la contient (masque polygonal autour de la zone aile droite, avec léger feathering pour éviter la couture), et la conserver comme calque réutilisable.
+2. **La recomposer sur les 6 frames**, derrière le cavalier et le corps (ordre de composition : aile arrière → corps/cavalier → aile avant), pour qu'elle soit toujours présente.
+3. **L'animer** par rotation autour de son point d'attache à l'épaule, en opposition de phase avec l'aile avant (cycle type : +9°, +3°, -6°, -9°, -3°, +5°), avec une légère compression horizontale sur les frames d'extension pour simuler la perspective.
+4. **Nettoyer les résidus** de l'aile dans les frames sources 3 et 4 avant recomposition, pour éviter une double aile.
+5. Appliquer le même traitement aux deux planches : `dread_mount_prey_spritesheet.png` et `dread_mount_fed_spritesheet.png`.
+6. **Vérification** : re-découpage des 6 frames et contrôle visuel que la zone aile droite est non vide et varie progressivement sur tout le cycle.
 
-3. Nouveau `src/game/effects/DreadMount.ts` :
-   - Sprite unique recyclé, `setScrollFactor` ~0.55 (parallaxe de fond, derrière les colonnes, devant le décor lointain), profondeur négative, aucune physique ni collision.
-   - Traversée lente de gauche à droite ou inversement, ondulation verticale sinusoïdale, légère variation d'échelle pour l'effet d'éloignement.
-   - Sprite de proie ancré à la gueule (offset suivi frame par frame), joue le cycle de gigotage puis, une fois par traversée, la séquence d'avalement (gerbe de sang + secousse de tête), après quoi la gueule reste vide jusqu'au passage suivant.
-   - Cri lointain / battements d'ailes optionnels via événements existants (pas de nouvel audio si non fourni).
-4. `src/game/scenes/BootScene.ts` : chargement des deux spritesheets et déclaration des animations.
-5. `src/game/scenes/GameScene.ts` : instanciation uniquement pour `backdropKey === "cathedrale"`, passage toutes les ~18-25 s, destruction dans le cleanup existant à côté de `critters`/`crucified`.
+## Détails techniques
 
-## Vérification
-
-Capture Playwright de la salle 1 pour confirmer que la bête occupe bien la zone vide entourée en rouge, qu'elle passe derrière les colonnes du premier plan et que la proie est visible puis avalée.
+- Script Python/PIL (hors dépôt, dans `/tmp`) régénérant les deux spritesheets à partir des originaux `/tmp/prey_orig.png` et `/tmp/fed_orig.png`.
+- Dimensions inchangées : 6 frames × 320×238 → 1920×238, donc **aucune modification** de `src/game/scenes/BootScene.ts` ni de `src/game/effects/DreadMount.ts` n'est nécessaire.
