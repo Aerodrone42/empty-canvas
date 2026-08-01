@@ -645,6 +645,7 @@ export class GameScene extends Phaser.Scene {
         useGameStore.getState().setAbsorb(false, 0);
       }
       this.regenerateFromBlood(!threatened, delta);
+      this.updateAbsorbPrompt(!threatened, delta);
       // bande-son adaptative : theme epique tant qu'une creature menace
       this.music?.setCombat(threatened);
     });
