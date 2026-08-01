@@ -232,7 +232,8 @@ export class BootScene extends Phaser.Scene {
       repeat: 0,
     });
 
-    this.scene.start("game");
+    // reprise sur la salle choisie dans le menu (sinon la premiere)
+    this.scene.start("game", { backdrop: useGameStore.getState().stage });
   }
 }
 
