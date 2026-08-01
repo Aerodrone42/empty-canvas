@@ -535,7 +535,7 @@ export class GameScene extends Phaser.Scene {
       store.health < store.maxHealth &&
       store.flesh >= ABSORB_COST &&
       !!this.blood.poolAt(this.player.x);
-    this.absorbPrompt.tick(visible, this.player.x, this.player.y - 110, delta);
+    this.absorbPrompt.tick(visible, this.player.x, this.player.y - 150, delta);
   }
 
 
