@@ -39,22 +39,26 @@ Le joueur choisit d'achever ou d'épargner les âmes — capital moral implicite
 
 | Bloc | Niveaux | Boss principaux |
 | --- | --- | --- |
-| Prologue — Le Seuil (**produit**) | 1–4 | Mère-Suture |
-| Ante-Enfer | 5–6 | Charon |
-| Cercle 1 — Les Limbes | 7–10 | Chien de Garde des Limbes |
-| Cercle 2 — Luxure | 11–14 | Reine des Vents Lascifs |
-| Cercle 3 — Gourmandise | 15–18 | Cerbère |
-| Cercle 4 — Avarice et Prodigalité | 19–22 | Pluton / Gardien Doré |
-| Cercle 5 — Colère et Paresse (Styx) | 23–27 | Phlégyas |
-| Cercle 6 — Hérésie (Cité de Dis) | 28–33 | Les Furies, Cardinal Cendré |
-| Cercle 7.1 — Phlégéthon | 34–38 | Chiron |
-| Cercle 7.2 — Forêt des Suicidés | 39–42 | L'Harpie Mère |
-| Cercle 7.3 — Sables Brûlants | 43–46 | Capanée |
-| Cercle 8 — Malebolge (10 bolges) | 47–92 | Malacoda, Voleur Serpent, Grand Fendu, Faussaire Boursouflé… |
-| Cercle 9 — Cocyte | 93–99 | Nembrot & Éphialtès, Ombre de Lucifer |
-| Niveau final — Le Puits | 100 | **Lucifer** |
+| Prologue — Le Seuil (**produit**) | 1–4 | Mère-Suture (niv. 4) |
+| Ante-Enfer | 5–6 | Charon (niv. 6) |
+| Cercle 1 — Les Limbes | 7–10 | Chien de Garde des Limbes (niv. 10) |
+| Cercle 2 — Luxure | 11–15 | Reine des Vents Lascifs (niv. 15) |
+| Cercle 3 — Gourmandise | 16–20 | Cerbère (niv. 20) |
+| Cercle 4 — Avarice et Prodigalité | 21–25 | Pluton / Gardien Doré (niv. 25) |
+| Cercle 5 — Colère et Paresse (Styx) | 26–31 | Phlégyas (niv. 31) |
+| Cercle 6 — Hérésie (Cité de Dis) | 32–40 | Cardinal Cendré (niv. 40) |
+| Cercle 7.1 — Phlégéthon | 41–45 | Chiron (niv. 45) |
+| Cercle 7.2 — Forêt des Suicidés | 46–50 | L'Harpie Mère (niv. 50) |
+| Cercle 7.3 — Sables Brûlants | 51–55 | Capanée (niv. 55) |
+| Cercle 8 — Malebolge, 10 bolges de 3 niveaux | 56–85 | Malacoda, Voleur Serpent, Grand Fendu, Faussaire Boursouflé |
+| Cercle 9 — Cocyte | 86–99 | Nembrot & Éphialtès, Ombre de Lucifer |
+| Niveau final — Le Puits | 100 | **Lucifer, le Cœur Gelé de la Création** |
 
-(Les bornes exactes de chaque bolge sont dans les tableaux du § 6.)
+Bolges du Cercle 8 : 1 Entremetteurs 56–58 · 2 Flatteurs 59–61 · 3 Simoniaques 62–64 ·
+4 Devins 65–67 · 5 Corrompus 68–70 · 6 Hypocrites 71–73 · 7 Voleurs 74–76 ·
+8 Conseillers frauduleux 77–79 · 9 Semeurs de discorde 80–82 · 10 Faussaires 83–85.
+
+(Titres, descriptions, ennemis et boss niveau par niveau : tableaux du § 6 de la bible.)
 
 ## Ennemis hérités — à faire évoluer en 3 paliers
 
