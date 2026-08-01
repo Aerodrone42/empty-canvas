@@ -56,7 +56,9 @@ const TORTURE_RACK_X = 1320;
 
 
 /** enchainement des salles : la colonne mene a la suivante */
-const ROOM_ORDER: BackdropKey[] = ["cathedrale", "corridor", "throne", "exterieur"];
+import { ROOM_ORDER } from "../rooms";
+
+
 
 
 export class GameScene extends Phaser.Scene {
