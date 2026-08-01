@@ -16,6 +16,8 @@ export type EnemyStats = {
   bodyHeight: number;
   fleshReward: number;
   animPrefix: string;
+  /** anim jouee pendant l'anticipation (defaut : idle teinte) */
+  windupAnim?: string;
   /** garde : seuls les coups brise-garde passent en plein */
   guarded?: boolean;
 };
@@ -248,9 +250,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.lastAttackAt = time;
         this.attacking = true;
 
-        // anticipation lisible : la creature se teinte avant de frapper
-        this.setTint(0xffcf6b);
-        this.play(`${this.stats.animPrefix}-idle-anim`, true);
+        // anticipation lisible : arme qui se charge si la creature a une
+        // planche d'armement, sinon teinte sur l'idle
+        if (this.stats.windupAnim) {
+          this.play(this.stats.windupAnim, true);
+        } else {
+          this.setTint(0xffcf6b);
+          this.play(`${this.stats.animPrefix}-idle-anim`, true);
+        }
+
 
         this.scene.time.delayedCall(TELEGRAPH_MS, () => {
           if (!this.active || this.dying) return;
@@ -502,13 +510,16 @@ export class Bourreau extends Enemy {
       detectRange: 1000,
       attackRange: 104,
       attackCooldown: 1400,
-      scale: 1.7,
-      // colosse a l'echelle 1.7 : hurtbox alignee sur la silhouette rendue
+      // planches regenerees : corps de 128 px dans le cadre (contre 150 avant),
+      // l'echelle compense pour garder la meme stature a l'ecran
+      scale: 1.99,
+      // colosse : hurtbox alignee sur la silhouette rendue
       bodyWidth: 78,
       bodyHeight: 158,
 
       fleshReward: 16,
       animPrefix: "bourreau",
+      windupAnim: "bourreau-windup-anim",
     });
   }
 }

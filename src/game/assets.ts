@@ -173,7 +173,7 @@ export const SHEETS: SheetDef[] = [
     path: `${ENEMIES}/bourreau_walk_spritesheet.png`,
     frameWidth: ENEMY_FRAME_W,
     frameHeight: ENEMY_FRAME_H,
-    frameCount: 4,
+    frameCount: 6,
     frameRate: 8,
     repeat: -1,
     spacing: 0,

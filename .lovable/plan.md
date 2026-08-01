@@ -1,24 +1,41 @@
-## Diagnostic (vérifié)
+## Périmètre
 
-Les animations du bourreau sont bien déclarées (`src/game/assets.ts` : `bourreau-attack`, 5 frames) et jouées par `Enemy.think()` via `bourreau-attack-anim`. Le problème vient de l'asset lui-même : en analysant `public/assets/sprites/enemies/bourreau_attack_spritesheet.png`, les 5 frames ont une silhouette quasi identique à l'idle (boîte englobante 64-159 px sur toutes les frames, aucun déplacement de bras ou d'arme). Visuellement, le bourreau frappe sans bouger — d'où l'impression d'absence d'animation.
+Refaire **uniquement le Bourreau** : ses trois planches de sprites, régénérées par génération d'image, dans le style du jeu et aux dimensions exactes du moteur.
 
-## Ce qu'on fait
+**Rien d'autre n'est touché** : ni la machine d'écartèlement (`torture_rack_frame.png`), ni le supplicié (`torture_rack_victim_spritesheet.png`), ni `src/game/effects/TortureRack.ts`.
 
-1. **Nouvelle planche d'attaque** `bourreau_attack_spritesheet.png` (même gabarit 224x176, ligne de pieds y=168, fond transparent), 6 frames avec un mouvement franc et lisible :
-   - f0-f1 : armement, crochet/hache reculé au-dessus de l'épaule, torse pivoté en arrière
-   - f2 : swing large vers l'avant, traînée de mouvement
-   - f3 : impact, bras tendu au maximum, buste penché
-   - f4-f5 : récupération, retour vers la garde
-   Amplitude horizontale du bras nettement au-delà de la silhouette idle pour que le coup se voie.
+## Contraintes fixes
 
-2. **Frames d'anticipation** dans `src/game/entities/Enemy.ts` : pendant le télégraphe (350 ms) l'ennemi rejoue l'idle. On ajoutera une animation `bourreau-windup` (frames 0-1 de la planche d'attaque, non bouclée) jouée pendant l'anticipation, puis le swing complet — le joueur voit le coup arriver, ce qui rend l'esquive/parade lisible.
+- **224 x 176 par frame**, fond transparent, pieds sur la ligne de sol, même échelle que les autres ennemis.
+- Silhouette stable d'une frame à l'autre : même centre, même taille de couperet, même carrure.
+- Style : gothique organique sombre, cuir tanné, masque de bourreau à lanières, chaîne et crochet à la ceinture, torse pâle marqué, éclairage latéral froid, sang séché. Pas de contour cartoon, pas de fond.
 
-3. **Effets d'impact** : au moment du `enemy-strike` du bourreau, ajout d'un flash de traînée d'arme (arc rouge court) + micro-secousse caméra, cohérent avec le reste du combat.
+## Planches
 
-## Détails techniques
+| Planche | Frames | Contenu |
+|---|---|---|
+| `bourreau_attack_spritesheet.png` | 6 | armement couperet derrière l'épaule (0-1), swing (2-3), impact bras tendu vers l'avant (4), retour à la garde (5) |
+| `bourreau_idle_spritesheet.png` | 4 | respiration lourde, couperet appuyé sur l'épaule, chaîne qui balance |
+| `bourreau_walk_spritesheet.png` | 6 | marche pesante, épaules qui roulent |
 
-- Génération de l'asset par script Python (Pillow) comme pour les autres sprites, sortie 6x224 = 1344x176, quantifiée 32 couleurs, transparence conservée.
-- `src/game/assets.ts` : `frameCount` de `bourreau-attack` passé à 6, frameRate ajusté (~12) pour rester dans la fenêtre d'attaque existante.
-- `src/game/scenes/BootScene.ts` : création de l'animation `bourreau-windup-anim` (frames 0-1, repeat 0).
-- `src/game/entities/Enemy.ts` : hook optionnel `windupAnim` dans `EnemyStats`, utilisé pendant le télégraphe s'il existe (les autres monstres gardent le comportement actuel).
-- Vérification en jeu (Playwright) : le bourreau apparaît après la machine d'écartèlement en salle 2 — capture des frames pendant son attaque pour confirmer le mouvement.
+L'attaque est la priorité : c'est elle qui est illisible aujourd'hui. Idle et walk sont refaits dans la foulée pour rester cohérents avec elle.
+
+`bourreau_crank.png` (le bourreau à la manivelle) reste tel quel puisqu'il appartient à la scène de la machine.
+
+## Méthode
+
+1. Une **feuille de référence** du Bourreau générée en premier, validée visuellement avant toute animation.
+2. Chaque frame générée à partir de cette référence : seule la pose change, le personnage reste identique.
+3. Assemblage sur la grille 224 x 176 avec contrôle programmatique : bbox de chaque frame, pieds alignés, centre stable, transparence propre, largeur totale exacte.
+4. **Validation visuelle avant câblage.** Une frame incohérente est régénérée, jamais repeinte à la main.
+
+## Câblage moteur (une seule fois, à la fin)
+
+- `src/game/assets.ts` : `bourreau-attack` → `frameCount: 6`, `frameRate: 12` ; ajustement des compteurs idle/walk si nécessaire.
+- `src/game/scenes/BootScene.ts` : anim `bourreau-windup-anim` (frames 0-1, 7 fps) pour la phase d'anticipation.
+- `src/game/entities/Enemy.ts` : champ optionnel `windupAnim` dans `EnemyStats`, joué pendant les 350 ms d'anticipation à la place du idle teinté ; le coup part sur la frame d'impact.
+- Contrôle final en jeu par capture runtime : anticipation lisible, swing visible, impact synchronisé avec les dégâts.
+
+## Ce que je ne fais plus
+
+Aucun membre dessiné en script, aucune rotation de lame, aucun inpainting manuel. Le sprite sort de la génération d'image ou n'est pas livré.
