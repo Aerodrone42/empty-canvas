@@ -35,7 +35,7 @@ import { Pickup } from "../entities/Pickup";
 import { Player } from "../entities/Player";
 import { ROOM_ORDER } from "../rooms";
 import type { BackdropKey } from "@/game/assets";
-import { useGameStore } from "@/store/gameStore";
+import { ABSORB_COST, useGameStore } from "@/store/gameStore";
 
 const ROOM_WIDTH = 2400;
 const ROOM_HEIGHT = 900;
