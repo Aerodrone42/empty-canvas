@@ -278,7 +278,7 @@ export const SHEETS: SheetDef[] = [
   // --- Suppliciee (femme rousse, robe blanche ensanglantee) ---
   {
     key: "crucifiee-idle",
-    path: `${SPRITES}/props/crucifiee_femme_spritesheet.png`,
+    path: `${SPRITES}/props/crucifiee_femme_spritesheet.png?v=3`,
     frameWidth: 284,
     frameHeight: 697,
     frameCount: 8,
