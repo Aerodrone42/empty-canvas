@@ -612,7 +612,7 @@ export class GameScene extends Phaser.Scene {
     this.wheel?.tick(this.player.x, time);
     this.critters?.tick(time, delta);
     this.mount?.update(time, delta);
-    this.altar?.tick(this.player.x, time);
+    this.altar?.tick(this.player.x, time, delta);
     for (const t of this.torches) t.tick(time);
 
 
