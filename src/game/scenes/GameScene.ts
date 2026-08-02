@@ -226,7 +226,11 @@ export class GameScene extends Phaser.Scene {
     // mort puis reapparition : la salle est relancee depuis l'autel scelle
     this.unsubRespawn = useGameStore.subscribe((state, prev) => {
       if (state.respawnToken === prev.respawnToken) return;
-      const target = state.checkpoint?.stage === this.backdropKey ? state.checkpoint.x : 180;
+      const target =
+        state.checkpoint?.stage === this.backdropKey
+          ? state.checkpoint.x
+          : this.room.spawnX;
+
       this.scene.restart({ backdrop: this.backdropKey, spawnX: target });
     });
 
