@@ -240,46 +240,94 @@ export class GameScene extends Phaser.Scene {
   }
 
 
+  /** Instancie une creature depuis sa description de configuration. */
+  private makeEnemy(def: SpawnDef): Enemy {
+    const enemy =
+      def.kind === "penitent"
+        ? new PenitentGreffe(this, def.x, FLOOR_Y)
+        : def.kind === "bourreau"
+          ? new Bourreau(this, def.x, FLOOR_Y)
+          : new SuppliantRampant(this, def.x, FLOOR_Y);
+    if (def.elite) enemy.makeElite();
+    return enemy;
+  }
+
   /**
-   * Peuplement propre a chaque salle : la cathedrale sert d'introduction,
-   * le corridor est un couloir d'embuscade beaucoup plus dense (creatures
-   * rapprochees, pendus multiples, pieges au sol), les salles suivantes
-   * montent encore d'un cran.
+   * Peuplement pilote par `roomConfig` : creatures d'entree, pendus, mains
+   * agrippantes, puis premiere vague pour les salles en arene.
    */
   private populateRoom() {
-    if (this.backdropKey === "corridor") {
-      this.spawn(new SuppliantRampant(this, 620, FLOOR_Y));
-      this.spawn(new SuppliantRampant(this, 900, FLOOR_Y));
-      this.spawn(new PenitentGreffe(this, 1150, FLOOR_Y));
-      this.spawn(new SuppliantRampant(this, 1450, FLOOR_Y));
-      this.spawn(new PenitentGreffe(this, 1720, FLOOR_Y));
-      this.spawn(new PenitentGreffe(this, 2050, FLOOR_Y));
-      this.spawnPendu(new EcorchePendu(this, 1000, FLOOR_Y, 60));
-      this.spawnPendu(new EcorchePendu(this, 1600, FLOOR_Y, 60));
-      this.spawnPendu(new EcorchePendu(this, 2200, FLOOR_Y, 60));
-
-      this.hands = [
-        new GraspingHands(this, 420, 900, FLOOR_Y),
-        new GraspingHands(this, 950, 1500, FLOOR_Y),
-        new GraspingHands(this, 1550, 2000, FLOOR_Y),
-        new GraspingHands(this, 2050, 2400, FLOOR_Y),
-      ];
-      return;
+    for (const def of this.room.spawns) this.spawn(this.makeEnemy(def));
+    for (const x of this.room.hangers) {
+      this.spawnPendu(new EcorchePendu(this, x, FLOOR_Y, 60));
     }
+    this.hands = this.room.hands.map(
+      ([from, to]) => new GraspingHands(this, from, to, FLOOR_Y),
+    );
 
-    this.spawn(new SuppliantRampant(this, 760, FLOOR_Y));
-    this.spawn(new PenitentGreffe(this, 1180, FLOOR_Y));
-    this.spawn(new SuppliantRampant(this, 1600, FLOOR_Y));
-    this.spawn(new PenitentGreffe(this, 2060, FLOOR_Y));
-    this.spawnPendu(new EcorchePendu(this, 1400, FLOOR_Y, 60));
-    this.spawnPendu(new EcorchePendu(this, 1900, FLOOR_Y, 60));
-
-    this.hands = [
-      new GraspingHands(this, 520, 1150, FLOOR_Y),
-      new GraspingHands(this, 1200, 1800, FLOOR_Y),
-      new GraspingHands(this, 1850, 2400, FLOOR_Y),
-    ];
+    // arene : la premiere vague n'arrive qu'au franchissement du verrou
   }
+
+  /** Arene : le passage se referme derriere le heros et la premiere vague tombe. */
+  private lockArena() {
+    if (this.arenaLocked || this.room.arenaLockX === undefined) return;
+    this.arenaLocked = true;
+
+    const wall = this.add.rectangle(
+      this.room.arenaLockX - 30,
+      FLOOR_Y - 230,
+      36,
+      470,
+      0x53161f,
+      0.85,
+    );
+    wall.setDepth(4);
+    this.physics.add.existing(wall, true);
+    this.platforms.add(wall);
+    this.arenaWall = wall;
+
+    this.cameras.main.shake(260, 0.008);
+    this.announce("Le passage se referme");
+    this.nextWave();
+  }
+
+  /** Vague suivante d'une arene : apparition differee avec secousse. */
+  private nextWave() {
+    const wave = this.pendingWaves.shift();
+    if (!wave) return;
+    this.waveIncoming = true;
+    this.time.delayedCall(700, () => {
+      if (!this.scene.isActive()) return;
+      for (const def of wave) this.spawn(this.makeEnemy(def));
+      this.waveIncoming = false;
+      this.cameras.main.shake(180, 0.005);
+    });
+  }
+
+  /** Bandeau de texte centre en haut de l'ecran. */
+  private announce(text: string, delay = 0) {
+    const cam = this.cameras.main;
+    const label = this.add
+      .text(cam.width / 2, 120, text, {
+        fontFamily: "Georgia, serif",
+        fontSize: "26px",
+        color: "#c2727a",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(60)
+      .setAlpha(0);
+    this.tweens.add({
+      targets: label,
+      alpha: 1,
+      duration: 500,
+      delay,
+      yoyo: true,
+      hold: 1400,
+      onComplete: () => label.destroy(),
+    });
+  }
+
 
   private spawn(enemy: Enemy) {
     this.physics.add.collider(enemy, this.platforms);
