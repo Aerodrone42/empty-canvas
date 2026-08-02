@@ -432,7 +432,7 @@ export class GameScene extends Phaser.Scene {
       // mini-boss aerien : il surgit dans la seconde moitie de la salle
       this.mount = new DreadMount(this, {
         floorY: FLOOR_Y,
-        roomWidth: ROOM_WIDTH,
+        roomWidth,
         triggerX: MOUNT_TRIGGER_X,
         getPlayer: () => this.player,
         onStrike: (amount) => this.resolveEnemyStrike(amount),
@@ -440,14 +440,14 @@ export class GameScene extends Phaser.Scene {
       });
     } else if (this.backdropKey === "corridor") {
       // grosse veine qui bat le long du couloir, derriere les statues
-      this.vein = new CorridorVein(this, FLOOR_Y, ROOM_WIDTH);
+      this.vein = new CorridorVein(this, FLOOR_Y, roomWidth);
 
       // statues de pleureuses qui saignent des yeux quand le heros approche
       // amas de chair disperses sur la ligne sol/mur, reveils aleatoires
-      this.blobs = scatterFleshBlobs(this, FLOOR_Y, ROOM_WIDTH, {
+      this.blobs = scatterFleshBlobs(this, FLOOR_Y, roomWidth, {
         count: Phaser.Math.Between(4, 6),
         minX: 380,
-        maxX: ROOM_WIDTH - 320,
+        maxX: roomWidth - 320,
         lift: 70,
       });
 
@@ -465,10 +465,43 @@ export class GameScene extends Phaser.Scene {
         }
         this.cameras.main.shake(180, 0.006);
       });
+    } else if (this.backdropKey === "throne") {
+      // salle du trone : statues de garde de part et d'autre de l'arene,
+      // amas de chair au pied des murs
+      this.statues = [
+        new WeepingStatue(this, 1080, FLOOR_Y, 0.8, 90),
+        new WeepingStatue(this, 1920, FLOOR_Y, 0.8, 90),
+      ];
+      this.blobs = scatterFleshBlobs(this, FLOOR_Y, roomWidth, {
+        count: Phaser.Math.Between(3, 5),
+        minX: 1050,
+        maxX: roomWidth - 260,
+        lift: 60,
+      });
+      this.crucified = new CrucifiedProp(this, 300, FLOOR_Y);
+    } else {
+      // exterieur : parvis long, supplicies exposes et chairs eparses
+      this.crucified = new CrucifiedProp(this, 640, FLOOR_Y);
+      this.crucifiedWoman = new CrucifiedProp(
+        this,
+        2900,
+        FLOOR_Y,
+        "crucifiee-idle",
+      );
+      this.statues = [
+        new WeepingStatue(this, 1450, FLOOR_Y, 0.7, 80),
+        new WeepingStatue(this, 2600, FLOOR_Y, 0.7, 80),
+      ];
+      this.blobs = scatterFleshBlobs(this, FLOOR_Y, roomWidth, {
+        count: Phaser.Math.Between(4, 6),
+        minX: 800,
+        maxX: roomWidth - 300,
+        lift: 50,
+      });
     }
 
     // autel de sang : sauvegarde juste avant l'affrontement majeur de la salle
-    const altarX = ALTAR_X[this.backdropKey];
+    const altarX = this.room.altarX;
     if (altarX !== undefined) {
       const saved = useGameStore.getState().checkpoint;
       this.altar = new BloodAltar(
@@ -485,16 +518,18 @@ export class GameScene extends Phaser.Scene {
    * respirent, et un seuil obstrue le passage tant qu'il reste des monstres.
    */
   private buildGate() {
-    this.gateColumn = new GateColumn(this, GATE_X, FLOOR_Y);
+    const gateX = gateXOf(this.room);
+    this.gateColumn = new GateColumn(this, gateX, FLOOR_Y);
 
     // verrou physique invisible : le heros bute sur la colonne
-    const wall = this.add.rectangle(GATE_X + 40, FLOOR_Y - 220, 40, 460);
+    const wall = this.add.rectangle(gateX + 40, FLOOR_Y - 220, 40, 460);
     wall.setVisible(false);
     this.physics.add.existing(wall, true);
     this.platforms.add(wall);
     this.gateWall = wall;
 
   }
+
 
   /** Dernier monstre tue : le passage s'ouvre. */
   private openGate() {
