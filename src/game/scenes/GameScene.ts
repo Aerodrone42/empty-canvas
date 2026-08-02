@@ -172,6 +172,8 @@ export class GameScene extends Phaser.Scene {
     this.roomCleared = false;
     this.arenaLocked = false;
     this.arenaWall = undefined;
+    this.arenaGate = undefined;
+
     this.waveIncoming = false;
     this.pendingWaves = (this.room.waves ?? []).map((w) => [...w]);
     this.physics.world.setBounds(0, 0, this.room.width, ROOM_HEIGHT);
