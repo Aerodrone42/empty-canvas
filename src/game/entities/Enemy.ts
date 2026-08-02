@@ -35,6 +35,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   protected patrolOrigin: number;
   protected stunnedUntil = 0;
   protected guardBrokenUntil = 0;
+  /** teinte permanente (variante elite) : restauree apres chaque flash */
+  protected baseTint?: number;
+
 
   constructor(scene: Phaser.Scene, x: number, y: number, stats: EnemyStats) {
     super(scene, x, y, `${stats.animPrefix}-idle`);
