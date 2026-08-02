@@ -34,11 +34,11 @@ import { Bourreau, EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from 
 import { GraspingHands } from "../entities/GraspingHands";
 import { Pickup } from "../entities/Pickup";
 import { Player } from "../entities/Player";
-import { ROOM_ORDER } from "../rooms";
+import { ROOM_LABELS, ROOM_ORDER } from "../rooms";
+import { ROOM_CONFIG, gateXOf, type RoomConfig, type SpawnDef } from "../roomConfig";
 import type { BackdropKey } from "@/game/assets";
 import { ABSORB_COST, useGameStore } from "@/store/gameStore";
 
-const ROOM_WIDTH = 2400;
 const ROOM_HEIGHT = 900;
 /** supplicie ecorche : decor anime au centre de la cathedrale */
 // Emplacement marque par la croix rouge : juste a droite de la zone de depart.
@@ -51,19 +51,13 @@ const FLOOR_Y = 880;
 const POOL_REGEN_PER_SEC = 6;
 /** distance en dessous de laquelle une creature empeche de se soigner */
 const SAFE_RADIUS = 300;
-/** position de la colonne de fin de salle */
-const GATE_X = 2150;
-/** au dela de ce point, le heros bascule dans la salle suivante */
-const GATE_EXIT_X = GATE_X + 110;
 /** seconde moitie de la cathedrale : la monture d'effroi fond sur le heros */
 const MOUNT_TRIGGER_X = 1500;
 /** machine d'ecartellement du corridor */
 const TORTURE_RACK_X = 1320;
-/** autel de sang : point de sauvegarde place juste avant l'affrontement majeur */
-const ALTAR_X: Partial<Record<BackdropKey, number>> = {
-  cathedrale: 1400,
-  corridor: 1200,
-};
+/** degats subis en tombant dans une fosse */
+const PIT_DAMAGE = 14;
+
 
 
 
@@ -109,6 +103,9 @@ export class GameScene extends Phaser.Scene {
   /** torcheres sur pied : decor pur, aucune interaction */
   private torches: FloorTorch[] = [];
   private gateWall?: Phaser.GameObjects.Rectangle;
+  /** mur de chair qui se referme derriere le heros dans une arene */
+  private arenaWall?: Phaser.GameObjects.Rectangle;
+  private arenaLocked = false;
   /** autel de sang : point de sauvegarde de la salle */
   private altar?: BloodAltar;
   /** position de depart du heros (autel scelle apres une mort) */
@@ -116,7 +113,14 @@ export class GameScene extends Phaser.Scene {
   /** desabonnement du store (reapparition) */
   private unsubRespawn?: () => void;
 
-  
+  /** configuration de la salle courante */
+  private room: RoomConfig = ROOM_CONFIG.cathedrale;
+  /** vagues restantes (arene) */
+  private pendingWaves: SpawnDef[][] = [];
+  private waveIncoming = false;
+  /** compteur de creatures restantes affiche en haut de l'ecran */
+  private counterText?: Phaser.GameObjects.Text;
+
   /** bande-son adaptative (ambiance / combat) */
   private music?: MusicDirector;
   private roomCleared = false;
@@ -132,10 +136,12 @@ export class GameScene extends Phaser.Scene {
 
   init(data?: { backdrop?: BackdropKey; spawnX?: number }) {
     this.backdropKey = data?.backdrop ?? "cathedrale";
-    this.spawnX = data?.spawnX ?? 180;
+    this.room = ROOM_CONFIG[this.backdropKey];
+    this.spawnX = data?.spawnX ?? this.room.spawnX;
     // memorise la salle atteinte : point de reprise du menu Continuer
     useGameStore.getState().setStage(this.backdropKey);
   }
+
 
 
   create() {
@@ -160,18 +166,23 @@ export class GameScene extends Phaser.Scene {
 
     this.exiting = false;
     this.roomCleared = false;
-    this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
-    this.cameras.main.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
+    this.arenaLocked = false;
+    this.arenaWall = undefined;
+    this.waveIncoming = false;
+    this.pendingWaves = (this.room.waves ?? []).map((w) => [...w]);
+    this.physics.world.setBounds(0, 0, this.room.width, ROOM_HEIGHT);
+    this.cameras.main.setBounds(0, 0, this.room.width, ROOM_HEIGHT);
     this.cameras.main.setBackgroundColor(0x14090b);
     this.cameras.main.fadeIn(500, 0, 0, 0);
 
 
     this.profiler = new Profiler(this);
-    // premiere salle : choeur gothique ; salles suivantes : theme habituel
+    // une piste par salle : choeur, suspense, ou theme principal
     this.music = new MusicDirector(this, {
-      intro: this.backdropKey === ROOM_ORDER[0],
-      suspense: this.backdropKey === ROOM_ORDER[1],
+      intro: this.room.music === "choir",
+      suspense: this.room.music === "suspense",
     });
+
 
     this.blood = new BloodFX(this, FLOOR_Y);
     this.guardFx = new GuardFX(this);
@@ -187,7 +198,20 @@ export class GameScene extends Phaser.Scene {
 
     this.populateRoom();
 
+    // repere de progression : creatures restantes / vagues a venir
+    this.counterText?.destroy();
+    this.counterText = this.add
+      .text(this.cameras.main.width - 24, 24, "", {
+        fontFamily: "Georgia, serif",
+        fontSize: "16px",
+        color: "#a98b8b",
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(58)
+      .setAlpha(0.85);
 
+    this.showRoomTitle();
 
     // suivi horizontal uniquement : au saut, l'image ne doit pas bouger
     const cam = this.cameras.main;
@@ -198,10 +222,15 @@ export class GameScene extends Phaser.Scene {
 
     cam.setScroll(cam.scrollX, ROOM_HEIGHT - cam.height);
 
+
     // mort puis reapparition : la salle est relancee depuis l'autel scelle
     this.unsubRespawn = useGameStore.subscribe((state, prev) => {
       if (state.respawnToken === prev.respawnToken) return;
-      const target = state.checkpoint?.stage === this.backdropKey ? state.checkpoint.x : 180;
+      const target =
+        state.checkpoint?.stage === this.backdropKey
+          ? state.checkpoint.x
+          : this.room.spawnX;
+
       this.scene.restart({ backdrop: this.backdropKey, spawnX: target });
     });
 
@@ -229,46 +258,163 @@ export class GameScene extends Phaser.Scene {
   }
 
 
+  /** Instancie une creature depuis sa description de configuration. */
+  private makeEnemy(def: SpawnDef): Enemy {
+    const enemy =
+      def.kind === "penitent"
+        ? new PenitentGreffe(this, def.x, FLOOR_Y)
+        : def.kind === "bourreau"
+          ? new Bourreau(this, def.x, FLOOR_Y)
+          : new SuppliantRampant(this, def.x, FLOOR_Y);
+    if (def.elite) enemy.makeElite();
+    return enemy;
+  }
+
   /**
-   * Peuplement propre a chaque salle : la cathedrale sert d'introduction,
-   * le corridor est un couloir d'embuscade beaucoup plus dense (creatures
-   * rapprochees, pendus multiples, pieges au sol), les salles suivantes
-   * montent encore d'un cran.
+   * Peuplement pilote par `roomConfig` : creatures d'entree, pendus, mains
+   * agrippantes, puis premiere vague pour les salles en arene.
    */
   private populateRoom() {
-    if (this.backdropKey === "corridor") {
-      this.spawn(new SuppliantRampant(this, 620, FLOOR_Y));
-      this.spawn(new SuppliantRampant(this, 900, FLOOR_Y));
-      this.spawn(new PenitentGreffe(this, 1150, FLOOR_Y));
-      this.spawn(new SuppliantRampant(this, 1450, FLOOR_Y));
-      this.spawn(new PenitentGreffe(this, 1720, FLOOR_Y));
-      this.spawn(new PenitentGreffe(this, 2050, FLOOR_Y));
-      this.spawnPendu(new EcorchePendu(this, 1000, FLOOR_Y, 60));
-      this.spawnPendu(new EcorchePendu(this, 1600, FLOOR_Y, 60));
-      this.spawnPendu(new EcorchePendu(this, 2200, FLOOR_Y, 60));
+    for (const def of this.room.spawns) this.spawn(this.makeEnemy(def));
+    for (const x of this.room.hangers) {
+      this.spawnPendu(new EcorchePendu(this, x, FLOOR_Y, 60));
+    }
+    this.hands = this.room.hands.map(
+      ([from, to]) => new GraspingHands(this, from, to, FLOOR_Y),
+    );
 
-      this.hands = [
-        new GraspingHands(this, 420, 900, FLOOR_Y),
-        new GraspingHands(this, 950, 1500, FLOOR_Y),
-        new GraspingHands(this, 1550, 2000, FLOOR_Y),
-        new GraspingHands(this, 2050, 2400, FLOOR_Y),
-      ];
+    // arene : la premiere vague n'arrive qu'au franchissement du verrou
+  }
+
+  /** Arene : le passage se referme derriere le heros et la premiere vague tombe. */
+  private lockArena() {
+    if (this.arenaLocked || this.room.arenaLockX === undefined) return;
+    this.arenaLocked = true;
+
+    const wall = this.add.rectangle(
+      this.room.arenaLockX - 30,
+      FLOOR_Y - 230,
+      36,
+      470,
+      0x53161f,
+      0.85,
+    );
+    wall.setDepth(4);
+    this.physics.add.existing(wall, true);
+    this.platforms.add(wall);
+    this.arenaWall = wall;
+
+    this.cameras.main.shake(260, 0.008);
+    this.announce("Le passage se referme");
+    this.nextWave();
+  }
+
+  /** Vague suivante d'une arene : apparition differee avec secousse. */
+  private nextWave() {
+    const wave = this.pendingWaves.shift();
+    if (!wave) return;
+    this.waveIncoming = true;
+    this.time.delayedCall(700, () => {
+      if (!this.scene.isActive()) return;
+      for (const def of wave) this.spawn(this.makeEnemy(def));
+      this.waveIncoming = false;
+      this.cameras.main.shake(180, 0.005);
+    });
+  }
+
+  /** Bandeau de texte centre en haut de l'ecran. */
+  private announce(text: string, delay = 0) {
+    const cam = this.cameras.main;
+    const label = this.add
+      .text(cam.width / 2, 120, text, {
+        fontFamily: "Georgia, serif",
+        fontSize: "26px",
+        color: "#c2727a",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(60)
+      .setAlpha(0);
+    this.tweens.add({
+      targets: label,
+      alpha: 1,
+      duration: 500,
+      delay,
+      yoyo: true,
+      hold: 1400,
+      onComplete: () => label.destroy(),
+    });
+  }
+
+  /** Cartouche de titre a l'entree de la salle. */
+  private showRoomTitle() {
+    const cam = this.cameras.main;
+    const label = this.add
+      .text(cam.width / 2, cam.height / 2 - 60, ROOM_LABELS[this.backdropKey], {
+        fontFamily: "Georgia, serif",
+        fontSize: "34px",
+        color: "#e0c9c1",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(60)
+      .setAlpha(0);
+    const rule = this.add
+      .rectangle(cam.width / 2, cam.height / 2 - 24, 220, 2, 0x8f2230, 0.9)
+      .setScrollFactor(0)
+      .setDepth(60)
+      .setAlpha(0);
+    this.tweens.add({
+      targets: [label, rule],
+      alpha: 1,
+      duration: 700,
+      yoyo: true,
+      hold: 1600,
+      onComplete: () => {
+        label.destroy();
+        rule.destroy();
+      },
+    });
+  }
+
+  /** Compteur discret de creatures restantes, en haut a droite. */
+  private updateCounter(alive: number) {
+    if (!this.counterText) return;
+    if (this.roomCleared) {
+      this.counterText.setText("Passage ouvert");
       return;
     }
-
-    this.spawn(new SuppliantRampant(this, 760, FLOOR_Y));
-    this.spawn(new PenitentGreffe(this, 1180, FLOOR_Y));
-    this.spawn(new SuppliantRampant(this, 1600, FLOOR_Y));
-    this.spawn(new PenitentGreffe(this, 2060, FLOOR_Y));
-    this.spawnPendu(new EcorchePendu(this, 1400, FLOOR_Y, 60));
-    this.spawnPendu(new EcorchePendu(this, 1900, FLOOR_Y, 60));
-
-    this.hands = [
-      new GraspingHands(this, 520, 1150, FLOOR_Y),
-      new GraspingHands(this, 1200, 1800, FLOOR_Y),
-      new GraspingHands(this, 1850, 2400, FLOOR_Y),
-    ];
+    const waves = this.pendingWaves.length;
+    this.counterText.setText(
+      waves > 0
+        ? `Creatures : ${alive}   ·   Vagues restantes : ${waves}`
+        : `Creatures : ${alive}`,
+    );
   }
+
+  /**
+   * Chute dans une fosse : le heros perd de la vie et est replace sur le
+   * bord le plus proche, plutot que de rester coince au fond du monde.
+   */
+  private checkPitFall() {
+    if (!this.player || this.room.pits.length === 0) return;
+    if (this.player.y <= FLOOR_Y + 40) return;
+
+    const pit = this.room.pits.find(
+      (p) => this.player.x > p.from - 20 && this.player.x < p.to + 20,
+    );
+    if (!pit) return;
+
+    const edge = this.player.x < (pit.from + pit.to) / 2 ? pit.from - 60 : pit.to + 60;
+    const body = this.player.body as Phaser.Physics.Arcade.Body | null;
+    this.player.setPosition(Phaser.Math.Clamp(edge, 60, this.room.width - 60), FLOOR_Y - 40);
+    body?.setVelocity(0, 0);
+    this.cameras.main.shake(200, 0.01);
+    this.player.receiveDamage(PIT_DAMAGE, this.time.now);
+  }
+
+
+
 
   private spawn(enemy: Enemy) {
     this.physics.add.collider(enemy, this.platforms);
@@ -344,7 +490,8 @@ export class GameScene extends Phaser.Scene {
 
   /** Decor en trois calques de parallaxe, selon la salle courante. */
   private buildBackdrop() {
-    this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, ROOM_WIDTH);
+    const roomWidth = this.room.width;
+    this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, roomWidth);
 
     // vie de fond : dosage rats / chauves-souris selon le volume de la salle
     const mix =
@@ -353,10 +500,11 @@ export class GameScene extends Phaser.Scene {
         : this.backdropKey === "cathedrale"
           ? { rats: 2, bats: 4, ratBias: 0.3 }
           : { rats: 3, bats: 3, ratBias: 0.5 };
-    this.critters = new AmbientCritters(this, FLOOR_Y, ROOM_WIDTH, mix);
+    this.critters = new AmbientCritters(this, FLOOR_Y, roomWidth, mix);
 
     // torcheres sur pied : flamme, lueur fluctuante et fumee legere
-    this.torches = placeTorches(this, FLOOR_Y, ROOM_WIDTH, this.backdropKey);
+    this.torches = placeTorches(this, FLOOR_Y, roomWidth, this.backdropKey);
+
 
     // supplicie ecorche : uniquement dans la cathedrale
     if (this.backdropKey === "cathedrale") {
@@ -371,7 +519,7 @@ export class GameScene extends Phaser.Scene {
       // mini-boss aerien : il surgit dans la seconde moitie de la salle
       this.mount = new DreadMount(this, {
         floorY: FLOOR_Y,
-        roomWidth: ROOM_WIDTH,
+        roomWidth,
         triggerX: MOUNT_TRIGGER_X,
         getPlayer: () => this.player,
         onStrike: (amount) => this.resolveEnemyStrike(amount),
@@ -379,14 +527,14 @@ export class GameScene extends Phaser.Scene {
       });
     } else if (this.backdropKey === "corridor") {
       // grosse veine qui bat le long du couloir, derriere les statues
-      this.vein = new CorridorVein(this, FLOOR_Y, ROOM_WIDTH);
+      this.vein = new CorridorVein(this, FLOOR_Y, roomWidth);
 
       // statues de pleureuses qui saignent des yeux quand le heros approche
       // amas de chair disperses sur la ligne sol/mur, reveils aleatoires
-      this.blobs = scatterFleshBlobs(this, FLOOR_Y, ROOM_WIDTH, {
+      this.blobs = scatterFleshBlobs(this, FLOOR_Y, roomWidth, {
         count: Phaser.Math.Between(4, 6),
         minX: 380,
-        maxX: ROOM_WIDTH - 320,
+        maxX: roomWidth - 320,
         lift: 70,
       });
 
@@ -404,10 +552,43 @@ export class GameScene extends Phaser.Scene {
         }
         this.cameras.main.shake(180, 0.006);
       });
+    } else if (this.backdropKey === "throne") {
+      // salle du trone : statues de garde de part et d'autre de l'arene,
+      // amas de chair au pied des murs
+      this.statues = [
+        new WeepingStatue(this, 1080, FLOOR_Y, 0.8, 90),
+        new WeepingStatue(this, 1920, FLOOR_Y, 0.8, 90),
+      ];
+      this.blobs = scatterFleshBlobs(this, FLOOR_Y, roomWidth, {
+        count: Phaser.Math.Between(3, 5),
+        minX: 1050,
+        maxX: roomWidth - 260,
+        lift: 60,
+      });
+      this.crucified = new CrucifiedProp(this, 300, FLOOR_Y);
+    } else {
+      // exterieur : parvis long, supplicies exposes et chairs eparses
+      this.crucified = new CrucifiedProp(this, 640, FLOOR_Y);
+      this.crucifiedWoman = new CrucifiedProp(
+        this,
+        2900,
+        FLOOR_Y,
+        "crucifiee-idle",
+      );
+      this.statues = [
+        new WeepingStatue(this, 1450, FLOOR_Y, 0.7, 80),
+        new WeepingStatue(this, 2600, FLOOR_Y, 0.7, 80),
+      ];
+      this.blobs = scatterFleshBlobs(this, FLOOR_Y, roomWidth, {
+        count: Phaser.Math.Between(4, 6),
+        minX: 800,
+        maxX: roomWidth - 300,
+        lift: 50,
+      });
     }
 
     // autel de sang : sauvegarde juste avant l'affrontement majeur de la salle
-    const altarX = ALTAR_X[this.backdropKey];
+    const altarX = this.room.altarX;
     if (altarX !== undefined) {
       const saved = useGameStore.getState().checkpoint;
       this.altar = new BloodAltar(
@@ -424,16 +605,18 @@ export class GameScene extends Phaser.Scene {
    * respirent, et un seuil obstrue le passage tant qu'il reste des monstres.
    */
   private buildGate() {
-    this.gateColumn = new GateColumn(this, GATE_X, FLOOR_Y);
+    const gateX = gateXOf(this.room);
+    this.gateColumn = new GateColumn(this, gateX, FLOOR_Y);
 
     // verrou physique invisible : le heros bute sur la colonne
-    const wall = this.add.rectangle(GATE_X + 40, FLOOR_Y - 220, 40, 460);
+    const wall = this.add.rectangle(gateX + 40, FLOOR_Y - 220, 40, 460);
     wall.setVisible(false);
     this.physics.add.existing(wall, true);
     this.platforms.add(wall);
     this.gateWall = wall;
 
   }
+
 
   /** Dernier monstre tue : le passage s'ouvre. */
   private openGate() {
@@ -445,27 +628,12 @@ export class GameScene extends Phaser.Scene {
       this.platforms.remove(this.gateWall, true, true);
       this.gateWall = undefined;
     }
+    if (this.arenaWall) {
+      this.platforms.remove(this.arenaWall, true, true);
+      this.arenaWall = undefined;
+    }
 
-
-    const cam = this.cameras.main;
-    const label = this.add
-      .text(cam.width / 2, 120, "Le passage s'ouvre", {
-        fontFamily: "Georgia, serif",
-        fontSize: "26px",
-        color: "#c2727a",
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(60)
-      .setAlpha(0);
-    this.tweens.add({
-      targets: label,
-      alpha: 1,
-      duration: 500,
-      yoyo: true,
-      hold: 1400,
-      onComplete: () => label.destroy(),
-    });
+    this.announce("Le passage s'ouvre");
   }
 
 
@@ -487,19 +655,42 @@ export class GameScene extends Phaser.Scene {
     this.platforms = this.physics.add.staticGroup();
 
     // Le sol visible est peint par les calques de decor : ici on ne garde
-    // qu'un corps de collision invisible sur toute la largeur de la salle.
+    // que des corps de collision invisibles, decoupes par les fosses.
     const groundH = ROOM_HEIGHT - FLOOR_Y;
-    const ground = this.add.rectangle(
-      ROOM_WIDTH / 2,
-      FLOOR_Y + groundH / 2,
-      ROOM_WIDTH,
-      groundH,
-    );
-    ground.setVisible(false);
-    this.platforms.add(ground);
+    const width = this.room.width;
+    const pits = [...this.room.pits].sort((a, b) => a.from - b.from);
+
+    let cursor = 0;
+    const segments: [number, number][] = [];
+    for (const pit of pits) {
+      if (pit.from > cursor) segments.push([cursor, pit.from]);
+      cursor = pit.to;
+    }
+    if (cursor < width) segments.push([cursor, width]);
+
+    for (const [from, to] of segments) {
+      const ground = this.add.rectangle(
+        (from + to) / 2,
+        FLOOR_Y + groundH / 2,
+        to - from,
+        groundH,
+      );
+      ground.setVisible(false);
+      this.platforms.add(ground);
+    }
+
+    // plateaux suspendus : ils donnent enfin une utilite au saut et au plongeon
+    for (const def of this.room.platforms) {
+      const plat = this.add.rectangle(def.x, def.y, def.width, 24, 0x2a1418, 0.92);
+      plat.setStrokeStyle(2, 0x4a2028, 0.9);
+      plat.setDepth(3);
+      this.physics.add.existing(plat, true);
+      this.platforms.add(plat);
+    }
 
     this.platforms.refresh();
   }
+
 
 
   /**
@@ -658,14 +849,30 @@ export class GameScene extends Phaser.Scene {
 
     this.enemies = this.enemies.filter((e) => e.active);
 
+    // arene : le verrou se referme quand le heros franchit le seuil
+    if (this.room.arenaLockX !== undefined && this.player.x > this.room.arenaLockX) {
+      this.lockArena();
+    }
+
+    // fosses : la chute coute de la vie et renvoie le heros au bord
+    this.checkPitFall();
+
+    const alive = this.enemies.filter((e) => !e.isDead).length;
     // salle nettoyee : la monture doit etre abattue en plus des monstres au sol
     const mountCleared = !this.mount || this.mount.isDefeated;
-    if (!this.roomCleared && mountCleared && this.enemies.every((e) => e.isDead)) {
-      this.openGate();
+    if (!this.roomCleared && mountCleared && alive === 0 && !this.waveIncoming) {
+      if (this.pendingWaves.length > 0 && this.arenaLocked) {
+        this.nextWave();
+      } else if (this.room.arenaLockX === undefined || this.arenaLocked) {
+        this.openGate();
+      }
     }
-    if (this.roomCleared && !this.exiting && this.player.x > GATE_EXIT_X) {
+    this.updateCounter(alive);
+
+    if (this.roomCleared && !this.exiting && this.player.x > gateXOf(this.room) + 110) {
       this.exitRoom();
     }
+
 
     // aucune creature vivante a proximite : le soin par absorption est permis
     prof.measure("absorption", () => {
