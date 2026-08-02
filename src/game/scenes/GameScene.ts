@@ -103,6 +103,9 @@ export class GameScene extends Phaser.Scene {
   /** torcheres sur pied : decor pur, aucune interaction */
   private torches: FloorTorch[] = [];
   private gateWall?: Phaser.GameObjects.Rectangle;
+  /** mur de chair qui se referme derriere le heros dans une arene */
+  private arenaWall?: Phaser.GameObjects.Rectangle;
+  private arenaLocked = false;
   /** autel de sang : point de sauvegarde de la salle */
   private altar?: BloodAltar;
   /** position de depart du heros (autel scelle apres une mort) */
@@ -110,7 +113,14 @@ export class GameScene extends Phaser.Scene {
   /** desabonnement du store (reapparition) */
   private unsubRespawn?: () => void;
 
-  
+  /** configuration de la salle courante */
+  private room: RoomConfig = ROOM_CONFIG.cathedrale;
+  /** vagues restantes (arene) */
+  private pendingWaves: SpawnDef[][] = [];
+  private waveIncoming = false;
+  /** compteur de creatures restantes affiche en haut de l'ecran */
+  private counterText?: Phaser.GameObjects.Text;
+
   /** bande-son adaptative (ambiance / combat) */
   private music?: MusicDirector;
   private roomCleared = false;
@@ -126,10 +136,12 @@ export class GameScene extends Phaser.Scene {
 
   init(data?: { backdrop?: BackdropKey; spawnX?: number }) {
     this.backdropKey = data?.backdrop ?? "cathedrale";
-    this.spawnX = data?.spawnX ?? 180;
+    this.room = ROOM_CONFIG[this.backdropKey];
+    this.spawnX = data?.spawnX ?? this.room.spawnX;
     // memorise la salle atteinte : point de reprise du menu Continuer
     useGameStore.getState().setStage(this.backdropKey);
   }
+
 
 
   create() {
