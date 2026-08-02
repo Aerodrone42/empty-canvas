@@ -43,6 +43,7 @@ export type PlayerState =
   | "dive"
   | "dodge"
   | "parry"
+  | "guard"
   | "absorb"
   | "special";
 
@@ -63,6 +64,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private dodgeRecoverUntil = 0;
   private invulnUntil = 0;
   private parryUntil = 0;
+  /** dernier appui de parade, pour la tolerance d'entree */
+  private parryPressedAt = -Infinity;
   private charging = false;
   private facing = 1;
   private airJumpsUsed = 0;
@@ -145,9 +148,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return this.moveState === "attack" || this.moveState === "heavy" || this.moveState === "special";
   }
 
-  /** Vrai si la parade est active : le coup est annulé et l'ennemi étourdi. */
-  tryParry(time: number) {
-    return this.moveState === "parry" && time < this.parryUntil;
+  /**
+   * "perfect" : coup annule + ennemi etourdi.
+   * "guard" : coup encaisse en garde (degats reduits).
+   */
+  tryParry(time: number): "perfect" | "guard" | null {
+    const guarding = this.moveState === "guard" || this.moveState === "parry";
+    const perfect =
+      time < this.parryUntil || time - this.parryPressedAt <= PARRY.buffer;
+    if (perfect && (guarding || time - this.parryPressedAt <= PARRY.buffer)) {
+      this.parryPressedAt = -Infinity;
+      this.parryUntil = 0;
+      return "perfect";
+    }
+    return guarding ? "guard" : null;
   }
 
   /** La scene indique s'il n'y a aucune creature a proximite. */
@@ -287,12 +301,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    if (this.moveState === "parry") {
-      if (time >= this.stateUntil) {
+    if (this.moveState === "parry" || this.moveState === "guard") {
+      // la garde se relache des que la touche est laissee
+      if (!this.actions.isDown("parry") || !onGround) {
         this.moveState = "idle";
         this.clearTint();
       } else {
-        if (onGround) body.setVelocityX(0);
+        body.setVelocityX(0);
+        this.setTint(time < this.parryUntil ? 0xfff0c0 : 0x9fb4cf);
+        this.play("vigile-idle-anim", true);
         return;
       }
     }
@@ -380,13 +397,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // ---------- parade ----------
+    // ---------- garde / parade ----------
     if (this.actions.justDown("parry") && onGround) {
-
-      this.parryUntil = time + PARRY.window + effects.parryWindowBonus;
-      this.beginState("parry", time, PARRY.window + effects.parryWindowBonus + PARRY.recovery);
+      this.parryPressedAt = time;
+      this.parryUntil = time + PARRY.perfectWindow + effects.parryWindowBonus;
+    }
+    if (this.actions.isDown("parry") && onGround) {
+      this.moveState = "guard";
+      this.stateUntil = time + PARRY.recovery;
       body.setVelocityX(0);
-      this.setTint(0xf2d9a0);
+      this.setTint(time < this.parryUntil ? 0xfff0c0 : 0x9fb4cf);
       this.play("vigile-idle-anim", true);
       return;
     }

@@ -148,8 +148,8 @@ export function Hud() {
         </p>
         <p className="font-display text-[0.55rem] tracking-[0.3em] text-muted-foreground/60 uppercase">
           {keyLabel(bindings.attack.key)} frappe / maintenir = lourd ·{" "}
-          {keyLabel(bindings.dodge.key)} esquive · {keyLabel(bindings.parry.key)} parade ·{" "}
-          {keyLabel(bindings.flesh.key)} autel
+          {keyLabel(bindings.dodge.key)} esquive · {keyLabel(bindings.parry.key)} maintenir = garde,
+          appuyer au bon moment = parade · {keyLabel(bindings.flesh.key)} autel
         </p>
         <AltarLine />
         <p className="font-display text-[0.55rem] tracking-[0.3em] text-muted-foreground/60 uppercase">

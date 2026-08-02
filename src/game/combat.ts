@@ -175,10 +175,16 @@ export const DODGE = {
   invuln: 220,
   cooldown: 700,
 };
-/** Paramètres de la parade. */
+/** Paramètres de la garde et de la parade parfaite. */
 export const PARRY = {
-  window: 180,
-  recovery: 320,
+  /** fenêtre de parade parfaite au début du maintien */
+  perfectWindow: 200,
+  /** tolérance : un appui juste après le coup compte encore comme parfait */
+  buffer: 120,
+  /** multiplicateur de dégâts quand la garde est simplement tenue */
+  guardDamageMult: 0.25,
+  /** récupération courte au relâchement */
+  recovery: 120,
   stun: 1200,
   fleshReward: 6,
 };
