@@ -257,6 +257,29 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
 
+  /** Posture de garde : anim figee, leger recul, teinte froide. */
+  private holdGuardPose(time: number) {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setVelocityX(0);
+    useGameStore.getState().setGuarding(true);
+
+    // frame unique : la garde ne doit pas ressembler a l'idle anime
+    this.anims.stop();
+    this.setTexture("vigile-idle", 0);
+    const windowOpen = time < this.parryUntil;
+    this.setTint(windowOpen ? 0xfff0c0 : 0x93a9c4);
+    // le heros se ramasse legerement en arriere
+    this.setScale(SCALE * 0.97, SCALE * 0.95);
+  }
+
+  /** Sortie de garde : on remet la posture normale. */
+  private releaseGuard() {
+    this.moveState = "idle";
+    this.clearTint();
+    this.setScale(SCALE);
+    useGameStore.getState().setGuarding(false);
+  }
+
   tick(time: number) {
     const store = useGameStore.getState();
     const effects = store.effects;
@@ -326,12 +349,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.moveState === "parry" || this.moveState === "guard") {
       // la garde se relache des que la touche est laissee
       if (!this.actions.isDown("parry") || !onGround) {
-        this.moveState = "idle";
-        this.clearTint();
+        this.releaseGuard();
       } else {
-        body.setVelocityX(0);
-        this.setTint(time < this.parryUntil ? 0xfff0c0 : 0x9fb4cf);
-        this.play("vigile-idle-anim", true);
+        this.holdGuardPose(time);
         return;
       }
     }
@@ -427,9 +447,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.actions.isDown("parry") && onGround) {
       this.moveState = "guard";
       this.stateUntil = time + PARRY.recovery;
-      body.setVelocityX(0);
-      this.setTint(time < this.parryUntil ? 0xfff0c0 : 0x9fb4cf);
-      this.play("vigile-idle-anim", true);
+      this.holdGuardPose(time);
       return;
     }
 
