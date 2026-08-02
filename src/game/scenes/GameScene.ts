@@ -307,7 +307,7 @@ export class GameScene extends Phaser.Scene {
     // herse de fer forge : elle tombe du plafond et plante ses pointes au sol
     const gate = this.add.image(wallX, FLOOR_Y - 700, "iron-gate");
     gate.setOrigin(0.5, 1);
-    gate.setDisplaySize(96, 500);
+    gate.setDisplaySize(120, 500);
     gate.setDepth(4);
     this.arenaGate = gate;
 
