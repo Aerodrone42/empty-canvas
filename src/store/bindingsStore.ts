@@ -56,7 +56,7 @@ export const DEFAULT_BINDINGS: Bindings = {
   jump: { key: "Space", pad: 0 },
   attack: { key: "KeyE", pad: 2 },
   dodge: { key: "ShiftLeft", pad: 1 },
-  parry: { key: "KeyA", pad: 4 },
+  parry: { key: "KeyW", pad: 4 },
   absorb: { key: "KeyC", pad: 6 },
   special: { key: "KeyR", pad: 5 },
   interact: { key: "KeyS", pad: 3 },
