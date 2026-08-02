@@ -64,6 +64,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private dodgeRecoverUntil = 0;
   private invulnUntil = 0;
   private parryUntil = 0;
+  /** dernier appui de parade, pour la tolerance d'entree */
+  private parryPressedAt = -Infinity;
   private charging = false;
   private facing = 1;
   private airJumpsUsed = 0;
