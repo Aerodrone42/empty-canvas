@@ -590,24 +590,7 @@ export class GameScene extends Phaser.Scene {
       // salle du trone : le decor peint se suffit a lui-meme
 
     } else {
-      // exterieur : parvis long, supplicies exposes et chairs eparses
-      this.crucified = new CrucifiedProp(this, 640, FLOOR_Y);
-      this.crucifiedWoman = new CrucifiedProp(
-        this,
-        2900,
-        FLOOR_Y,
-        "crucifiee-idle",
-      );
-      this.statues = [
-        new WeepingStatue(this, 1450, FLOOR_Y, 0.7, 80),
-        new WeepingStatue(this, 2600, FLOOR_Y, 0.7, 80),
-      ];
-      this.blobs = scatterFleshBlobs(this, FLOOR_Y, roomWidth, {
-        count: Phaser.Math.Between(4, 6),
-        minX: 800,
-        maxX: roomWidth - 300,
-        lift: 50,
-      });
+      // exterieur : le decor peint se suffit a lui-meme
     }
 
     // autel de sang : sauvegarde juste avant l'affrontement majeur de la salle
