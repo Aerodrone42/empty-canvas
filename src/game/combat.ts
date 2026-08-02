@@ -178,11 +178,15 @@ export const DODGE = {
 /** Paramètres de la garde et de la parade parfaite. */
 export const PARRY = {
   /** fenêtre de parade parfaite au début du maintien */
-  perfectWindow: 200,
+  perfectWindow: 300,
   /** tolérance : un appui juste après le coup compte encore comme parfait */
-  buffer: 120,
-  /** multiplicateur de dégâts quand la garde est simplement tenue */
-  guardDamageMult: 0.25,
+  buffer: 140,
+  /** la garde tenue bloque intégralement le coup */
+  guardDamageMult: 0,
+  /** recul appliqué au héros quand il bloque */
+  guardKnockback: 90,
+  /** figeage bref lors d'une parade parfaite */
+  hitstop: 90,
   /** récupération courte au relâchement */
   recovery: 120,
   stun: 1200,
