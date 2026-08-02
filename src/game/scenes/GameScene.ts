@@ -105,7 +105,9 @@ export class GameScene extends Phaser.Scene {
   private gateWall?: Phaser.GameObjects.Rectangle;
   /** mur de chair qui se referme derriere le heros dans une arene */
   private arenaWall?: Phaser.GameObjects.Rectangle;
-  private arenaLocked = false;
+  /** herse de fer visible qui materialise la fermeture de l'arene */
+  private arenaGate?: Phaser.GameObjects.Image;
+
   /** autel de sang : point de sauvegarde de la salle */
   private altar?: BloodAltar;
   /** position de depart du heros (autel scelle apres une mort) */
