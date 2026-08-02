@@ -209,9 +209,12 @@ export function placeTorches(
   }
 
 
-  // cathedrale : quatre torcheres reparties, loin du crucifie et de la sortie
-  for (const x of [180, 1080, 1720, 2380]) {
+  // autres salles : torcheres reparties sur toute la largeur, tous les ~650 px
+  const count = Math.max(4, Math.round(roomWidth / 650));
+  for (let i = 0; i < count; i++) {
+    const x = 180 + (i * (roomWidth - 300)) / Math.max(1, count - 1);
     torches.push(new FloorTorch(scene, x, floorY + Phaser.Math.Between(-3, 3), 0.52, -6));
   }
   return torches;
+
 }
