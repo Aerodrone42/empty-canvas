@@ -375,3 +375,16 @@ export const BACKDROPS: Record<BackdropKey, BackdropDef> = {
 
 };
 
+/* ------------------------------------------------------------------ */
+/* Decors additionnels : segments de la longue marche vers le Trone     */
+/* ------------------------------------------------------------------ */
+
+export const EXTRA_BACKGROUNDS: { key: string; path: string }[] = [
+  { key: "throne-ossuary", path: `${BACKGROUNDS}/throne_bg_ossuary.png` },
+  { key: "throne-flooded", path: `${BACKGROUNDS}/throne_bg_flooded.png` },
+  { key: "throne-cloister", path: `${BACKGROUNDS}/throne_bg_cloister.png` },
+  { key: "throne-gallery", path: `${BACKGROUNDS}/throne_bg_gallery.png` },
+  { key: "throne-floor", path: `${BACKGROUNDS}/throne_floor.png` },
+];
+
+
