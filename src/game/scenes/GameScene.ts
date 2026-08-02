@@ -411,6 +411,39 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  /** Cartouche discret annoncant le lieu traverse, en bas de l'ecran. */
+  private showSegmentTitle(name: string) {
+    const cam = this.cameras.main;
+    const label = this.add
+      .text(cam.width / 2, cam.height - 120, name, {
+        fontFamily: "Georgia, serif",
+        fontSize: "22px",
+        color: "#d7b7ab",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(59)
+      .setAlpha(0);
+    const rule = this.add
+      .rectangle(cam.width / 2, cam.height - 98, 160, 1, 0x8f2230, 0.8)
+      .setScrollFactor(0)
+      .setDepth(59)
+      .setAlpha(0);
+    this.tweens.add({
+      targets: [label, rule],
+      alpha: 1,
+      duration: 600,
+      yoyo: true,
+      hold: 1500,
+      onComplete: () => {
+        label.destroy();
+        rule.destroy();
+      },
+    });
+  }
+
+
+
   /** Compteur discret de creatures restantes, en haut a droite. */
   private updateCounter(alive: number) {
     if (!this.counterText) return;
