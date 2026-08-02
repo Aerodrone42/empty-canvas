@@ -1,29 +1,46 @@
-## Objectif
-Étape actuelle : **uniquement la salle du Trône allongée, son sol et ses fonds**. Aucun ennemi, aucune vague, aucune herse. Le joueur doit pouvoir marcher longuement à travers le décor jusqu'au Trône.
+Objectif : transformer le fond de la salle du Trône actuel (une seule image répétée sur 9600 px) en un environnement colossal, profond et cinématographique, sans ennemis ni arène pour l'instant.
 
-## Longueur
-`throne.width` : 2000 → **9600 px**. Traversée à pied de plusieurs minutes, entièrement libre.
+Etat actuel vérifié
+- `src/game/roomConfig.ts` : salle `throne` = 9600 px, `spawns: []`, `arenaLockX` absent.
+- `src/game/effects/Parallax.ts` : n'utilise qu'un seul calque `far` en `tileSprite` ; les calques `mid` et `near` sont chargés mais inutilisés.
+- `public/assets/sprites/backgrounds/throne_bg_far.png` a été regénéré à 18:13 ; les fichiers `mid` et `near` datent d'avant et ne correspondent pas forcément au nouveau style.
+- Le sol est un collider invisible ; aucune texture visible ne recouvre le sol.
 
-## Contenu de la salle à cette étape
-- `spawns` : vide
-- `waves` : supprimées
-- `arenaLockX` : supprimé
-- Autel de sang conservé (x≈900) comme point de départ/sauvegarde
-- Écorchés suspendus et mains agrippantes : conservés en décor léger, redistribués sur les 9600 px pour éviter les zones vides
-- Sol : plat et continu sur toute la largeur, aucune fosse ni plateau
-- Torches au sol : déjà distribuées dynamiquement selon la largeur, rien à changer
+Plan de travail
 
-## Fonds de décor (3 couches parallaxe)
-Les images validées sont trop courtes pour 9600 px. Régénération :
-- `throne_far_v1.png` — nef profonde bouclable (arcades, brume rouge), défilement 0.15
-- `throne_mid_v1.png` — **composition en progression, non bouclée** : ossuaire → colonnes → estrade → trône de chair au fond, étirée sur toute la salle, défilement 0.45, pour que le Trône grossisse à mesure qu'on avance
-- `throne_near_v1.png` — piliers et braseros d'avant-plan, tuilés avec espacement irrégulier, défilement 0.9
+1. Générer les calques manquants et cohérents
+   - Regénérer `throne_bg_mid.png` : plan médian avec colonnes d'os, trône de chair lointain, bannières dorées déchirées, arches gothiques.
+   - Regénérer `throne_bg_near.png` : avant-plan avec piliers de pierre, braseros vivants, chaînes, dalles de marbre noir.
+   - Les trois images doivent partager la même palette (rouge sang, noir, or terni, pierre grise) et la même ligne de sol.
+   - Avant intégration, te montrer les 3 images pour validation.
 
-Je te renvoie les 3 images pour validation avant intégration.
+2. Refaire le système de parallaxe pour la salle du Trône
+   - Modifier `src/game/effects/Parallax.ts` : si la salle est `throne`, empiler 3 `tileSprite` avec des facteurs de défilement différents :
+     - `far` : scrollFactor 0.15, scale 1.0 → profondeur immense
+     - `mid` : scrollFactor 0.45, scale 1.0 → colonnes et trône
+     - `near` : scrollFactor 0.85, scale 1.0 → piliers et braseros
+   - Conserver le rendu actuel à un seul calque pour les autres salles (`cathedrale`, `corridor`, `exterieur`) afin de ne pas tout casser.
+   - Aligner le bas de chaque calque sur `floorY` avec la même marge `BELOW_FLOOR`.
 
-## Détails techniques
-- `src/game/roomConfig.ts` : entrée `throne` réduite à width / spawnX / altarX / hangers / hands, listes de combat vidées
-- `src/game/scenes/GameScene.ts` : aucune logique retirée (les boucles vagues/herse ne produisent rien sans configuration) ; géométrie, sol et parallaxe suivent déjà `config.width`
-- `src/game/assets.ts` / `BootScene.ts` : mêmes clés, images remplacées
+3. Ajouter un sol texturé visible
+   - Générer une texture de sol en marbre noir veiné de sang, répétable horizontalement (`throne_floor.png`).
+   - L'afficher en `tileSprite` au-dessus du collider invisible, entre le joueur et le fond, avec un léger défilement (scrollFactor 1).
+   - Ajouter des reflets de lumière rouge sur le sol à intervalles réguliers.
 
-Ennemis, vagues, herse, boss et reskin de l'autel : étapes suivantes.
+4. Renforcer l'atmosphère
+   - Activer le mode `dense` d'ambiance pour la salle du Trône : braises rouges qui montent, poussières dorées, vignettage latéral.
+   - Ajouter des rayons de lumière (god rays) depuis le haut en teintes rouge sang, défilant légèrement avec la caméra.
+   - Ajouter des braseros statiques supplémentaires le long du chemin pour rythmer la progression.
+
+5. Vérification
+   - Lancer l'aperçu et marcher sur toute la longueur de la salle pour vérifier :
+     - aucune répétition visible ou moche,
+     - les calques sont alignés au sol,
+     - le joueur reste devant le sol et derrière les piliers de l'avant-plan,
+     - les performances restent stables.
+
+Critères de validation
+- Le fond doit donner l'impression d'une nef colossale qu'on traverse pendant plusieurs minutes.
+- Les 3 calques doivent créer une profondeur évidente sans décalage de ligne de sol.
+- Le sol doit être visible, sombre, et cohérent avec le marbre noir du décor.
+- Aucun ajout d'ennemis, d'arène ou de boss dans cette étape.
