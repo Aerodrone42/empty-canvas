@@ -198,7 +198,20 @@ export class GameScene extends Phaser.Scene {
 
     this.populateRoom();
 
+    // repere de progression : creatures restantes / vagues a venir
+    this.counterText?.destroy();
+    this.counterText = this.add
+      .text(this.cameras.main.width - 24, 24, "", {
+        fontFamily: "Georgia, serif",
+        fontSize: "16px",
+        color: "#a98b8b",
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(58)
+      .setAlpha(0.85);
 
+    this.showRoomTitle();
 
     // suivi horizontal uniquement : au saut, l'image ne doit pas bouger
     const cam = this.cameras.main;
@@ -208,6 +221,7 @@ export class GameScene extends Phaser.Scene {
     cam.setDeadzone(180, ROOM_HEIGHT);
 
     cam.setScroll(cam.scrollX, ROOM_HEIGHT - cam.height);
+
 
     // mort puis reapparition : la salle est relancee depuis l'autel scelle
     this.unsubRespawn = useGameStore.subscribe((state, prev) => {
