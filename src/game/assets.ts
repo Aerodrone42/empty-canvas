@@ -90,6 +90,18 @@ export const SHEETS: SheetDef[] = [
     repeat: 0,
     spacing: 0,
   },
+  {
+    key: "vigile-guard",
+    path: `${SPRITES}/vigile_muet_guard_spritesheet.png?v=1`,
+    frameWidth: HERO_FRAME_W,
+    frameHeight: HERO_FRAME_H,
+    frameCount: 3,
+    frameRate: 14,
+    repeat: 0,
+    spacing: 0,
+  },
+
+
 
 
   // --- Penitent-Greffe (lourd, lent, resistant) ---

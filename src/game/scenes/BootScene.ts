@@ -235,6 +235,28 @@ export class BootScene extends Phaser.Scene {
       repeat: 0,
     });
 
+    // Garde du Vigile : montee en garde, maintien, impulsion de parade.
+    this.anims.create({
+      key: "vigile-guard-enter",
+      frames: this.anims.generateFrameNumbers("vigile-guard", { start: 0, end: 1 }),
+      frameRate: 18,
+      repeat: 0,
+    });
+    this.anims.create({
+      key: "vigile-guard-hold",
+      frames: this.anims.generateFrameNumbers("vigile-guard", { start: 1, end: 1 }),
+      frameRate: 1,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: "vigile-guard-parry",
+      frames: this.anims.generateFrameNumbers("vigile-guard", { frames: [2, 2, 1] }),
+      frameRate: 14,
+      repeat: 0,
+    });
+
+
+
     // reprise sur la salle choisie dans le menu (sinon la premiere)
     this.scene.start("game", { backdrop: useGameStore.getState().stage });
   }
