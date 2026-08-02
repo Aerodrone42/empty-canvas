@@ -1,36 +1,31 @@
-## Ce que j'ai vérifié
+## Constat
 
-- `src/game/entities/Player.ts` : la parade se déclenche uniquement sur un appui bref (`justDown("parry")`) et n'est active que `PARRY.window = 180 ms` (`src/game/combat.ts`). Passé ce délai, il reste 320 ms de récupération pendant lesquels le héros est immobile **et** vulnérable.
-- `src/game/scenes/GameScene.ts` (`resolveEnemyStrike`) : le coup n'est annulé que si `tryParry()` est vrai à l'instant exact de l'événement `enemy-strike`.
-- `src/game/entities/Enemy.ts` : l'ennemi frappe après `TELEGRAPH_MS` + 180 ms, en un seul instant ponctuel. Il faut donc appuyer dans une fenêtre de 180 ms alignée pile sur cet instant, sans aucune tolérance ni retour visuel/sonore.
-- `src/store/bindingsStore.ts` : la parade est par défaut sur `KeyA`, qui sur un clavier AZERTY correspond à la touche physique **Q**, juste à côté du déplacement gauche (`KeyQ` = touche physique A) — source de confusion supplémentaire.
+- Aucune spritesheet de garde n'existe (`public/assets/sprites/` : idle, walk, attack, dodge, jump), et `BootScene.ts` ne crée aucune animation de parade : la garde n'est qu'une teinte sur l'idle, invisible en jeu.
+- Dans `GameScene.ts`, une attaque bloquée passe quand même par `receiveDamage()` → flash rouge, recul, clignotement : à l'écran, parer ressemble à encaisser.
+- Dans `Player.ts`, la fenêtre parfaite ne dure que 200 ms après l'appui ; si l'ennemi frappe plus tard alors que la garde est tenue, le coup passe en dégâts réduits.
+- `bindingsStore.ts` : la nouvelle touche `KeyW` ne s'applique qu'aux nouveaux joueurs ; une config déjà sauvegardée reste sur `KeyA`.
 
-Conclusion : la parade « ne fonctionne pas » parce qu'elle est quasi impossible à timer et ne donne aucun signe qu'elle est active ou réussie.
+## Plan (sans bouclier)
 
-## Ce que je propose
+1. **La garde pare vraiment**
+   - Touche maintenue = coup entièrement bloqué (0 dégât), petit recul, pas de flash rouge ni d'invulnérabilité de blessure.
+   - Appui dans la fenêtre (~300 ms avant l'impact) = **parade parfaite** : coup annulé, ennemi étourdi, gain de Chair, court hitstop (~90 ms).
 
-1. **Garde maintenue + parade parfaite**
-   - Maintenir la touche = état `guard` : le héros bloque les coups (dégâts fortement réduits, léger recul, pas d'étourdissement de l'ennemi).
-   - Les ~200 premières ms du maintien = **parade parfaite** : coup totalement annulé, ennemi étourdi, gain de Chair (comportement actuel conservé).
-   - Relâchement = retour immédiat à `idle`, sans la longue récupération punitive actuelle.
+2. **Retour visuel réservé à la parade parfaite**
+   - **Étincelles uniquement quand le coup est paré au bon moment** : gerbe d'étincelles au point d'impact, éclat blanc/or bref sur le héros, mention « PARADE » au-dessus de la tête, secousse caméra et vibration manette marquées, ennemi repoussé.
+   - Blocage simple (garde tenue hors fenêtre) : aucun éclat ni étincelle — juste un sourd sursaut du héros et un léger recul, sans flash rouge.
+   - Posture de garde : le héros se fige sur une frame d'idle, légèrement reculé et teinté froid, pour distinguer la garde de l'idle animé.
 
-2. **Tolérance d'entrée (input buffer)**
-   - Un appui juste après le coup (~120 ms) compte encore comme parade parfaite, pour absorber la latence humaine.
+3. **HUD**
+   - Petit indicateur de garde active (liseré sur la barre de vie) et rappel de la touche assignée.
 
-3. **Retour visuel clair**
-   - Aura/teinte pendant la garde, éclat blanc plus marqué et étincelles sur parade parfaite, teinte différente sur simple blocage.
-   - Petite vibration manette distincte selon parade parfaite / blocage.
-
-4. **Touche par défaut plus naturelle**
-   - Clavier : parade sur une touche non ambiguë (proposition : `KeyW` ou clic droit / `KeyX`), manette : bouton d'épaule gauche LB (bouton 4, inchangé).
-   - Les remappages déjà enregistrés par le joueur sont préservés (migration douce existante).
-
-5. **HUD**
-   - La ligne d'aide de `src/components/game/Hud.tsx` mentionnera « maintenir pour garder, appuyer au bon moment pour parer ».
+4. **Touche par défaut réellement appliquée**
+   - Migration de la config sauvegardée : ancien `KeyA` de parade → `KeyW`, une seule fois, sans écraser un remappage volontaire vers une autre touche.
 
 ## Détails techniques
 
-- `src/game/combat.ts` : `PARRY` devient `{ perfectWindow: 200, buffer: 120, guardDamageMult: 0.25, recovery: 120, stun: 1200, fleshReward: 6 }`.
-- `src/game/entities/Player.ts` : nouvel état `guard` distinct de `parry` ; `tryParry(time)` renvoie `"perfect" | "guard" | null` ; prise en compte du buffer via un timestamp `parryPressedAt`.
-- `src/game/scenes/GameScene.ts` : `resolveEnemyStrike` traite les trois cas (parfait / bloqué / touché).
-- `src/store/bindingsStore.ts` : mise à jour du défaut clavier pour `parry`.
+- `src/game/combat.ts` : `PARRY` → `{ perfectWindow: 300, buffer: 140, guardDamageMult: 0, guardKnockback: 90, hitstop: 90, stun: 1200, fleshReward: 6 }`.
+- `src/game/entities/Player.ts` : `onGuardBlocked(perfect)` (recul + FX seulement si `perfect`, aucun dégât) ; état `guard` fige l'anim idle sur une frame avec léger offset arrière.
+- `src/game/effects/GuardFX.ts` (nouveau) : `perfectFlash(x, y, dir)` — étincelles, éclat, texte « PARADE ». Pas de visuel de bouclier, pas d'effet pour un blocage non parfait.
+- `src/game/scenes/GameScene.ts` : `resolveEnemyStrike` route sur `"perfect" | "guard" | null` ; dégâts seulement si `null`, FX seulement si `"perfect"`.
+- `src/store/bindingsStore.ts` : migration versionnée dans le chargement des bindings.
