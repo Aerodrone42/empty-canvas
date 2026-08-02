@@ -107,6 +107,8 @@ export class GameScene extends Phaser.Scene {
   private arenaWall?: Phaser.GameObjects.Rectangle;
   /** herse de fer visible qui materialise la fermeture de l'arene */
   private arenaGate?: Phaser.GameObjects.Image;
+  private arenaLocked = false;
+
 
   /** autel de sang : point de sauvegarde de la salle */
   private altar?: BloodAltar;
