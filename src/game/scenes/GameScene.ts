@@ -20,6 +20,7 @@ import { placeTorches, type FloorTorch } from "../effects/FloorTorch";
 import { AbsorbPrompt } from "../effects/AbsorbPrompt";
 import { BloodFX } from "../effects/Blood";
 import { BloodAltar } from "../effects/BloodAltar";
+import { GuardFX } from "../effects/GuardFX";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
 import { DreadMount } from "../effects/DreadMount";
 import { CorridorVein } from "../effects/CorridorVein";
@@ -77,6 +78,7 @@ export class GameScene extends Phaser.Scene {
   private hands: GraspingHands[] = [];
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
   private blood!: BloodFX;
+  private guardFx!: GuardFX;
   private absorbPrompt?: AbsorbPrompt;
   /** chiffres de degats flottants */
   private damageNumbers!: DamageNumbers;
@@ -172,6 +174,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.blood = new BloodFX(this, FLOOR_Y);
+    this.guardFx = new GuardFX(this);
     this.damageNumbers = new DamageNumbers(this);
     this.absorbPrompt = new AbsorbPrompt(this);
 
@@ -593,26 +596,31 @@ export class GameScene extends Phaser.Scene {
 
   private resolveEnemyStrike(amount: number, source?: Enemy) {
     const result = this.player.tryParry(this.time.now);
+    const dir = this.player.facingDirection;
+
     if (result === "perfect") {
+      // parade au bon moment : coup annule, ennemi etourdi, etincelles
       const store = useGameStore.getState();
       store.registerParry();
       store.gainFlesh(PARRY.fleshReward);
       source?.stun(PARRY.stun);
-      this.player.rumble(0.55, 160);
-      this.cameras.main.flash(120, 255, 244, 200);
-      this.blood.sparks(this.player.x + this.player.facingDirection * 30, this.player.y - 70);
+      this.player.onGuardBlocked(true);
+      this.player.rumble(0.75, 220);
+      this.cameras.main.shake(140, 0.009);
+      this.cameras.main.flash(90, 255, 244, 200);
+      this.guardFx.perfectFlash(this.player.x, this.player.y, dir);
       return;
     }
+
     if (result === "guard") {
-      this.player.rumble(0.25, 90);
-      this.cameras.main.shake(80, 0.005);
-      this.blood.sparks(this.player.x + this.player.facingDirection * 26, this.player.y - 60);
-      this.player.receiveDamage(
-        Math.max(1, Math.round(amount * PARRY.guardDamageMult)),
-        this.time.now,
-      );
+      // garde tenue hors fenetre : coup bloque, aucun eclat
+      this.player.onGuardBlocked(false);
+      this.player.rumble(0.2, 80);
+      this.cameras.main.shake(60, 0.003);
+      this.guardFx.blockThud(this.player.x, this.player.y, dir);
       return;
     }
+
     this.player.receiveDamage(amount, this.time.now);
   }
 

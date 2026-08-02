@@ -148,21 +148,43 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return this.moveState === "attack" || this.moveState === "heavy" || this.moveState === "special";
   }
 
+  /** Vrai tant que la garde est levee. */
+  get isGuarding() {
+    return this.moveState === "guard" || this.moveState === "parry";
+  }
+
   /**
-   * "perfect" : coup annule + ennemi etourdi.
-   * "guard" : coup encaisse en garde (degats reduits).
+   * "perfect" : coup annule + ennemi etourdi (appui dans la fenetre).
+   * "guard" : garde tenue, coup bloque sans degats.
    */
   tryParry(time: number): "perfect" | "guard" | null {
-    const guarding = this.moveState === "guard" || this.moveState === "parry";
+    const guarding = this.isGuarding;
     const perfect =
-      time < this.parryUntil || time - this.parryPressedAt <= PARRY.buffer;
-    if (perfect && (guarding || time - this.parryPressedAt <= PARRY.buffer)) {
+      guarding && (time < this.parryUntil || time - this.parryPressedAt <= PARRY.buffer);
+    if (perfect) {
       this.parryPressedAt = -Infinity;
       this.parryUntil = 0;
       return "perfect";
     }
     return guarding ? "guard" : null;
   }
+
+  /** Coup bloque : recul leger, aucun degat, aucune invulnerabilite rouge. */
+  onGuardBlocked(perfect: boolean) {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setVelocityX(-this.facing * (perfect ? PARRY.guardKnockback * 0.4 : PARRY.guardKnockback));
+    if (perfect) {
+      // hitstop : la scene se fige un instant sur la parade
+      this.scene.time.timeScale = 0.25;
+      this.scene.time.delayedCall(PARRY.hitstop * 0.25, () => {
+        this.scene.time.timeScale = 1;
+      });
+      this.setTint(0xfff3c4);
+    } else {
+      this.setTint(0x8fa6c2);
+    }
+  }
+
 
   /** La scene indique s'il n'y a aucune creature a proximite. */
   setSafeToAbsorb(safe: boolean) {
@@ -235,6 +257,29 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
 
+  /** Posture de garde : anim figee, leger recul, teinte froide. */
+  private holdGuardPose(time: number) {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setVelocityX(0);
+    useGameStore.getState().setGuarding(true);
+
+    // frame unique : la garde ne doit pas ressembler a l'idle anime
+    this.anims.stop();
+    this.setTexture("vigile-idle", 0);
+    const windowOpen = time < this.parryUntil;
+    this.setTint(windowOpen ? 0xfff0c0 : 0x93a9c4);
+    // le heros se ramasse legerement en arriere
+    this.setScale(SCALE * 0.97, SCALE * 0.95);
+  }
+
+  /** Sortie de garde : on remet la posture normale. */
+  private releaseGuard() {
+    this.moveState = "idle";
+    this.clearTint();
+    this.setScale(SCALE);
+    useGameStore.getState().setGuarding(false);
+  }
+
   tick(time: number) {
     const store = useGameStore.getState();
     const effects = store.effects;
@@ -243,6 +288,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const pad = this.scene.input.gamepad?.getPad(0) ?? undefined;
 
     this.actions.update(pad, time);
+
+    if (this.moveState !== "guard" && this.moveState !== "parry") {
+      useGameStore.getState().setGuarding(false);
+    }
 
     if (onGround) this.airJumpsUsed = 0;
 
@@ -304,12 +353,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.moveState === "parry" || this.moveState === "guard") {
       // la garde se relache des que la touche est laissee
       if (!this.actions.isDown("parry") || !onGround) {
-        this.moveState = "idle";
-        this.clearTint();
+        this.releaseGuard();
       } else {
-        body.setVelocityX(0);
-        this.setTint(time < this.parryUntil ? 0xfff0c0 : 0x9fb4cf);
-        this.play("vigile-idle-anim", true);
+        this.holdGuardPose(time);
         return;
       }
     }
@@ -405,9 +451,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.actions.isDown("parry") && onGround) {
       this.moveState = "guard";
       this.stateUntil = time + PARRY.recovery;
-      body.setVelocityX(0);
-      this.setTint(time < this.parryUntil ? 0xfff0c0 : 0x9fb4cf);
-      this.play("vigile-idle-anim", true);
+      this.holdGuardPose(time);
       return;
     }
 

@@ -65,6 +65,9 @@ export const DEFAULT_BINDINGS: Bindings = {
 };
 
 const STORAGE_KEY = "sanguine-vigile:bindings";
+const VERSION_KEY = "sanguine-vigile:bindings-version";
+/** incrementer a chaque changement de touche par defaut a propager */
+const BINDINGS_VERSION = 2;
 
 function loadBindings(): Bindings {
   if (typeof window === "undefined") return DEFAULT_BINDINGS;
@@ -79,6 +82,14 @@ function loadBindings(): Bindings {
       if (value && typeof value.key === "string" && typeof value.pad === "number") {
         merged[action] = { key: value.key, pad: value.pad };
       }
+    }
+    // migration versionnee : l'ancienne parade sur KeyA passe sur KeyW,
+    // sauf si le joueur l'a volontairement remappee ailleurs
+    const version = Number(window.localStorage.getItem(VERSION_KEY) ?? "1");
+    if (version < BINDINGS_VERSION) {
+      if (merged.parry.key === "KeyA") merged.parry = { ...merged.parry, key: "KeyW" };
+      window.localStorage.setItem(VERSION_KEY, String(BINDINGS_VERSION));
+      persist(merged);
     }
     return merged;
   } catch {

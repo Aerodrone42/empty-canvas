@@ -40,6 +40,8 @@ export type GameState = {
   /** absorption de chair en cours : progression 0 → 1 */
   absorbProgress: number;
   absorbing: boolean;
+  /** garde levée : sert au liseré du HUD */
+  guarding: boolean;
   /** l'autel n'offre son soin complet qu'une fois par salle */
   altarHealUsed: boolean;
   /** salle courante : sert de point de reprise */
@@ -76,6 +78,7 @@ export type GameState = {
   registerParry: () => void;
   setDodgeCooldown: (durationMs: number) => void;
   setAbsorb: (absorbing: boolean, progress: number) => void;
+  setGuarding: (guarding: boolean) => void;
   consumeFleshForHealth: () => boolean;
   /** l'autel de sang enregistre la position de reapparition */
   setCheckpoint: (x: number) => void;
@@ -168,6 +171,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   dodgeCooldownMs: 700,
   absorbProgress: 0,
   absorbing: false,
+  guarding: false,
   altarHealUsed: false,
   stage: "cathedrale",
   checkpoint: null,
@@ -296,6 +300,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ dodgeCooldownMs: durationMs, dodgeReadyAt: Date.now() + durationMs }),
 
   setAbsorb: (absorbing, progress) => set({ absorbing, absorbProgress: progress }),
+
+  setGuarding: (guarding) => set((s) => (s.guarding === guarding ? s : { guarding })),
 
   consumeFleshForHealth: () => {
     const s = get();
