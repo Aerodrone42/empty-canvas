@@ -40,6 +40,10 @@ export class BootScene extends Phaser.Scene {
     // autel de sang (point de sauvegarde)
     this.load.image("blood-altar", "/assets/sprites/props/blood_altar.png");
 
+    // herse de fer a pointes : fermeture d'arene
+    this.load.image("iron-gate", "/assets/sprites/props/iron_gate.png");
+
+
     // amas de chair animes le long du mur du corridor
     this.load.spritesheet(
       "flesh-blob",

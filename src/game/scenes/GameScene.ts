@@ -105,7 +105,11 @@ export class GameScene extends Phaser.Scene {
   private gateWall?: Phaser.GameObjects.Rectangle;
   /** mur de chair qui se referme derriere le heros dans une arene */
   private arenaWall?: Phaser.GameObjects.Rectangle;
+  /** herse de fer visible qui materialise la fermeture de l'arene */
+  private arenaGate?: Phaser.GameObjects.Image;
   private arenaLocked = false;
+
+
   /** autel de sang : point de sauvegarde de la salle */
   private altar?: BloodAltar;
   /** position de depart du heros (autel scelle apres une mort) */
@@ -168,6 +172,8 @@ export class GameScene extends Phaser.Scene {
     this.roomCleared = false;
     this.arenaLocked = false;
     this.arenaWall = undefined;
+    this.arenaGate = undefined;
+
     this.waveIncoming = false;
     this.pendingWaves = (this.room.waves ?? []).map((w) => [...w]);
     this.physics.world.setBounds(0, 0, this.room.width, ROOM_HEIGHT);
@@ -291,20 +297,48 @@ export class GameScene extends Phaser.Scene {
     if (this.arenaLocked || this.room.arenaLockX === undefined) return;
     this.arenaLocked = true;
 
-    const wall = this.add.rectangle(
-      this.room.arenaLockX - 30,
-      FLOOR_Y - 230,
-      36,
-      470,
-      0x53161f,
-      0.85,
-    );
-    wall.setDepth(4);
+    const wallX = this.room.arenaLockX - 30;
+    const wall = this.add.rectangle(wallX, FLOOR_Y - 230, 36, 470, 0x000000, 0);
+    wall.setVisible(false);
     this.physics.add.existing(wall, true);
     this.platforms.add(wall);
     this.arenaWall = wall;
 
-    this.cameras.main.shake(260, 0.008);
+    // herse de fer forge : elle tombe du plafond et plante ses pointes au sol
+    const gate = this.add.image(wallX, FLOOR_Y - 700, "iron-gate");
+    gate.setOrigin(0.5, 1);
+    gate.setDisplaySize(96, 500);
+    gate.setDepth(4);
+    this.arenaGate = gate;
+
+    this.tweens.add({
+      targets: gate,
+      y: FLOOR_Y + 12,
+      duration: 260,
+      ease: "Quad.easeIn",
+      onComplete: () => {
+        this.cameras.main.shake(260, 0.008);
+        this.tweens.add({
+          targets: gate,
+          y: FLOOR_Y,
+          duration: 120,
+          ease: "Quad.easeOut",
+        });
+        const dust = this.add.particles(wallX, FLOOR_Y, "__WHITE", {
+          speed: { min: 40, max: 140 },
+          angle: { min: 200, max: 340 },
+          lifespan: 420,
+          quantity: 14,
+          scale: { start: 0.8, end: 0 },
+          tint: 0x6b5a4a,
+          emitting: false,
+        });
+        dust.setDepth(5);
+        dust.explode(14);
+        this.time.delayedCall(600, () => dust.destroy());
+      },
+    });
+
     this.announce("Le passage se referme");
     this.nextWave();
   }
@@ -553,19 +587,8 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.shake(180, 0.006);
       });
     } else if (this.backdropKey === "throne") {
-      // salle du trone : statues de garde de part et d'autre de l'arene,
-      // amas de chair au pied des murs
-      this.statues = [
-        new WeepingStatue(this, 1080, FLOOR_Y, 0.8, 90),
-        new WeepingStatue(this, 1920, FLOOR_Y, 0.8, 90),
-      ];
-      this.blobs = scatterFleshBlobs(this, FLOOR_Y, roomWidth, {
-        count: Phaser.Math.Between(3, 5),
-        minX: 1050,
-        maxX: roomWidth - 260,
-        lift: 60,
-      });
-      this.crucified = new CrucifiedProp(this, 300, FLOOR_Y);
+      // salle du trone : le decor peint se suffit a lui-meme
+
     } else {
       // exterieur : parvis long, supplicies exposes et chairs eparses
       this.crucified = new CrucifiedProp(this, 640, FLOOR_Y);
@@ -632,6 +655,18 @@ export class GameScene extends Phaser.Scene {
       this.platforms.remove(this.arenaWall, true, true);
       this.arenaWall = undefined;
     }
+    if (this.arenaGate) {
+      const gate = this.arenaGate;
+      this.arenaGate = undefined;
+      this.tweens.add({
+        targets: gate,
+        y: FLOOR_Y - 700,
+        duration: 420,
+        ease: "Quad.easeIn",
+        onComplete: () => gate.destroy(),
+      });
+    }
+
 
     this.announce("Le passage s'ouvre");
   }
