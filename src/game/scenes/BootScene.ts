@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 
-import { BACKDROPS, FRAME_SPACING, SHEETS } from "../assets";
+import { BACKDROPS, EXTRA_BACKGROUNDS, FRAME_SPACING, SHEETS } from "../assets";
 import { MUSIC_AMBIENT, MUSIC_CHOIR, MUSIC_COMBAT, MUSIC_SUSPENSE } from "../audio/Music";
 import { useGameStore } from "@/store/gameStore";
 import ambientTrack from "@/assets/music_obscura_piano.mp3.asset.json";
@@ -28,6 +28,11 @@ export class BootScene extends Phaser.Scene {
       this.load.image(def.far, def.paths[0]);
       this.load.image(def.mid, def.paths[1]);
       this.load.image(def.near, def.paths[2]);
+    }
+
+    // decors additionnels : segments de la marche vers le Trone
+    for (const bg of EXTRA_BACKGROUNDS) {
+      this.load.image(bg.key, bg.path);
     }
 
     // colonne de fin de salle (visceres animes)

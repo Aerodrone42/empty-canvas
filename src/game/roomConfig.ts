@@ -16,6 +16,26 @@ export type PlatformDef = { x: number; y: number; width: number };
 /** fosse : segment de sol manquant, la chute renvoie le heros au bord */
 export type PitDef = { from: number; to: number };
 
+/**
+ * Segment de parcours : tronçon de salle avec son propre decor peint,
+ * son voile d'ambiance et son nom affiche a l'entree.
+ */
+export type SegmentDef = {
+  /** nom du lieu, affiche en cartouche a l'entree du segment */
+  name: string;
+  /** bornes du segment en abscisse monde */
+  from: number;
+  to: number;
+  /** cle de texture du decor peint */
+  bg: string;
+  /** voile colore applique sur ce troncon */
+  tint: number;
+  tintAlpha: number;
+  /** couleur des poussieres flottantes du troncon */
+  dust: number;
+};
+
+
 export type RoomConfig = {
   /** largeur jouable de la salle */
   width: number;
@@ -39,6 +59,10 @@ export type RoomConfig = {
   pits: PitDef[];
   /** piste musicale de la salle */
   music: "choir" | "suspense" | "main";
+  /** parcours segmente : decors successifs le long de la salle */
+  segments?: SegmentDef[];
+  /** texture de sol repetee le long de la salle */
+  floorTexture?: string;
 };
 
 /** marge entre la colonne de sortie et le bord droit de la salle */
@@ -98,24 +122,105 @@ export const ROOM_CONFIG: Record<BackdropKey, RoomConfig> = {
 
   // III — La Marche vers le Trone : longue traversee, aucun combat pour l'instant
   throne: {
-    width: 9600,
+    width: 16000,
     spawnX: 160,
     altarX: 900,
     spawns: [],
-    hangers: [1800, 3000, 4200, 5400, 6600, 7800, 8800],
+    hangers: [
+      2400, 4300, 5200, 6400, 8200, 9000, 10400, 11500, 12800, 14600,
+    ],
     hands: [
       [1500, 2300],
-      [2800, 3600],
-      [4100, 4900],
-      [5300, 6100],
-      [6500, 7300],
-      [7700, 8500],
-      [8700, 9400],
+      [3000, 3800],
+      [4400, 5200],
+      [6000, 6800],
+      [7900, 8700],
+      [9200, 10000],
+      [10600, 11400],
+      [12200, 13000],
+      [13600, 14400],
+      [14900, 15600],
     ],
     platforms: [],
     pits: [],
     music: "main",
+    segments: [
+      {
+        name: "Le Seuil",
+        from: 0,
+        to: 1800,
+        bg: "throne-far",
+        tint: 0x1a0508,
+        tintAlpha: 0.34,
+        dust: 0xff8a9a,
+      },
+      {
+        name: "La Nef Rouge",
+        from: 1800,
+        to: 3600,
+        bg: "throne-far",
+        tint: 0x40060f,
+        tintAlpha: 0.2,
+        dust: 0xffb08a,
+      },
+      {
+        name: "L'Ossuaire",
+        from: 3600,
+        to: 5600,
+        bg: "throne-ossuary",
+        tint: 0x0d1512,
+        tintAlpha: 0.26,
+        dust: 0xbfd6c4,
+      },
+      {
+        name: "Le Passage Noye",
+        from: 5600,
+        to: 7600,
+        bg: "throne-flooded",
+        tint: 0x2c0308,
+        tintAlpha: 0.3,
+        dust: 0xff6a72,
+      },
+      {
+        name: "Le Cloitre des Supplicies",
+        from: 7600,
+        to: 9800,
+        bg: "throne-cloister",
+        tint: 0x3a0a06,
+        tintAlpha: 0.2,
+        dust: 0xffa06a,
+      },
+      {
+        name: "La Galerie des Bannieres",
+        from: 9800,
+        to: 12000,
+        bg: "throne-gallery",
+        tint: 0x2a0c05,
+        tintAlpha: 0.2,
+        dust: 0xffc27a,
+      },
+      {
+        name: "L'Ascension",
+        from: 12000,
+        to: 14000,
+        bg: "throne-near",
+        tint: 0x38060d,
+        tintAlpha: 0.22,
+        dust: 0xff9a86,
+      },
+      {
+        name: "Le Parvis du Trone",
+        from: 14000,
+        to: 16000,
+        bg: "throne-mid",
+        tint: 0x4a060f,
+        tintAlpha: 0.24,
+        dust: 0xff8a9a,
+      },
+    ],
+    floorTexture: "throne-floor",
   },
+
 
 
   // IV — L'Exterieur : parvis long et accidente, combats espaces, verticalite

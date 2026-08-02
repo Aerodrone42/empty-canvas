@@ -411,6 +411,39 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  /** Cartouche discret annoncant le lieu traverse, en bas de l'ecran. */
+  private showSegmentTitle(name: string) {
+    const cam = this.cameras.main;
+    const label = this.add
+      .text(cam.width / 2, cam.height - 120, name, {
+        fontFamily: "Georgia, serif",
+        fontSize: "22px",
+        color: "#d7b7ab",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(59)
+      .setAlpha(0);
+    const rule = this.add
+      .rectangle(cam.width / 2, cam.height - 98, 160, 1, 0x8f2230, 0.8)
+      .setScrollFactor(0)
+      .setDepth(59)
+      .setAlpha(0);
+    this.tweens.add({
+      targets: [label, rule],
+      alpha: 1,
+      duration: 600,
+      yoyo: true,
+      hold: 1500,
+      onComplete: () => {
+        label.destroy();
+        rule.destroy();
+      },
+    });
+  }
+
+
+
   /** Compteur discret de creatures restantes, en haut a droite. */
   private updateCounter(alive: number) {
     if (!this.counterText) return;
@@ -525,7 +558,14 @@ export class GameScene extends Phaser.Scene {
   /** Decor en trois calques de parallaxe, selon la salle courante. */
   private buildBackdrop() {
     const roomWidth = this.room.width;
-    this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, roomWidth);
+    this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, roomWidth, {
+      segments: this.room.segments,
+      floorTexture: this.room.floorTexture,
+      onSegment: (seg, index) => {
+        // la premiere zone est deja annoncee par le cartouche de salle
+        if (index > 0) this.showSegmentTitle(seg.name);
+      },
+    });
 
     // vie de fond : dosage rats / chauves-souris selon le volume de la salle
     const mix =
@@ -837,7 +877,7 @@ export class GameScene extends Phaser.Scene {
     const t0 = performance.now();
     const prof = this.profiler;
 
-    prof.measure("parallax", () => this.parallax.update());
+    prof.measure("parallax", () => this.parallax.update(this.player?.x ?? 0));
 
     const phase = useGameStore.getState().phase;
     if (phase !== "playing") {
