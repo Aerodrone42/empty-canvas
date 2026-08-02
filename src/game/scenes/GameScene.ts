@@ -403,7 +403,8 @@ export class GameScene extends Phaser.Scene {
 
   /** Decor en trois calques de parallaxe, selon la salle courante. */
   private buildBackdrop() {
-    this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, ROOM_WIDTH);
+    const roomWidth = this.room.width;
+    this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, roomWidth);
 
     // vie de fond : dosage rats / chauves-souris selon le volume de la salle
     const mix =
@@ -412,10 +413,11 @@ export class GameScene extends Phaser.Scene {
         : this.backdropKey === "cathedrale"
           ? { rats: 2, bats: 4, ratBias: 0.3 }
           : { rats: 3, bats: 3, ratBias: 0.5 };
-    this.critters = new AmbientCritters(this, FLOOR_Y, ROOM_WIDTH, mix);
+    this.critters = new AmbientCritters(this, FLOOR_Y, roomWidth, mix);
 
     // torcheres sur pied : flamme, lueur fluctuante et fumee legere
-    this.torches = placeTorches(this, FLOOR_Y, ROOM_WIDTH, this.backdropKey);
+    this.torches = placeTorches(this, FLOOR_Y, roomWidth, this.backdropKey);
+
 
     // supplicie ecorche : uniquement dans la cathedrale
     if (this.backdropKey === "cathedrale") {
