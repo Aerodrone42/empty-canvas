@@ -653,6 +653,18 @@ export class GameScene extends Phaser.Scene {
       this.platforms.remove(this.arenaWall, true, true);
       this.arenaWall = undefined;
     }
+    if (this.arenaGate) {
+      const gate = this.arenaGate;
+      this.arenaGate = undefined;
+      this.tweens.add({
+        targets: gate,
+        y: FLOOR_Y - 700,
+        duration: 420,
+        ease: "Quad.easeIn",
+        onComplete: () => gate.destroy(),
+      });
+    }
+
 
     this.announce("Le passage s'ouvre");
   }
