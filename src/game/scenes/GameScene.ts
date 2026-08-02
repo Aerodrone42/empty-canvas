@@ -291,20 +291,48 @@ export class GameScene extends Phaser.Scene {
     if (this.arenaLocked || this.room.arenaLockX === undefined) return;
     this.arenaLocked = true;
 
-    const wall = this.add.rectangle(
-      this.room.arenaLockX - 30,
-      FLOOR_Y - 230,
-      36,
-      470,
-      0x53161f,
-      0.85,
-    );
-    wall.setDepth(4);
+    const wallX = this.room.arenaLockX - 30;
+    const wall = this.add.rectangle(wallX, FLOOR_Y - 230, 36, 470, 0x000000, 0);
+    wall.setVisible(false);
     this.physics.add.existing(wall, true);
     this.platforms.add(wall);
     this.arenaWall = wall;
 
-    this.cameras.main.shake(260, 0.008);
+    // herse de fer forge : elle tombe du plafond et plante ses pointes au sol
+    const gate = this.add.image(wallX, FLOOR_Y - 700, "iron-gate");
+    gate.setOrigin(0.5, 1);
+    gate.setDisplaySize(96, 500);
+    gate.setDepth(4);
+    this.arenaGate = gate;
+
+    this.tweens.add({
+      targets: gate,
+      y: FLOOR_Y + 12,
+      duration: 260,
+      ease: "Quad.easeIn",
+      onComplete: () => {
+        this.cameras.main.shake(260, 0.008);
+        this.tweens.add({
+          targets: gate,
+          y: FLOOR_Y,
+          duration: 120,
+          ease: "Quad.easeOut",
+        });
+        const dust = this.add.particles(wallX, FLOOR_Y, "blood-particle", {
+          speed: { min: 40, max: 140 },
+          angle: { min: 200, max: 340 },
+          lifespan: 420,
+          quantity: 14,
+          scale: { start: 0.8, end: 0 },
+          tint: 0x6b5a4a,
+          emitting: false,
+        });
+        dust.setDepth(5);
+        dust.explode(14);
+        this.time.delayedCall(600, () => dust.destroy());
+      },
+    });
+
     this.announce("Le passage se referme");
     this.nextWave();
   }
