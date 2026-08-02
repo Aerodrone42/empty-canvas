@@ -525,7 +525,14 @@ export class GameScene extends Phaser.Scene {
   /** Decor en trois calques de parallaxe, selon la salle courante. */
   private buildBackdrop() {
     const roomWidth = this.room.width;
-    this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, roomWidth);
+    this.parallax = new Parallax(this, this.backdropKey, FLOOR_Y, ROOM_HEIGHT, roomWidth, {
+      segments: this.room.segments,
+      floorTexture: this.room.floorTexture,
+      onSegment: (seg, index) => {
+        // la premiere zone est deja annoncee par le cartouche de salle
+        if (index > 0) this.showSegmentTitle(seg.name);
+      },
+    });
 
     // vie de fond : dosage rats / chauves-souris selon le volume de la salle
     const mix =
