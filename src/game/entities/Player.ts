@@ -381,13 +381,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // ---------- parade ----------
+    // ---------- garde / parade ----------
     if (this.actions.justDown("parry") && onGround) {
-
-      this.parryUntil = time + PARRY.window + effects.parryWindowBonus;
-      this.beginState("parry", time, PARRY.window + effects.parryWindowBonus + PARRY.recovery);
+      this.parryPressedAt = time;
+      this.parryUntil = time + PARRY.perfectWindow + effects.parryWindowBonus;
+    }
+    if (this.actions.isDown("parry") && onGround) {
+      this.moveState = "guard";
+      this.stateUntil = time + PARRY.recovery;
       body.setVelocityX(0);
-      this.setTint(0xf2d9a0);
+      this.setTint(time < this.parryUntil ? 0xfff0c0 : 0x9fb4cf);
       this.play("vigile-idle-anim", true);
       return;
     }
