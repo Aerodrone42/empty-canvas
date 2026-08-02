@@ -1,20 +1,17 @@
-## Constat
+## Problème
 
-Dans la salle du Trône, deux choses jurent avec le décor peint :
+La herse actuelle est dessinée **de face** (grille large de 5 barreaux, 96 px de large à l'écran). Or le jeu est vu de côté : une grille qui barre le couloir doit se voir **par la tranche**, c'est-à-dire comme une fine colonne de fer, pas comme un panneau.
 
-1. Les props ajoutés par-dessus le fond (`GameScene.ts`, l. 555-568) : deux statues de pleureuses (x=1080, x=1920), 3 à 5 amas de chair et un supplicié crucifié (x=300). Ce sont des sprites réutilisés des autres salles, mal calés sur ce fond déjà très chargé.
-2. Le mur qui se ferme (`lockArena`, l. 294-305) : c'est un simple `add.rectangle` bordeaux translucide (36×470, `0x53161f`, alpha 0.85) posé au premier plan — aucun sprite, d'où l'aspect « placeholder ».
+## Correctif
 
-## Changements
+1. **Nouveau sprite** `public/assets/sprites/props/iron_gate.png`
+   - Vue de profil : une seule barre verticale épaisse de fer forgé, pointe acérée en bas, pointe en haut, avec les traverses vues par la tranche (petits blocs/rivets réguliers) et un léger décalage des barreaux du fond pour donner l'épaisseur.
+   - Même palette que l'image de référence : fer sombre, rouille bordeaux, reflets bronze — cohérent avec le gothique du jeu.
+   - Fond transparent, format vertical étroit (env. 128 × 640).
 
-1. **`src/game/scenes/GameScene.ts`** — branche `throne` (l. 555-568) : suppression des `WeepingStatue`, du `scatterFleshBlobs` et du `CrucifiedProp`. La salle garde son décor de fond, ses torchères, ses pendus, son autel et ses vagues.
+2. **`src/game/scenes/GameScene.ts` — `lockArena`**
+   - `gate.setDisplaySize(96, 500)` → largeur réduite (env. 30 px) pour respecter la vue de tranche, hauteur inchangée (500).
+   - Chute, secousse de caméra, poussière à l'impact et remontée à la victoire : inchangés.
+   - Le collider invisible (36 px) reste aligné sur la nouvelle largeur.
 
-2. **Nouvelle herse de fer** — le rectangle bordeaux est remplacé par un vrai sprite pixel-art dans le style du jeu :
-   - Génération de `public/assets/sprites/props/iron_gate.png` : grille de fer forgé verticale, barreaux rongés de rouille, pointes acérées en bas (et en haut), teintes fer sombre / bronze patiné accordées à la palette bordeaux-brun de la salle, fond transparent.
-   - Déclaration dans `src/game/assets.ts` et chargement dans `src/game/scenes/BootScene.ts`.
-
-3. **`src/game/scenes/GameScene.ts`** — `lockArena` : la herse est un `Image` posé au niveau du verrou, qui tombe du plafond (tween rapide + rebond court), plante ses pointes dans le sol, déclenche la secousse de caméra existante, un impact de poussière et le message « Le passage se referme ». Le collider statique reste identique (même largeur, même hauteur) mais est désormais invisible et masqué derrière le sprite, donc le blocage ne change pas.
-
-## Résultat
-
-Salle III épurée : plus de props recyclés hors style, et la fermeture de l'arène se joue avec une vraie herse de fer à pointes qui s'abat, cohérente avec le décor gothique.
+Aucun changement de gameplay : seule l'apparence de la herse est corrigée.
