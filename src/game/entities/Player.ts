@@ -301,12 +301,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    if (this.moveState === "parry") {
-      if (time >= this.stateUntil) {
+    if (this.moveState === "parry" || this.moveState === "guard") {
+      // la garde se relache des que la touche est laissee
+      if (!this.actions.isDown("parry") || !onGround) {
         this.moveState = "idle";
         this.clearTint();
       } else {
-        if (onGround) body.setVelocityX(0);
+        body.setVelocityX(0);
+        this.setTint(time < this.parryUntil ? 0xfff0c0 : 0x9fb4cf);
+        this.play("vigile-idle-anim", true);
         return;
       }
     }
