@@ -1,36 +1,29 @@
 ## Objectif
+Étape actuelle : **uniquement la salle du Trône allongée, son sol et ses fonds**. Aucun ennemi, aucune vague, aucune herse. Le joueur doit pouvoir marcher longuement à travers le décor jusqu'au Trône.
 
-La salle III (Trône) est trop courte et son décor trop pauvre. On l'allonge et on lui refait un fond gothique varié. L'autel de sauvegarde, hors style ici, est retravaillé ensuite.
+## Longueur
+`throne.width` : 2000 → **9600 px**. Traversée à pied de plusieurs minutes, entièrement libre.
 
-## Étape 1 — Décor de fond (validation avant intégration)
+## Contenu de la salle à cette étape
+- `spawns` : vide
+- `waves` : supprimées
+- `arenaLockX` : supprimé
+- Autel de sang conservé (x≈900) comme point de départ/sauvegarde
+- Écorchés suspendus et mains agrippantes : conservés en décor léger, redistribués sur les 9600 px pour éviter les zones vides
+- Sol : plat et continu sur toute la largeur, aucune fosse ni plateau
+- Torches au sol : déjà distribuées dynamiquement selon la largeur, rien à changer
 
-Je génère les 3 couches de parallaxe du Trône, format large et panoramique :
+## Fonds de décor (3 couches parallaxe)
+Les images validées sont trop courtes pour 9600 px. Régénération :
+- `throne_far_v1.png` — nef profonde bouclable (arcades, brume rouge), défilement 0.15
+- `throne_mid_v1.png` — **composition en progression, non bouclée** : ossuaire → colonnes → estrade → trône de chair au fond, étirée sur toute la salle, défilement 0.45, pour que le Trône grossisse à mesure qu'on avance
+- `throne_near_v1.png` — piliers et braseros d'avant-plan, tuilés avec espacement irrégulier, défilement 0.9
 
-- `throne_bg_far.png` — nef immense en profondeur : arcs brisés en enfilade, vitraux éteints, brume rouge sombre.
-- `throne_bg_mid.png` — le trône de chair et d'os au centre, gradins de pierre, colonnes torses, chaînes.
-- `throne_bg_near.png` — piliers rapprochés, braseros, dallage ébréché, ombres portées.
-
-Palette tenue au style existant : pierre gris-brun chaud, bordeaux, ambre des braises. Pixel-art cohérent avec les autres salles.
-
-**Je t'envoie les images en chat pour validation. Rien n'est intégré tant que tu n'as pas dit oui.** Si ça ne va pas, je régénère.
-
-## Étape 2 — Salle plus longue (après validation)
-
-`src/game/roomConfig.ts`, entrée `throne` :
-
-- `width` : 2000 → 3400
-- `arenaLockX` : 980 → 1500 (approche plus longue avant l'arène)
-- `altarX` : 620 → 900
-- Vagues réparties sur la nouvelle largeur (les 3 vagues gardent leur composition, positions étalées entre 1900 et 3200)
-- `hangers` / `hands` repositionnés sur la longueur
-
-Les torches au sol et le parallaxe se calent déjà sur `width`, donc rien d'autre à changer côté scène.
-
-## Étape 3 — Autel dans le style de la salle
-
-L'autel actuel (`blood_altar.png`) jure avec la nef du Trône. Deux options que je te proposerai en images : soit une variante retexturée du même sprite (pierre plus sombre, ferronnerie), soit un sprite dédié « autel du trône ». Je te fais valider avant intégration là aussi.
+Je te renvoie les 3 images pour validation avant intégration.
 
 ## Détails techniques
+- `src/game/roomConfig.ts` : entrée `throne` réduite à width / spawnX / altarX / hangers / hands, listes de combat vidées
+- `src/game/scenes/GameScene.ts` : aucune logique retirée (les boucles vagues/herse ne produisent rien sans configuration) ; géométrie, sol et parallaxe suivent déjà `config.width`
+- `src/game/assets.ts` / `BootScene.ts` : mêmes clés, images remplacées
 
-- Les fonds remplacent les fichiers existants dans `public/assets/sprites/backgrounds/`, avec un `?v=` bumpé dans `src/game/assets.ts` pour casser le cache.
-- Aucune modification de gameplay : mêmes ennemis, même herse d'arène, mêmes règles de vagues.
+Ennemis, vagues, herse, boss et reskin de l'autel : étapes suivantes.
