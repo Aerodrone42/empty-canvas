@@ -877,7 +877,7 @@ export class GameScene extends Phaser.Scene {
     const t0 = performance.now();
     const prof = this.profiler;
 
-    prof.measure("parallax", () => this.parallax.update());
+    prof.measure("parallax", () => this.parallax.update(this.player?.x ?? 0));
 
     const phase = useGameStore.getState().phase;
     if (phase !== "playing") {
