@@ -89,7 +89,35 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     return this.dying;
   }
 
+  /**
+   * Variante elite : creature plus grande, plus resistante, plus dangereuse,
+   * marquee par une teinte sanglante permanente et une meilleure recompense.
+   */
+  makeElite() {
+    this.stats = {
+      ...this.stats,
+      health: Math.round(this.stats.health * 1.8),
+      damage: Math.round(this.stats.damage * 1.3),
+      chaseSpeed: Math.round(this.stats.chaseSpeed * 1.1),
+      fleshReward: Math.round(this.stats.fleshReward * 2),
+      bodyWidth: Math.round(this.stats.bodyWidth * 1.12),
+      bodyHeight: Math.round(this.stats.bodyHeight * 1.12),
+    };
+    this.health = this.stats.health;
+    this.setScale(this.scaleX * 1.12);
+    this.baseTint = 0x9c3541;
+    this.setTint(this.baseTint);
+    return this;
+  }
+
+  /** on ne revient jamais au blanc pur si la creature porte une teinte d'elite */
+  override clearTint() {
+    if (this.baseTint !== undefined) return this.setTint(this.baseTint);
+    return super.clearTint();
+  }
+
   /** hurtbox reelle de la creature (centre + demi-dimensions) */
+
   get hurtbox() {
     return {
       cx: this.x,
