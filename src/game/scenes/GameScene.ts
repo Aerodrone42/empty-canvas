@@ -541,27 +541,12 @@ export class GameScene extends Phaser.Scene {
       this.platforms.remove(this.gateWall, true, true);
       this.gateWall = undefined;
     }
+    if (this.arenaWall) {
+      this.platforms.remove(this.arenaWall, true, true);
+      this.arenaWall = undefined;
+    }
 
-
-    const cam = this.cameras.main;
-    const label = this.add
-      .text(cam.width / 2, 120, "Le passage s'ouvre", {
-        fontFamily: "Georgia, serif",
-        fontSize: "26px",
-        color: "#c2727a",
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(60)
-      .setAlpha(0);
-    this.tweens.add({
-      targets: label,
-      alpha: 1,
-      duration: 500,
-      yoyo: true,
-      hold: 1400,
-      onComplete: () => label.destroy(),
-    });
+    this.announce("Le passage s'ouvre");
   }
 
 
@@ -583,19 +568,42 @@ export class GameScene extends Phaser.Scene {
     this.platforms = this.physics.add.staticGroup();
 
     // Le sol visible est peint par les calques de decor : ici on ne garde
-    // qu'un corps de collision invisible sur toute la largeur de la salle.
+    // que des corps de collision invisibles, decoupes par les fosses.
     const groundH = ROOM_HEIGHT - FLOOR_Y;
-    const ground = this.add.rectangle(
-      ROOM_WIDTH / 2,
-      FLOOR_Y + groundH / 2,
-      ROOM_WIDTH,
-      groundH,
-    );
-    ground.setVisible(false);
-    this.platforms.add(ground);
+    const width = this.room.width;
+    const pits = [...this.room.pits].sort((a, b) => a.from - b.from);
+
+    let cursor = 0;
+    const segments: [number, number][] = [];
+    for (const pit of pits) {
+      if (pit.from > cursor) segments.push([cursor, pit.from]);
+      cursor = pit.to;
+    }
+    if (cursor < width) segments.push([cursor, width]);
+
+    for (const [from, to] of segments) {
+      const ground = this.add.rectangle(
+        (from + to) / 2,
+        FLOOR_Y + groundH / 2,
+        to - from,
+        groundH,
+      );
+      ground.setVisible(false);
+      this.platforms.add(ground);
+    }
+
+    // plateaux suspendus : ils donnent enfin une utilite au saut et au plongeon
+    for (const def of this.room.platforms) {
+      const plat = this.add.rectangle(def.x, def.y, def.width, 24, 0x2a1418, 0.92);
+      plat.setStrokeStyle(2, 0x4a2028, 0.9);
+      plat.setDepth(3);
+      this.physics.add.existing(plat, true);
+      this.platforms.add(plat);
+    }
 
     this.platforms.refresh();
   }
+
 
 
   /**
