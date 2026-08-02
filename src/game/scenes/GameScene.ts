@@ -592,14 +592,25 @@ export class GameScene extends Phaser.Scene {
 
 
   private resolveEnemyStrike(amount: number, source?: Enemy) {
-    if (this.player.tryParry(this.time.now)) {
+    const result = this.player.tryParry(this.time.now);
+    if (result === "perfect") {
       const store = useGameStore.getState();
       store.registerParry();
       store.gainFlesh(PARRY.fleshReward);
       source?.stun(PARRY.stun);
-      this.player.rumble(0.4, 120);
-      this.cameras.main.flash(90, 240, 220, 160);
+      this.player.rumble(0.55, 160);
+      this.cameras.main.flash(120, 255, 244, 200);
       this.blood.sparks(this.player.x + this.player.facingDirection * 30, this.player.y - 70);
+      return;
+    }
+    if (result === "guard") {
+      this.player.rumble(0.25, 90);
+      this.cameras.main.shake(80, 0.005);
+      this.blood.sparks(this.player.x + this.player.facingDirection * 26, this.player.y - 60);
+      this.player.receiveDamage(
+        Math.max(1, Math.round(amount * PARRY.guardDamageMult)),
+        this.time.now,
+      );
       return;
     }
     this.player.receiveDamage(amount, this.time.now);
