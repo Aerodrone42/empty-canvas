@@ -585,19 +585,8 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.shake(180, 0.006);
       });
     } else if (this.backdropKey === "throne") {
-      // salle du trone : statues de garde de part et d'autre de l'arene,
-      // amas de chair au pied des murs
-      this.statues = [
-        new WeepingStatue(this, 1080, FLOOR_Y, 0.8, 90),
-        new WeepingStatue(this, 1920, FLOOR_Y, 0.8, 90),
-      ];
-      this.blobs = scatterFleshBlobs(this, FLOOR_Y, roomWidth, {
-        count: Phaser.Math.Between(3, 5),
-        minX: 1050,
-        maxX: roomWidth - 260,
-        lift: 60,
-      });
-      this.crucified = new CrucifiedProp(this, 300, FLOOR_Y);
+      // salle du trone : le decor peint se suffit a lui-meme
+
     } else {
       // exterieur : parvis long, supplicies exposes et chairs eparses
       this.crucified = new CrucifiedProp(this, 640, FLOOR_Y);
