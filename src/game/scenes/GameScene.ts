@@ -328,6 +328,75 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  /** Cartouche de titre a l'entree de la salle. */
+  private showRoomTitle() {
+    const cam = this.cameras.main;
+    const label = this.add
+      .text(cam.width / 2, cam.height / 2 - 60, ROOM_LABELS[this.backdropKey], {
+        fontFamily: "Georgia, serif",
+        fontSize: "34px",
+        color: "#e0c9c1",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(60)
+      .setAlpha(0);
+    const rule = this.add
+      .rectangle(cam.width / 2, cam.height / 2 - 24, 220, 2, 0x8f2230, 0.9)
+      .setScrollFactor(0)
+      .setDepth(60)
+      .setAlpha(0);
+    this.tweens.add({
+      targets: [label, rule],
+      alpha: 1,
+      duration: 700,
+      yoyo: true,
+      hold: 1600,
+      onComplete: () => {
+        label.destroy();
+        rule.destroy();
+      },
+    });
+  }
+
+  /** Compteur discret de creatures restantes, en haut a droite. */
+  private updateCounter(alive: number) {
+    if (!this.counterText) return;
+    if (this.roomCleared) {
+      this.counterText.setText("Passage ouvert");
+      return;
+    }
+    const waves = this.pendingWaves.length;
+    this.counterText.setText(
+      waves > 0
+        ? `Creatures : ${alive}   ·   Vagues restantes : ${waves}`
+        : `Creatures : ${alive}`,
+    );
+  }
+
+  /**
+   * Chute dans une fosse : le heros perd de la vie et est replace sur le
+   * bord le plus proche, plutot que de rester coince au fond du monde.
+   */
+  private checkPitFall() {
+    if (!this.player || this.room.pits.length === 0) return;
+    if (this.player.y <= FLOOR_Y + 40) return;
+
+    const pit = this.room.pits.find(
+      (p) => this.player.x > p.from - 20 && this.player.x < p.to + 20,
+    );
+    if (!pit) return;
+
+    const edge = this.player.x < (pit.from + pit.to) / 2 ? pit.from - 60 : pit.to + 60;
+    const body = this.player.body as Phaser.Physics.Arcade.Body | null;
+    this.player.setPosition(Phaser.Math.Clamp(edge, 60, this.room.width - 60), FLOOR_Y - 40);
+    body?.setVelocity(0, 0);
+    this.cameras.main.shake(200, 0.01);
+    this.player.receiveDamage(PIT_DAMAGE, this.time.now);
+  }
+
+
+
 
   private spawn(enemy: Enemy) {
     this.physics.add.collider(enemy, this.platforms);
