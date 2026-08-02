@@ -43,6 +43,7 @@ export type PlayerState =
   | "dive"
   | "dodge"
   | "parry"
+  | "guard"
   | "absorb"
   | "special";
 
