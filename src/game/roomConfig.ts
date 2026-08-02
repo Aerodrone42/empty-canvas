@@ -59,6 +59,10 @@ export type RoomConfig = {
   pits: PitDef[];
   /** piste musicale de la salle */
   music: "choir" | "suspense" | "main";
+  /** parcours segmente : decors successifs le long de la salle */
+  segments?: SegmentDef[];
+  /** texture de sol repetee le long de la salle */
+  floorTexture?: string;
 };
 
 /** marge entre la colonne de sortie et le bord droit de la salle */
