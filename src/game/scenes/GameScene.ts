@@ -166,18 +166,23 @@ export class GameScene extends Phaser.Scene {
 
     this.exiting = false;
     this.roomCleared = false;
-    this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
-    this.cameras.main.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
+    this.arenaLocked = false;
+    this.arenaWall = undefined;
+    this.waveIncoming = false;
+    this.pendingWaves = (this.room.waves ?? []).map((w) => [...w]);
+    this.physics.world.setBounds(0, 0, this.room.width, ROOM_HEIGHT);
+    this.cameras.main.setBounds(0, 0, this.room.width, ROOM_HEIGHT);
     this.cameras.main.setBackgroundColor(0x14090b);
     this.cameras.main.fadeIn(500, 0, 0, 0);
 
 
     this.profiler = new Profiler(this);
-    // premiere salle : choeur gothique ; salles suivantes : theme habituel
+    // une piste par salle : choeur, suspense, ou theme principal
     this.music = new MusicDirector(this, {
-      intro: this.backdropKey === ROOM_ORDER[0],
-      suspense: this.backdropKey === ROOM_ORDER[1],
+      intro: this.room.music === "choir",
+      suspense: this.room.music === "suspense",
     });
+
 
     this.blood = new BloodFX(this, FLOOR_Y);
     this.guardFx = new GuardFX(this);
