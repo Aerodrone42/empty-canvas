@@ -1,29 +1,31 @@
 ## Constat
 
-- Il n'existe aucune feuille d'animation de garde : `public/assets/sprites/` ne contient que `idle`, `walk`, `attack`, `dodge`, `jump`.
-- Faute de sprite, `Player.ts` (`holdGuardPose`) se contente de figer une frame d'idle, de réduire légèrement l'échelle et d'appliquer une teinte froide — d'où l'effet « le perso rétrécit et change de couleur ».
+La planche que je t'ai montrée est la planche **d'attaque** déjà présente dans le jeu — c'est elle qui contient les défauts que tu entoures : frame 3 avec une lame qui se dédouble, frame 4 avec l'épée qui change de main. Le sprite de parade, lui, n'existe toujours pas : la « garde » actuelle n'est qu'une frame d'idle rétrécie et teintée. Il faut donc produire une vraie planche de parade **propre**, et la valider image par image avant de la brancher.
 
 ## Plan
 
-1. **Créer une vraie animation de garde**
-   - Nouvelle feuille `vigile_muet_guard_spritesheet.png`, même gabarit que les autres (192x144, baseline 138, hauteur perso 110), même palette et même silhouette (capuche rouge sombre, masque pâle, épée longue).
-   - 4 frames enchaînées :
-     1. amorce — le héros pivote de trois quarts, l'épée se relève,
-     2. lame dressée devant le torse, épaule avancée, jambes fléchies,
-     3. posture de garde tenue (frame de maintien, légère respiration),
-     4. impulsion de parade — la lame chasse vers l'avant.
-   - Découpage : frames 1-3 jouées à l'entrée en garde, frame 3 bouclée tant que la touche est tenue, frame 4 jouée au moment où un coup est paré.
+1. **Frame de référence propre**
+   - Extraire la frame d'idle la plus nette (héros de profil vers la droite, épée tenue dans la main avant, une seule lame) et s'en servir comme base d'édition : la silhouette, la palette et la position de l'épée sont ainsi héritées, pas réinventées.
 
-2. **Brancher l'animation**
-   - `BootScene.ts` : chargement de la feuille et création de deux animations, `guard_enter` (frames 1→3, une passe) et `guard_hold` (frame 3 en boucle), plus `guard_parry` (frame 4, une passe).
-   - `assets.ts` : ajout de l'entrée avec le paramètre de version anti-cache.
+2. **Générer la parade frame par frame (pas en planche d'un coup)**
+   - 3 poses seulement, générées et vérifiées **une par une** à partir de la même référence :
+     1. *amorce* — le poids passe sur la jambe arrière, la lame commence à se relever devant le corps,
+     2. *garde tenue* — lame dressée en diagonale devant le torse, épaule avancée, genoux fléchis (frame bouclée pendant le maintien),
+     3. *impact de parade* — la lame chasse le coup vers l'avant, le buste se redresse.
+   - **Contrôle qualité obligatoire sur chaque frame** avant de continuer : une seule lame, épée dans la **même main** que l'idle, capuche orientée dans le même sens, taille de silhouette identique (110 px). Toute frame qui échoue est régénérée, pas conservée.
 
-3. **Nettoyer le bricolage visuel**
-   - `Player.ts` : `holdGuardPose()` ne touche plus ni à `setScale` ni à `setTint` ; il joue `guard_enter` puis `guard_hold`. `releaseGuard()` revient à `idle` sans reset de teinte parasite.
-   - `onGuardBlocked(perfect)` : joue `guard_parry` ; la gerbe d'étincelles et la mention « PARADE » restent réservées à la parade parfaite, comme convenu.
+3. **Assemblage et intégration**
+   - Recomposition des 3 frames validées en une planche `vigile_muet_guard_spritesheet.png` au gabarit exact des autres (192x144, pieds à y=138), avec recentrage automatique sur la baseline pour éviter tout saut de position.
+   - Passage dans `scripts/defringe_hero.py` (suppression du liseré blanc).
+   - `assets.ts` + `BootScene.ts` : chargement et animations `vigile-guard-enter` (1→2), `vigile-guard-hold` (2 en boucle), `vigile-guard-parry` (3, une passe).
 
-## Détails techniques
+4. **Suppression du bricolage**
+   - `Player.ts` : `holdGuardPose()` ne fait plus ni `setScale` ni `setTint` — il joue les vraies animations. `releaseGuard()` revient à l'idle. `onGuardBlocked()` déclenche `vigile-guard-parry`.
+   - Étincelles / mention « PARADE » toujours réservées à la parade parfaite.
 
-- Génération de la feuille par le même pipeline que les autres sprites, puis passage dans `scripts/defringe_hero.py` pour supprimer le liseré clair sur les bords.
-- Fichiers touchés : `public/assets/sprites/vigile_muet_guard_spritesheet.png` (nouveau), `public/assets/sprites/vigile_muet_atlas.json`, `src/game/assets.ts`, `src/game/scenes/BootScene.ts`, `src/game/entities/Player.ts`.
-- Aucun bouclier ajouté : la garde reste à l'épée, conformément à la consigne précédente.
+5. **Vérification en jeu**
+   - Capture de l'écran avec la garde tenue pour confirmer : pas de rétrécissement, pas de teinte, posture lisible, une seule épée dans la bonne main.
+
+## Note
+
+Si après régénérations la pose de garde reste incohérente avec le reste du héros, je te le dis franchement plutôt que de livrer une frame bâclée — on choisira alors une pose de garde dérivée directement de la première frame d'attaque (art d'origine, zéro artefact) retravaillée en pixel.
