@@ -289,6 +289,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.actions.update(pad, time);
 
+    if (this.moveState !== "guard" && this.moveState !== "parry") {
+      useGameStore.getState().setGuarding(false);
+    }
+
     if (onGround) this.airJumpsUsed = 0;
 
     const snared = time < this.snareUntil;
