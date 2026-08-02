@@ -762,14 +762,30 @@ export class GameScene extends Phaser.Scene {
 
     this.enemies = this.enemies.filter((e) => e.active);
 
+    // arene : le verrou se referme quand le heros franchit le seuil
+    if (this.room.arenaLockX !== undefined && this.player.x > this.room.arenaLockX) {
+      this.lockArena();
+    }
+
+    // fosses : la chute coute de la vie et renvoie le heros au bord
+    this.checkPitFall();
+
+    const alive = this.enemies.filter((e) => !e.isDead).length;
     // salle nettoyee : la monture doit etre abattue en plus des monstres au sol
     const mountCleared = !this.mount || this.mount.isDefeated;
-    if (!this.roomCleared && mountCleared && this.enemies.every((e) => e.isDead)) {
-      this.openGate();
+    if (!this.roomCleared && mountCleared && alive === 0 && !this.waveIncoming) {
+      if (this.pendingWaves.length > 0 && this.arenaLocked) {
+        this.nextWave();
+      } else if (this.room.arenaLockX === undefined || this.arenaLocked) {
+        this.openGate();
+      }
     }
-    if (this.roomCleared && !this.exiting && this.player.x > GATE_EXIT_X) {
+    this.updateCounter(alive);
+
+    if (this.roomCleared && !this.exiting && this.player.x > gateXOf(this.room) + 110) {
       this.exitRoom();
     }
+
 
     // aucune creature vivante a proximite : le soin par absorption est permis
     prof.measure("absorption", () => {
