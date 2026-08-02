@@ -318,7 +318,7 @@ export class GameScene extends Phaser.Scene {
           duration: 120,
           ease: "Quad.easeOut",
         });
-        const dust = this.add.particles(wallX, FLOOR_Y, "blood-particle", {
+        const dust = this.add.particles(wallX, FLOOR_Y, "__WHITE", {
           speed: { min: 40, max: 140 },
           angle: { min: 200, max: 340 },
           lifespan: 420,
