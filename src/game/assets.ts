@@ -42,7 +42,7 @@ export const SHEETS: SheetDef[] = [
   // --- Vigile Muet (heros) ---
   {
     key: "vigile-idle",
-    path: `${SPRITES}/vigile_muet_idle_spritesheet.png`,
+    path: `${SPRITES}/vigile_muet_idle_spritesheet.png?v=2`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
     frameCount: 4,
@@ -52,7 +52,7 @@ export const SHEETS: SheetDef[] = [
   },
   {
     key: "vigile-walk",
-    path: `${SPRITES}/vigile_muet_walk_spritesheet.png`,
+    path: `${SPRITES}/vigile_muet_walk_spritesheet.png?v=2`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
     frameCount: 5,
@@ -62,7 +62,7 @@ export const SHEETS: SheetDef[] = [
   },
   {
     key: "vigile-attack",
-    path: `${SPRITES}/vigile_muet_attack_spritesheet.png`,
+    path: `${SPRITES}/vigile_muet_attack_spritesheet.png?v=2`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
     frameCount: 5,
@@ -72,7 +72,7 @@ export const SHEETS: SheetDef[] = [
   },
   {
     key: "vigile-dodge",
-    path: `${SPRITES}/vigile_muet_dodge_spritesheet.png`,
+    path: `${SPRITES}/vigile_muet_dodge_spritesheet.png?v=2`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
     frameCount: 8,
@@ -82,7 +82,7 @@ export const SHEETS: SheetDef[] = [
   },
   {
     key: "vigile-jump",
-    path: `${SPRITES}/vigile_muet_jump_spritesheet.png`,
+    path: `${SPRITES}/vigile_muet_jump_spritesheet.png?v=2`,
     frameWidth: HERO_FRAME_W,
     frameHeight: HERO_FRAME_H,
     frameCount: 6,
