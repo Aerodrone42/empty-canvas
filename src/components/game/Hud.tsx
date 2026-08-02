@@ -16,6 +16,7 @@ export function Hud() {
   const dodgeReadyAt = useGameStore((s) => s.dodgeReadyAt);
   const dodgeCooldownMs = useGameStore((s) => s.dodgeCooldownMs);
   const absorbing = useGameStore((s) => s.absorbing);
+  const guarding = useGameStore((s) => s.guarding);
   const absorbProgress = useGameStore((s) => s.absorbProgress);
   const bindings = useBindingsStore((s) => s.bindings);
   const lastUnlocked = useGameStore((s) => s.lastUnlocked);
@@ -93,7 +94,11 @@ export function Hud() {
               <span className="text-accent">+{effects.bonusHealth} greffés</span>
             )}
           </p>
-          <div className="relative mt-1 h-2 border border-border bg-card/80">
+          <div
+            className={`relative mt-1 h-2 border bg-card/80 transition-colors duration-100 ${
+              guarding ? "border-accent shadow-[0_0_10px_hsl(var(--accent)/0.8)]" : "border-border"
+            }`}
+          >
             <div
               className={`h-full transition-[width] duration-200 ${
                 critical ? "bg-destructive animate-pulse" : "bg-primary"
@@ -143,13 +148,15 @@ export function Hud() {
             flesh >= ABSORB_COST ? "text-accent" : "text-muted-foreground/50"
           }`}
         >
-          Maintenir {keyLabel(bindings.parry.key)} hors combat · Absorber ({ABSORB_COST} chair →{" "}
+          Maintenir {keyLabel(bindings.absorb.key)} sur du sang · Absorber ({ABSORB_COST} chair →{" "}
           {ABSORB_HEAL} PV)
         </p>
         <p className="font-display text-[0.55rem] tracking-[0.3em] text-muted-foreground/60 uppercase">
           {keyLabel(bindings.attack.key)} frappe / maintenir = lourd ·{" "}
-          {keyLabel(bindings.dodge.key)} esquive · {keyLabel(bindings.parry.key)} maintenir = garde,
-          appuyer au bon moment = parade · {keyLabel(bindings.flesh.key)} autel
+          {keyLabel(bindings.dodge.key)} esquive ·{" "}
+          <span className={guarding ? "text-accent" : undefined}>
+            {keyLabel(bindings.parry.key)} maintenir = garde, appuyer au bon moment = parade
+          </span> · {keyLabel(bindings.flesh.key)} autel
         </p>
         <AltarLine />
         <p className="font-display text-[0.55rem] tracking-[0.3em] text-muted-foreground/60 uppercase">

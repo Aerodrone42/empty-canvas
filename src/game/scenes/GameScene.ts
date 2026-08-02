@@ -20,6 +20,7 @@ import { placeTorches, type FloorTorch } from "../effects/FloorTorch";
 import { AbsorbPrompt } from "../effects/AbsorbPrompt";
 import { BloodFX } from "../effects/Blood";
 import { BloodAltar } from "../effects/BloodAltar";
+import { GuardFX } from "../effects/GuardFX";
 import { CrucifiedProp } from "../effects/CrucifiedProp";
 import { DreadMount } from "../effects/DreadMount";
 import { CorridorVein } from "../effects/CorridorVein";
@@ -77,6 +78,7 @@ export class GameScene extends Phaser.Scene {
   private hands: GraspingHands[] = [];
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
   private blood!: BloodFX;
+  private guardFx!: GuardFX;
   private absorbPrompt?: AbsorbPrompt;
   /** chiffres de degats flottants */
   private damageNumbers!: DamageNumbers;
@@ -172,6 +174,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.blood = new BloodFX(this, FLOOR_Y);
+    this.guardFx = new GuardFX(this);
     this.damageNumbers = new DamageNumbers(this);
     this.absorbPrompt = new AbsorbPrompt(this);
 
