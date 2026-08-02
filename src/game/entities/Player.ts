@@ -148,21 +148,43 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return this.moveState === "attack" || this.moveState === "heavy" || this.moveState === "special";
   }
 
+  /** Vrai tant que la garde est levee. */
+  get isGuarding() {
+    return this.moveState === "guard" || this.moveState === "parry";
+  }
+
   /**
-   * "perfect" : coup annule + ennemi etourdi.
-   * "guard" : coup encaisse en garde (degats reduits).
+   * "perfect" : coup annule + ennemi etourdi (appui dans la fenetre).
+   * "guard" : garde tenue, coup bloque sans degats.
    */
   tryParry(time: number): "perfect" | "guard" | null {
-    const guarding = this.moveState === "guard" || this.moveState === "parry";
+    const guarding = this.isGuarding;
     const perfect =
-      time < this.parryUntil || time - this.parryPressedAt <= PARRY.buffer;
-    if (perfect && (guarding || time - this.parryPressedAt <= PARRY.buffer)) {
+      guarding && (time < this.parryUntil || time - this.parryPressedAt <= PARRY.buffer);
+    if (perfect) {
       this.parryPressedAt = -Infinity;
       this.parryUntil = 0;
       return "perfect";
     }
     return guarding ? "guard" : null;
   }
+
+  /** Coup bloque : recul leger, aucun degat, aucune invulnerabilite rouge. */
+  onGuardBlocked(perfect: boolean) {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setVelocityX(-this.facing * (perfect ? PARRY.guardKnockback * 0.4 : PARRY.guardKnockback));
+    if (perfect) {
+      // hitstop : la scene se fige un instant sur la parade
+      this.scene.time.timeScale = 0.25;
+      this.scene.time.delayedCall(PARRY.hitstop * 0.25, () => {
+        this.scene.time.timeScale = 1;
+      });
+      this.setTint(0xfff3c4);
+    } else {
+      this.setTint(0x8fa6c2);
+    }
+  }
+
 
   /** La scene indique s'il n'y a aucune creature a proximite. */
   setSafeToAbsorb(safe: boolean) {
