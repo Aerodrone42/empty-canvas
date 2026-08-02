@@ -96,35 +96,27 @@ export const ROOM_CONFIG: Record<BackdropKey, RoomConfig> = {
     music: "suspense",
   },
 
-  // III — Le Trone : arene fermee, trois vagues, aucune fuite possible
+  // III — La Marche vers le Trone : longue traversee, aucun combat pour l'instant
   throne: {
-    width: 2000,
+    width: 9600,
     spawnX: 160,
-    altarX: 620,
+    altarX: 900,
     spawns: [],
-    arenaLockX: 980,
-    waves: [
-      [
-        { kind: "suppliant", x: 1350 },
-        { kind: "suppliant", x: 1650 },
-        { kind: "penitent", x: 1850 },
-      ],
-      [
-        { kind: "penitent", x: 1300 },
-        { kind: "penitent", x: 1750 },
-        { kind: "suppliant", x: 1550, elite: true },
-      ],
-      [
-        { kind: "bourreau", x: 1450 },
-        { kind: "penitent", x: 1800, elite: true },
-      ],
+    hangers: [1800, 3000, 4200, 5400, 6600, 7800, 8800],
+    hands: [
+      [1500, 2300],
+      [2800, 3600],
+      [4100, 4900],
+      [5300, 6100],
+      [6500, 7300],
+      [7700, 8500],
+      [8700, 9400],
     ],
-    hangers: [1200, 1700],
-    hands: [[1100, 1900]],
     platforms: [],
     pits: [],
     music: "main",
   },
+
 
   // IV — L'Exterieur : parvis long et accidente, combats espaces, verticalite
   exterieur: {
