@@ -173,17 +173,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   onGuardBlocked(perfect: boolean) {
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setVelocityX(-this.facing * (perfect ? PARRY.guardKnockback * 0.4 : PARRY.guardKnockback));
+    // impulsion de lame : la parade se voit dans le mouvement, pas dans une teinte
+    this.play("vigile-guard-parry", true);
     if (perfect) {
       // hitstop : la scene se fige un instant sur la parade
       this.scene.time.timeScale = 0.25;
       this.scene.time.delayedCall(PARRY.hitstop * 0.25, () => {
         this.scene.time.timeScale = 1;
       });
-      this.setTint(0xfff3c4);
-    } else {
-      this.setTint(0x8fa6c2);
     }
   }
+
 
 
   /** La scene indique s'il n'y a aucune creature a proximite. */
@@ -257,28 +257,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
 
-  /** Posture de garde : anim figee, leger recul, teinte froide. */
-  private holdGuardPose(time: number) {
+  /** Posture de garde : vraie animation d'epee levee, sans teinte ni mise a l'echelle. */
+  private holdGuardPose(_time: number) {
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setVelocityX(0);
     useGameStore.getState().setGuarding(true);
 
-    // frame unique : la garde ne doit pas ressembler a l'idle anime
-    this.anims.stop();
-    this.setTexture("vigile-idle", 0);
-    const windowOpen = time < this.parryUntil;
-    this.setTint(windowOpen ? 0xfff0c0 : 0x93a9c4);
-    // le heros se ramasse legerement en arriere
-    this.setScale(SCALE * 0.97, SCALE * 0.95);
+    const current = this.anims.currentAnim?.key;
+    if (current === "vigile-guard-parry" && this.anims.isPlaying) return;
+    if (current === "vigile-guard-enter") {
+      // on enchaine sur le maintien des que la montee en garde est finie
+      if (!this.anims.isPlaying) this.play("vigile-guard-hold", true);
+      return;
+    }
+    if (current !== "vigile-guard-hold") this.play("vigile-guard-enter", true);
   }
 
   /** Sortie de garde : on remet la posture normale. */
   private releaseGuard() {
     this.moveState = "idle";
     this.clearTint();
-    this.setScale(SCALE);
     useGameStore.getState().setGuarding(false);
+    this.play("vigile-idle-anim", true);
   }
+
 
   tick(time: number) {
     const store = useGameStore.getState();
