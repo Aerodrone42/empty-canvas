@@ -34,11 +34,11 @@ import { Bourreau, EcorchePendu, Enemy, PenitentGreffe, SuppliantRampant } from 
 import { GraspingHands } from "../entities/GraspingHands";
 import { Pickup } from "../entities/Pickup";
 import { Player } from "../entities/Player";
-import { ROOM_ORDER } from "../rooms";
+import { ROOM_LABELS, ROOM_ORDER } from "../rooms";
+import { ROOM_CONFIG, gateXOf, type RoomConfig, type SpawnDef } from "../roomConfig";
 import type { BackdropKey } from "@/game/assets";
 import { ABSORB_COST, useGameStore } from "@/store/gameStore";
 
-const ROOM_WIDTH = 2400;
 const ROOM_HEIGHT = 900;
 /** supplicie ecorche : decor anime au centre de la cathedrale */
 // Emplacement marque par la croix rouge : juste a droite de la zone de depart.
@@ -51,19 +51,13 @@ const FLOOR_Y = 880;
 const POOL_REGEN_PER_SEC = 6;
 /** distance en dessous de laquelle une creature empeche de se soigner */
 const SAFE_RADIUS = 300;
-/** position de la colonne de fin de salle */
-const GATE_X = 2150;
-/** au dela de ce point, le heros bascule dans la salle suivante */
-const GATE_EXIT_X = GATE_X + 110;
 /** seconde moitie de la cathedrale : la monture d'effroi fond sur le heros */
 const MOUNT_TRIGGER_X = 1500;
 /** machine d'ecartellement du corridor */
 const TORTURE_RACK_X = 1320;
-/** autel de sang : point de sauvegarde place juste avant l'affrontement majeur */
-const ALTAR_X: Partial<Record<BackdropKey, number>> = {
-  cathedrale: 1400,
-  corridor: 1200,
-};
+/** degats subis en tombant dans une fosse */
+const PIT_DAMAGE = 14;
+
 
 
 
