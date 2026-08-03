@@ -27,7 +27,7 @@ export type ParallaxOptions = {
 export class Parallax {
   readonly def: BackdropDef;
   private segments: SegmentDef[] = [];
-  private segmentPaintings: Phaser.GameObjects.Image[] = [];
+  private segmentPaintings: Phaser.GameObjects.TileSprite[] = [];
   private segmentVeil?: Phaser.GameObjects.Rectangle;
   private viewWidth = 0;
   private onSegment?: (segment: SegmentDef, index: number) => void;
@@ -98,28 +98,27 @@ export class Parallax {
       const drawH = viewH * 1.08;
       const bottomWorldY = floorY + drawH * BELOW_FLOOR;
 
-      // Chaque peinture doit couvrir son troncon, un ecran de debord de
-      // chaque cote et la zone de fondu. Elle reste ainsi continue pendant
-      // toute la traversee sans etre repositionnee par rapport au dallage.
+      // Echelle uniforme : la peinture garde son ratio natif, aucune
+      // deformation horizontale. La couverture du troncon est obtenue par
+      // repetition de la peinture, pas par etirement.
+      const scale = drawH / srcH;
+
       const segmentWidth = Math.max(0, seg.to - seg.from);
-      const drawW = Math.max(
-        (source.width || 1) * (drawH / srcH),
-        segmentWidth + TRANSITION_HALF * 2,
-      );
+      const drawW = segmentWidth + TRANSITION_HALF * 2;
+      const leftWorldX = seg.from - TRANSITION_HALF;
 
-      // Le sol fait partie de la peinture : elle doit donc partager le meme
-      // espace monde (facteur 1) que l'autel, les torches et les collisions.
-      const segCenter = (seg.from + seg.to) / 2;
-
+      // Le sol fait partie de la peinture : elle partage le meme espace
+      // monde (facteur 1) que l'autel, les torches et les collisions.
       const painting = scene.add
-        .image(segCenter, bottomWorldY, key)
-        .setOrigin(0.5, 1)
+        .tileSprite(leftWorldX, bottomWorldY, drawW, drawH, key)
+        .setOrigin(0, 1)
         .setScrollFactor(1)
         .setDepth(-30 + i * 0.01)
-        .setDisplaySize(drawW, drawH)
+        .setTileScale(scale, scale)
         .setAlpha(i === 0 ? 1 : 0);
       this.segmentPaintings.push(painting);
     });
+
 
     this.segmentVeil = scene.add
       .rectangle(0, 0, cam.width, viewH, this.segments[0].tint, this.segments[0].tintAlpha)
