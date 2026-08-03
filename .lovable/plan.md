@@ -1,27 +1,38 @@
 ## Cause confirmée
 
-Dans la salle du trône, chaque grande peinture contient **à la fois le fond architectural et le sol en perspective**, mais l’image complète défile à `0,35×`. Les éléments solides posés dans la salle — autel, torches, colonne de sortie, pendus et mains — défilent à `1×` avec le héros et les collisions. Ils glissent donc inévitablement sur le sol peint.
+Les huit peintures de la salle du trône font toutes **1920 × 1088** (ratio 1,76).
+
+Dans `Parallax.ts`, chaque peinture est affichée avec une largeur imposée :
+`largeur = largeur du segment + 1040 px`, soit environ **2840 à 3240 px**, pour une
+hauteur d'environ un écran seulement. L'image est donc **étirée horizontalement
+d'environ 1,7 à 2×** : colonnes trop larges, arches aplaties, personnages et
+statues déformés.
+
+La hauteur, elle, reste correcte — seule la largeur est forcée.
 
 ## Correction
 
-1. **Rattacher les peintures segmentées au monde**
-   - Faire défiler l’image complète, sol compris, à `1×` comme tous les objets physiques.
-   - Recalculer leur largeur et leur position pour conserver une couverture continue des segments.
+1. **Respecter le ratio natif de chaque image**
+   - Calculer la largeur d'affichage à partir de la hauteur choisie et du ratio
+     réel de la texture, jamais à partir de la longueur du segment.
 
-2. **Conserver les transitions sans désolidariser le sol**
-   - Garder les longs fondus entre les huit peintures.
-   - Les deux peintures superposées pendant un fondu utiliseront exactement la même vitesse monde, évitant tout glissement ou raccord mobile.
+2. **Couvrir la longueur du segment sans étirer**
+   - Les segments (1800 à 2200 px) sont plus longs qu'une peinture au ratio natif.
+   - Rendre chaque segment avec une peinture répétée horizontalement (tuilage à
+     l'échelle correcte) plutôt qu'une seule image dilatée, en conservant
+     l'ancrage monde à vitesse 1× déjà en place.
 
-3. **Réserver le parallaxe aux éléments réellement lointains**
-   - Ne plus appliquer de parallaxe à une image qui contient le sol.
-   - Garder uniquement les poussières et effets atmosphériques à une vitesse différente, puisqu’ils ne sont pas physiquement posés sur le sol.
+3. **Conserver les fondus entre zones**
+   - Le fondu progressif de 1040 px entre deux zones reste identique ; seules les
+     dimensions d'affichage changent.
 
-4. **Vérifier toute la traversée**
-   - Contrôler au début, au milieu et près du trône que l’autel, les torches, les pièges et la colonne restent fixés au même point du dallage.
-   - Vérifier qu’aucun bord vide ni saut n’apparaît aux changements de segment.
+4. **Vérifier visuellement**
+   - Contrôler au début, au milieu et près du trône que les colonnes et arches
+     retrouvent des proportions verticales normales et qu'aucun vide n'apparaît
+     aux extrémités des segments.
 
 ## Fichier principal
 
 - `src/game/effects/Parallax.ts`
 
-Aucun décor, ennemi ou contenu narratif ne sera ajouté ou modifié.
+Aucun décor, ennemi ni contenu narratif ne sera ajouté ou modifié.
