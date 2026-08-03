@@ -17,10 +17,8 @@ import type { SegmentDef } from "@/game/roomConfig";
 
 /** part de la peinture situee sous la ligne de sol jouable */
 const BELOW_FLOOR = 0.06;
-/** debordement d'une peinture sous le rideau d'ombre voisin */
-const SEG_PAD = 220;
-/** demi-largeur du rideau d'ombre a chaque jointure */
-const SEAM = 300;
+/** demi-longueur du fondu entre deux lieux : transition totale de 1040 px */
+const TRANSITION_HALF = 520;
 
 export type ParallaxOptions = {
   segments?: SegmentDef[];
@@ -31,6 +29,9 @@ export type ParallaxOptions = {
 export class Parallax {
   readonly def: BackdropDef;
   private segments: SegmentDef[] = [];
+  private segmentPaintings: Phaser.GameObjects.Image[] = [];
+  private segmentVeil?: Phaser.GameObjects.Rectangle;
+  private viewWidth = 0;
   private onSegment?: (segment: SegmentDef, index: number) => void;
   private currentSegment = -1;
 
@@ -55,9 +56,6 @@ export class Parallax {
 
     if (this.segments.length > 0) {
       this.buildSegments(floorY, viewH, roomHeight);
-      if (options.floorTexture) {
-        this.buildFloor(options.floorTexture, floorY, roomHeight, roomWidth);
-      }
       this.addAmbience(viewW, viewH, floorScreenY, true);
       return;
     }
@@ -84,75 +82,43 @@ export class Parallax {
     this.addAmbience(viewW, viewH, floorScreenY);
   }
 
-  /** Peintures successives + voiles + rideaux d'ombre aux jointures. */
+  /**
+   * Peintures plein ecran superposees. Le sol en perspective appartient a
+   * chaque peinture : aucun dallage artificiel ne vient plus le recouvrir.
+   * Le changement de lieu se fait ensuite par fondu dans update(), sans
+   * bord vertical ni redemarrage visible de texture.
+   */
   private buildSegments(floorY: number, viewH: number, roomHeight: number) {
     const scene = this.scene;
-    const last = this.segments.length - 1;
+    const cam = scene.cameras.main;
+    const floorScreenY = floorY - Math.max(0, roomHeight - viewH);
+    this.viewWidth = cam.width;
 
     this.segments.forEach((seg, i) => {
-      // la peinture grandit doucement vers le Trone : les voutes montent,
-      // l'espace parait s'ouvrir a mesure que le heros avance
-      const grow = 1.1 + (last > 0 ? (i / last) * 0.24 : 0);
-      const drawH = viewH * grow;
-      const bottomWorldY = floorY + drawH * BELOW_FLOOR;
-      const topWorldY = bottomWorldY - drawH;
-
       const key = scene.textures.exists(seg.bg) ? seg.bg : this.def.far;
       const source = scene.textures.get(key).getSourceImage();
+      const srcW = source.width || 1;
       const srcH = source.height || 1;
-      const scale = drawH / srcH;
+      const drawH = viewH * 1.08;
+      const scale = Math.max(drawH / srcH, cam.width / srcW);
+      const drawW = srcW * scale;
+      const bottom = floorScreenY + drawH * BELOW_FLOOR;
 
-      const from = Math.max(0, seg.from - SEG_PAD);
-      const to = seg.to + SEG_PAD;
-
-      scene.add
-        .tileSprite(from, topWorldY, to - from, drawH, key)
-        .setOrigin(0, 0)
-        .setScrollFactor(1)
+      const painting = scene.add
+        .image(cam.width / 2, bottom, key)
+        .setOrigin(0.5, 1)
+        .setScrollFactor(0)
         .setDepth(-30 + i * 0.01)
-        .setTileScale(scale, scale);
-
-      // voile d'ambiance propre au troncon, ancre au monde
-      scene.add
-        .rectangle(seg.from, 0, seg.to - seg.from, roomHeight, seg.tint, seg.tintAlpha)
-        .setOrigin(0, 0)
-        .setScrollFactor(1)
-        .setDepth(-8);
-
-      // rideau d'ombre a la jointure avec le troncon suivant
-      if (i < last) {
-        const g = scene.add.graphics().setScrollFactor(1).setDepth(-7);
-        g.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0, 0.96, 0, 0.96);
-        g.fillRect(seg.to - SEAM, 0, SEAM, roomHeight);
-        g.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.96, 0, 0.96, 0);
-        g.fillRect(seg.to, 0, SEAM, roomHeight);
-      }
+        .setDisplaySize(drawW, drawH)
+        .setAlpha(i === 0 ? 1 : 0);
+      this.segmentPaintings.push(painting);
     });
-  }
 
-  /** Dallage repete sous les pieds du heros, cale sur la ligne de sol. */
-  private buildFloor(
-    texture: string,
-    floorY: number,
-    roomHeight: number,
-    roomWidth: number,
-  ) {
-    const scene = this.scene;
-    if (!scene.textures.exists(texture)) return;
-
-    const top = floorY - 26;
-    const h = roomHeight - top + 40;
-    const source = scene.textures.get(texture).getSourceImage();
-    const srcH = source.height || 1;
-    const scale = h / srcH;
-
-    scene.add
-      .tileSprite(0, top, roomWidth, h, texture)
+    this.segmentVeil = scene.add
+      .rectangle(0, 0, cam.width, viewH, this.segments[0].tint, this.segments[0].tintAlpha)
       .setOrigin(0, 0)
-      .setScrollFactor(1)
-      .setDepth(-12)
-      .setAlpha(0.9)
-      .setTileScale(scale, scale);
+      .setScrollFactor(0)
+      .setDepth(-8);
   }
 
   /** Voile colore, poussieres flottantes, braises et vignettage. */
@@ -251,11 +217,61 @@ export class Parallax {
 
     const i = this.segments.findIndex((s) => worldX >= s.from && worldX < s.to);
     const index = i < 0 ? this.segments.length - 1 : i;
+
+    let fromIndex = index;
+    let toIndex = index;
+    let blend = 0;
+    for (let boundary = 0; boundary < this.segments.length - 1; boundary += 1) {
+      const seamX = this.segments[boundary].to;
+      if (worldX < seamX - TRANSITION_HALF || worldX > seamX + TRANSITION_HALF) continue;
+      fromIndex = boundary;
+      toIndex = boundary + 1;
+      blend = Phaser.Math.Clamp(
+        (worldX - (seamX - TRANSITION_HALF)) / (TRANSITION_HALF * 2),
+        0,
+        1,
+      );
+      // courbe douce : aucune acceleration visible au debut ou a la fin
+      blend = blend * blend * (3 - 2 * blend);
+      break;
+    }
+
+    this.segmentPaintings.forEach((painting, paintingIndex) => {
+      const alpha = paintingIndex === fromIndex ? 1 - blend : paintingIndex === toIndex ? blend : 0;
+      painting.setAlpha(alpha);
+
+      // lent travelling dans la largeur excedentaire de l'image : profondeur
+      // sans repetition ni deformation des colonnes.
+      const seg = this.segments[paintingIndex];
+      const progress = Phaser.Math.Clamp((worldX - seg.from) / Math.max(1, seg.to - seg.from), 0, 1);
+      const overflow = Math.max(0, painting.displayWidth - this.viewWidth);
+      painting.x = this.viewWidth / 2 + overflow * (0.5 - progress) * 0.32;
+    });
+
+    const from = this.segments[fromIndex];
+    const to = this.segments[toIndex];
+    const tint = Phaser.Display.Color.Interpolate.ColorWithColor(
+      Phaser.Display.Color.IntegerToColor(from.tint),
+      Phaser.Display.Color.IntegerToColor(to.tint),
+      1000,
+      Math.round(blend * 1000),
+    );
+    this.segmentVeil
+      ?.setFillStyle(Phaser.Display.Color.GetColor(tint.r, tint.g, tint.b), 1)
+      .setAlpha(Phaser.Math.Linear(from.tintAlpha, to.tintAlpha, blend));
+
+    const dust = Phaser.Display.Color.Interpolate.ColorWithColor(
+      Phaser.Display.Color.IntegerToColor(from.dust),
+      Phaser.Display.Color.IntegerToColor(to.dust),
+      1000,
+      Math.round(blend * 1000),
+    );
+    this.dust?.setParticleTint(Phaser.Display.Color.GetColor(dust.r, dust.g, dust.b));
+
     if (index === this.currentSegment) return;
 
     this.currentSegment = index;
     const seg = this.segments[index];
-    this.dust?.setParticleTint(seg.dust);
     this.onSegment?.(seg, index);
   }
 }
