@@ -104,7 +104,7 @@ export class Parallax {
       const segmentWidth = Math.max(0, seg.to - seg.from);
       const drawW = Math.max(
         (source.width || 1) * (drawH / srcH),
-        segmentWidth + cam.width * 2 + TRANSITION_HALF * 2,
+        segmentWidth + TRANSITION_HALF * 2,
       );
 
       // Le sol fait partie de la peinture : elle doit donc partager le meme
