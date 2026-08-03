@@ -19,6 +19,8 @@ import type { SegmentDef } from "@/game/roomConfig";
 const BELOW_FLOOR = 0.06;
 /** demi-longueur du fondu entre deux lieux : transition totale de 1040 px */
 const TRANSITION_HALF = 520;
+/** vitesse de defilement du decor peint par rapport au sol */
+const BG_PARALLAX = 0.35;
 
 export type ParallaxOptions = {
   segments?: SegmentDef[];
@@ -97,17 +99,24 @@ export class Parallax {
     this.segments.forEach((seg, i) => {
       const key = scene.textures.exists(seg.bg) ? seg.bg : this.def.far;
       const source = scene.textures.get(key).getSourceImage();
-      const srcW = source.width || 1;
       const srcH = source.height || 1;
       const drawH = viewH * 1.08;
-      const scale = Math.max(drawH / srcH, cam.width / srcW);
-      const drawW = srcW * scale;
       const bottom = floorScreenY + drawH * BELOW_FLOOR;
 
+      // largeur necessaire pour couvrir tout le segment vu au travers du
+      // facteur de parallaxe, sans jamais laisser apparaitre de bord
+      const travel = Math.max(0, seg.to - seg.from) * BG_PARALLAX;
+      const drawW = Math.max((source.width || 1) * (drawH / srcH), cam.width + travel);
+
+      // la peinture est ancree au monde : elle defile avec la camera, mais
+      // plus lentement que le sol et les objets (vrai parallaxe)
+      const segCenter = (seg.from + seg.to) / 2;
+      const worldX = cam.width / 2 + (segCenter - cam.width / 2) * BG_PARALLAX;
+
       const painting = scene.add
-        .image(cam.width / 2, bottom, key)
+        .image(worldX, bottom, key)
         .setOrigin(0.5, 1)
-        .setScrollFactor(0)
+        .setScrollFactor(BG_PARALLAX, 0)
         .setDepth(-30 + i * 0.01)
         .setDisplaySize(drawW, drawH)
         .setAlpha(i === 0 ? 1 : 0);
@@ -239,13 +248,7 @@ export class Parallax {
     this.segmentPaintings.forEach((painting, paintingIndex) => {
       const alpha = paintingIndex === fromIndex ? 1 - blend : paintingIndex === toIndex ? blend : 0;
       painting.setAlpha(alpha);
-
-      // lent travelling dans la largeur excedentaire de l'image : profondeur
-      // sans repetition ni deformation des colonnes.
-      const seg = this.segments[paintingIndex];
-      const progress = Phaser.Math.Clamp((worldX - seg.from) / Math.max(1, seg.to - seg.from), 0, 1);
-      const overflow = Math.max(0, painting.displayWidth - this.viewWidth);
-      painting.x = this.viewWidth / 2 + overflow * (0.5 - progress) * 0.32;
+      // position figee dans le monde : le defilement vient du scrollFactor
     });
 
     const from = this.segments[fromIndex];
