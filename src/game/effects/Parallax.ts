@@ -10,18 +10,14 @@ import type { SegmentDef } from "@/game/roomConfig";
  *  - salle simple : UNE peinture repetee sur toute la largeur, ancree au
  *    monde (scrollFactor 1), le dallage defile a la vitesse des pas.
  *  - salle segmentee (la marche vers le Trone) : chaque troncon a sa propre
- *    peinture, son voile d'ambiance et sa hauteur de dessin. Les jointures
- *    passent par un rideau d'ombre progressif, ce qui donne une transition
- *    douce de decor et une impression de perspective qui s'ouvre.
+ *    peinture, ancree au meme monde que le sol et les objets physiques. Les
+ *    jointures passent par un fondu progressif entre les deux peintures.
  */
 
 /** part de la peinture situee sous la ligne de sol jouable */
 const BELOW_FLOOR = 0.06;
 /** demi-longueur du fondu entre deux lieux : transition totale de 1040 px */
 const TRANSITION_HALF = 520;
-/** vitesse de defilement du decor peint par rapport au sol */
-const BG_PARALLAX = 0.35;
-
 export type ParallaxOptions = {
   segments?: SegmentDef[];
   floorTexture?: string;
@@ -93,7 +89,6 @@ export class Parallax {
   private buildSegments(floorY: number, viewH: number, roomHeight: number) {
     const scene = this.scene;
     const cam = scene.cameras.main;
-    const floorScreenY = floorY - Math.max(0, roomHeight - viewH);
     this.viewWidth = cam.width;
 
     this.segments.forEach((seg, i) => {
@@ -101,22 +96,25 @@ export class Parallax {
       const source = scene.textures.get(key).getSourceImage();
       const srcH = source.height || 1;
       const drawH = viewH * 1.08;
-      const bottom = floorScreenY + drawH * BELOW_FLOOR;
+      const bottomWorldY = floorY + drawH * BELOW_FLOOR;
 
-      // largeur necessaire pour couvrir tout le segment vu au travers du
-      // facteur de parallaxe, sans jamais laisser apparaitre de bord
-      const travel = Math.max(0, seg.to - seg.from) * BG_PARALLAX;
-      const drawW = Math.max((source.width || 1) * (drawH / srcH), cam.width + travel);
+      // Chaque peinture doit couvrir son troncon, un ecran de debord de
+      // chaque cote et la zone de fondu. Elle reste ainsi continue pendant
+      // toute la traversee sans etre repositionnee par rapport au dallage.
+      const segmentWidth = Math.max(0, seg.to - seg.from);
+      const drawW = Math.max(
+        (source.width || 1) * (drawH / srcH),
+        segmentWidth + TRANSITION_HALF * 2,
+      );
 
-      // la peinture est ancree au monde : elle defile avec la camera, mais
-      // plus lentement que le sol et les objets (vrai parallaxe)
+      // Le sol fait partie de la peinture : elle doit donc partager le meme
+      // espace monde (facteur 1) que l'autel, les torches et les collisions.
       const segCenter = (seg.from + seg.to) / 2;
-      const worldX = cam.width / 2 + (segCenter - cam.width / 2) * BG_PARALLAX;
 
       const painting = scene.add
-        .image(worldX, bottom, key)
+        .image(segCenter, bottomWorldY, key)
         .setOrigin(0.5, 1)
-        .setScrollFactor(BG_PARALLAX, 0)
+        .setScrollFactor(1)
         .setDepth(-30 + i * 0.01)
         .setDisplaySize(drawW, drawH)
         .setAlpha(i === 0 ? 1 : 0);
@@ -248,7 +246,7 @@ export class Parallax {
     this.segmentPaintings.forEach((painting, paintingIndex) => {
       const alpha = paintingIndex === fromIndex ? 1 - blend : paintingIndex === toIndex ? blend : 0;
       painting.setAlpha(alpha);
-      // position figee dans le monde : le defilement vient du scrollFactor
+      // Position fixe dans le monde : aucun glissement par rapport au sol.
     });
 
     const from = this.segments[fromIndex];
