@@ -19,6 +19,8 @@ import type { SegmentDef } from "@/game/roomConfig";
 const BELOW_FLOOR = 0.06;
 /** demi-longueur du fondu entre deux lieux : transition totale de 1040 px */
 const TRANSITION_HALF = 520;
+/** vitesse de defilement du decor peint par rapport au sol */
+const BG_PARALLAX = 0.35;
 
 export type ParallaxOptions = {
   segments?: SegmentDef[];
