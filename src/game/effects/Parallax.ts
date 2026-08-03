@@ -97,17 +97,24 @@ export class Parallax {
     this.segments.forEach((seg, i) => {
       const key = scene.textures.exists(seg.bg) ? seg.bg : this.def.far;
       const source = scene.textures.get(key).getSourceImage();
-      const srcW = source.width || 1;
       const srcH = source.height || 1;
       const drawH = viewH * 1.08;
-      const scale = Math.max(drawH / srcH, cam.width / srcW);
-      const drawW = srcW * scale;
       const bottom = floorScreenY + drawH * BELOW_FLOOR;
 
+      // largeur necessaire pour couvrir tout le segment vu au travers du
+      // facteur de parallaxe, sans jamais laisser apparaitre de bord
+      const travel = Math.max(0, seg.to - seg.from) * BG_PARALLAX;
+      const drawW = Math.max((source.width || 1) * (drawH / srcH), cam.width + travel);
+
+      // la peinture est ancree au monde : elle defile avec la camera, mais
+      // plus lentement que le sol et les objets (vrai parallaxe)
+      const segCenter = (seg.from + seg.to) / 2;
+      const worldX = cam.width / 2 + (segCenter - cam.width / 2) * BG_PARALLAX;
+
       const painting = scene.add
-        .image(cam.width / 2, bottom, key)
+        .image(worldX, bottom, key)
         .setOrigin(0.5, 1)
-        .setScrollFactor(0)
+        .setScrollFactor(BG_PARALLAX, 0)
         .setDepth(-30 + i * 0.01)
         .setDisplaySize(drawW, drawH)
         .setAlpha(i === 0 ? 1 : 0);
