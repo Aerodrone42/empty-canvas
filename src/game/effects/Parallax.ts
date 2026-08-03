@@ -248,13 +248,7 @@ export class Parallax {
     this.segmentPaintings.forEach((painting, paintingIndex) => {
       const alpha = paintingIndex === fromIndex ? 1 - blend : paintingIndex === toIndex ? blend : 0;
       painting.setAlpha(alpha);
-
-      // lent travelling dans la largeur excedentaire de l'image : profondeur
-      // sans repetition ni deformation des colonnes.
-      const seg = this.segments[paintingIndex];
-      const progress = Phaser.Math.Clamp((worldX - seg.from) / Math.max(1, seg.to - seg.from), 0, 1);
-      const overflow = Math.max(0, painting.displayWidth - this.viewWidth);
-      painting.x = this.viewWidth / 2 + overflow * (0.5 - progress) * 0.32;
+      // position figee dans le monde : le defilement vient du scrollFactor
     });
 
     const from = this.segments[fromIndex];
