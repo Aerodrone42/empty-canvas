@@ -158,7 +158,7 @@ export const ROOM_CONFIG: Record<BackdropKey, RoomConfig> = {
         name: "La Nef Rouge",
         from: 1800,
         to: 3600,
-        bg: "throne-far",
+        bg: "throne-nave",
         tint: 0x40060f,
         tintAlpha: 0.2,
         dust: 0xffb08a,
@@ -218,7 +218,6 @@ export const ROOM_CONFIG: Record<BackdropKey, RoomConfig> = {
         dust: 0xff8a9a,
       },
     ],
-    floorTexture: "throne-floor",
   },
 
 

@@ -380,11 +380,11 @@ export const BACKDROPS: Record<BackdropKey, BackdropDef> = {
 /* ------------------------------------------------------------------ */
 
 export const EXTRA_BACKGROUNDS: { key: string; path: string }[] = [
+  { key: "throne-nave", path: `${BACKGROUNDS}/throne_bg_nave.png` },
   { key: "throne-ossuary", path: `${BACKGROUNDS}/throne_bg_ossuary.png` },
   { key: "throne-flooded", path: `${BACKGROUNDS}/throne_bg_flooded.png` },
   { key: "throne-cloister", path: `${BACKGROUNDS}/throne_bg_cloister.png` },
   { key: "throne-gallery", path: `${BACKGROUNDS}/throne_bg_gallery.png` },
-  { key: "throne-floor", path: `${BACKGROUNDS}/throne_floor.png` },
 ];
 
 

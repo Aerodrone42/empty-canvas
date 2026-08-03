@@ -1,37 +1,40 @@
 ## Objectif
+Corriger les incohérences visuelles de la salle du Trône : sol plat et répétitif, changements de décor brutaux, répétition du même fond sur les deux premiers segments et bandes verticales visibles.
 
-Allonger la salle du Trône pour une vraie durée de niveau (~4-6 min de traversée) : passer de 9600 à **16000 px**, avec **4 nouveaux décors générés** intercalés avant l'arrivée au trône, plus des transitions de sol et de perspective qui guident le joueur.
+## Corrections prévues
 
-## Découpage du parcours (16000 px, 8 segments)
+1. **Remplacer le sol unique par des sols adaptés aux 8 zones**
+   - Seuil / Nef : marbre noir veiné de sang, sobre au départ puis plus réfléchissant.
+   - Ossuaire : dalles de pierre sombre incrustées d’ossements, sans dorures.
+   - Passage noyé : surface de sang sombre avec reflets et ondulations discrètes au premier plan.
+   - Cloître : pierre extérieure usée, humide, éclairée par le ciel rouge.
+   - Galerie : grandes dalles noires guidant la perspective vers le centre.
+   - Ascension : marches de pierre successives intégrées au parcours.
+   - Parvis : marbre noir poli et veines rouges, cohérent avec le trône.
 
-```text
-0 ── 1800 ── 3600 ── 5600 ── 7600 ── 9800 ── 12000 ── 14000 ── 16000
-Seuil  Nef   Ossuaire Passage Cloître  Galerie  Ascension  Parvis
-                                inondé   des     du Trône
-                                        suppliciés
-```
+2. **Créer une vraie profondeur de sol**
+   - Le sol ne sera plus une bande verticale écrasée sous les pieds.
+   - Ajouter trois plans lisibles : ligne de marche nette, dallage en perspective et premier plan plus sombre.
+   - Utiliser des textures en perspective déjà présentes dans les peintures, avec recadrage et mise à l’échelle cohérents plutôt qu’une répétition carrée uniforme.
+   - Ajouter des reflets et voiles localisés uniquement là où le décor le justifie.
 
-1. **Seuil (0-1800)** — fond `throne_bg_far` validé, dallage usé, brume dense, lumière faible.
-2. **Nef (1800-3600)** — même fond, calque médian (colonnes d'os) monte en opacité, rais de lumière.
-3. **Ossuaire (3600-5600)** — **nouveau fond** : murs entiers d'ossements empilés, crânes en niches, lumière verdâtre-froide.
-4. **Passage inondé (5600-7600)** — **nouveau fond** : crypte basse noyée de sang, reflets, arches à demi immergées ; sol avec surface liquide.
-5. **Cloître des suppliciés (7600-9800)** — **nouveau fond** : galerie ouverte, corps suspendus en fond lointain, ciel rouge derrière les arcades.
-6. **Galerie des bannières (9800-12000)** — **nouveau fond** : long couloir de bannières déchirées, or terni, colonnes rapprochées (resserrement avant le final).
-7. **Ascension (12000-14000)** — sol qui monte par paliers de pierre, caméra qui descend, braseros plus vifs. Fond `throne_bg_near` dominant.
-8. **Parvis du Trône (14000-16000)** — fonds validés `mid`+`near`, marbre poli, brume rouge basse, trône éclairé.
+3. **Supprimer le doublon des deux premiers fonds**
+   - Le Seuil conservera `throne-far`.
+   - La Nef utilisera une composition différente issue des fonds validés, afin que le joueur ne voie plus deux copies identiques consécutives.
+   - Les segments finaux utiliseront `near` puis `mid` dans un ordre visuel menant clairement vers le trône, sans retour incohérent de perspective.
 
-Tous les nouveaux fonds sont générés dans le style exact des fonds déjà validés (même palette, même échelle d'arches, même grain), avec raccords horizontaux propres.
+4. **Refaire entièrement les raccords entre décors**
+   - Retirer les rideaux noirs verticaux responsables des grandes coupures visibles sur les captures.
+   - Remplacer les rectangles juxtaposés par une zone de chevauchement plus longue, avec fondu progressif calculé selon la position de la caméra.
+   - Faire évoluer simultanément fond, teinte, poussière et sol sur la même distance pour éviter qu’un élément change avant les autres.
+   - Masquer les limites avec des éléments architecturaux naturels déjà présents dans l’image : pilier, arche, zone d’ombre ou brume, sans ajouter de décor artificiel répétitif.
 
-## Technique
+5. **Corriger la répétition interne des images**
+   - Éviter le `tileSprite` qui redémarre chaque peinture au bord de chaque segment et crée des duplications visibles.
+   - Chaque fond sera cadré comme une scène continue sur son segment, avec léger déplacement différentiel pour donner de la profondeur sans déformer l’image.
+   - Les segments longs alterneront cadrages et points de départ afin de ne pas répéter immédiatement les mêmes colonnes ou arches.
 
-- **`src/game/roomConfig.ts`** : largeur `throne` → 16000. Nouveau champ `segments[]` : `xStart`, `xEnd`, `bgKey`, `floorY`, `tint`, `fogAlpha`, `midAlpha`, `nearAlpha`, `props[]`.
-- **`src/game/assets.ts` + `BootScene.ts`** : enregistrement/chargement des 4 nouveaux fonds (`throne_bg_ossuary`, `throne_bg_flooded`, `throne_bg_cloister`, `throne_bg_gallery`).
-- **`src/game/effects/Parallax.ts`** : passage multi-calques (far `0.15`, mid `0.45`, near `0.85`) + sol `throne_floor`. Méthode `update(camX)` qui fait un **cross-fade** entre le fond du segment courant et celui du suivant sur ~400 px, pour des transitions sans coupure.
-- **`src/game/scenes/GameScene.ts`** : sol construit segment par segment (marches en pierre pour l'Ascension, surface liquide animée pour le Passage inondé), `parallax.update()` dans la boucle, offset caméra sur les segments 7-8, cartouche de nom de zone en fondu à chaque entrée de segment.
-- **Nouveaux props** : marche de pierre, brasero (réutilisé), colonne d'os — même style que les fonds.
-
-## Ce qui ne change pas
-
-- Les 4 images de fond déjà validées restent utilisées telles quelles.
-- Pas d'ennemis ni de herse ajoutés : la salle reste une traversée.
-- L'autel de sang reste à sa position actuelle.
+6. **Validation visuelle ciblée**
+   - Vérifier les 7 jointures une par une, notamment celles entourées sur les captures : Nef → Ossuaire, Ossuaire → Passage noyé, Passage noyé → Cloître et Ascension → Parvis.
+   - Vérifier que le héros reste correctement posé sur la ligne de marche, qu’aucune bande verticale n’apparaît et que chaque sol correspond au fond affiché.
+   - Contrôler le rendu pendant le déplacement, pas uniquement sur une image fixe.
