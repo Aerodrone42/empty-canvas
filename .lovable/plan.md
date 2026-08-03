@@ -1,40 +1,30 @@
-## Objectif
-Corriger les incohérences visuelles de la salle du Trône : sol plat et répétitif, changements de décor brutaux, répétition du même fond sur les deux premiers segments et bandes verticales visibles.
+## Problème
 
-## Corrections prévues
+Dans `src/game/effects/Parallax.ts`, les peintures de segments sont créées avec `setScrollFactor(0)` et repositionnées à `x = viewWidth/2 + …` en coordonnées écran. Le décor est donc **collé à la caméra** : il ne bouge pas quand le héros avance, alors que tous les objets de monde (autel, herses, mains, écorchés, ennemis) défilent normalement. D'où l'impression que « le décor bouge et le fond est fixe ».
 
-1. **Remplacer le sol unique par des sols adaptés aux 8 zones**
-   - Seuil / Nef : marbre noir veiné de sang, sobre au départ puis plus réfléchissant.
-   - Ossuaire : dalles de pierre sombre incrustées d’ossements, sans dorures.
-   - Passage noyé : surface de sang sombre avec reflets et ondulations discrètes au premier plan.
-   - Cloître : pierre extérieure usée, humide, éclairée par le ciel rouge.
-   - Galerie : grandes dalles noires guidant la perspective vers le centre.
-   - Ascension : marches de pierre successives intégrées au parcours.
-   - Parvis : marbre noir poli et veines rouges, cohérent avec le trône.
+Le léger travelling actuel (`overflow * (0.5 - progress) * 0.32`) est calculé sur la progression dans le segment, pas sur la caméra, ce qui ne produit aucun vrai parallaxe.
 
-2. **Créer une vraie profondeur de sol**
-   - Le sol ne sera plus une bande verticale écrasée sous les pieds.
-   - Ajouter trois plans lisibles : ligne de marche nette, dallage en perspective et premier plan plus sombre.
-   - Utiliser des textures en perspective déjà présentes dans les peintures, avec recadrage et mise à l’échelle cohérents plutôt qu’une répétition carrée uniforme.
-   - Ajouter des reflets et voiles localisés uniquement là où le décor le justifie.
+## Correction prévue
 
-3. **Supprimer le doublon des deux premiers fonds**
-   - Le Seuil conservera `throne-far`.
-   - La Nef utilisera une composition différente issue des fonds validés, afin que le joueur ne voie plus deux copies identiques consécutives.
-   - Les segments finaux utiliseront `near` puis `mid` dans un ordre visuel menant clairement vers le trône, sans retour incohérent de perspective.
+1. **Ancrer les peintures au monde avec un facteur de parallaxe**
+   - Chaque peinture de segment reçoit un `scrollFactor` de fond (~0.35) au lieu de 0.
+   - Sa position X est recalculée à chaque frame à partir de `camera.scrollX`, de manière à rester centrée sur son segment tout en dérivant plus lentement que le sol : le fond avance, mais moins vite que le héros.
 
-4. **Refaire entièrement les raccords entre décors**
-   - Retirer les rideaux noirs verticaux responsables des grandes coupures visibles sur les captures.
-   - Remplacer les rectangles juxtaposés par une zone de chevauchement plus longue, avec fondu progressif calculé selon la position de la caméra.
-   - Faire évoluer simultanément fond, teinte, poussière et sol sur la même distance pour éviter qu’un élément change avant les autres.
-   - Masquer les limites avec des éléments architecturaux naturels déjà présents dans l’image : pilier, arche, zone d’ombre ou brume, sans ajouter de décor artificiel répétitif.
+2. **Couvrir toute la longueur du segment**
+   - Une peinture unique de ~1920 px ne couvre pas un segment de 1800–2200 px lorsqu'elle défile plus lentement. La peinture sera étirée/échantillonnée pour couvrir la largeur de segment vue à travers son facteur de parallaxe, sans déformation verticale (ratio conservé, débord latéral rogné par la caméra).
 
-5. **Corriger la répétition interne des images**
-   - Éviter le `tileSprite` qui redémarre chaque peinture au bord de chaque segment et crée des duplications visibles.
-   - Chaque fond sera cadré comme une scène continue sur son segment, avec léger déplacement différentiel pour donner de la profondeur sans déformer l’image.
-   - Les segments longs alterneront cadrages et points de départ afin de ne pas répéter immédiatement les mêmes colonnes ou arches.
+3. **Conserver les fondus longs entre zones**
+   - Le crossfade actuel (1040 px de transition, courbe lissée) reste inchangé ; seule la position/le scrollFactor change. Les deux peintures en fondu défilent au même rythme, donc aucun décalage visible au raccord.
 
-6. **Validation visuelle ciblée**
-   - Vérifier les 7 jointures une par une, notamment celles entourées sur les captures : Nef → Ossuaire, Ossuaire → Passage noyé, Passage noyé → Cloître et Ascension → Parvis.
-   - Vérifier que le héros reste correctement posé sur la ligne de marche, qu’aucune bande verticale n’apparaît et que chaque sol correspond au fond affiché.
-   - Contrôler le rendu pendant le déplacement, pas uniquement sur une image fixe.
+4. **Éléments d'ambiance cohérents**
+   - Le voile coloré et le vignettage restent fixes à l'écran (correct pour une ambiance).
+   - Les poussières passent à un scrollFactor proche de celui du fond pour ne plus « glisser » par rapport à lui ; les braises restent liées au sol.
+
+5. **Vérification**
+   - Contrôle en déplacement continu depuis le spawn jusqu'au trône : le fond doit défiler visiblement plus lentement que le sol et les props, sans bande vide, sans saut au passage d'un segment à l'autre.
+
+## Détails techniques
+
+- Fichier concerné : `src/game/effects/Parallax.ts` (méthodes `buildSegments` et `update`).
+- `update(worldX)` reçoit déjà la position ; on utilisera en plus `scene.cameras.main.scrollX` pour le placement.
+- Aucun changement dans `roomConfig.ts`, `assets.ts` ni `GameScene.ts`.
