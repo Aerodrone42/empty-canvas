@@ -18,6 +18,8 @@ import type { SegmentDef } from "@/game/roomConfig";
 const BELOW_FLOOR = 0.06;
 /** demi-longueur du fondu entre deux lieux : transition totale de 1040 px */
 const TRANSITION_HALF = 520;
+/** recouvrement entre deux copies miroir d'une meme peinture */
+const SEAM_OVERLAP = 2;
 export type ParallaxOptions = {
   segments?: SegmentDef[];
   floorTexture?: string;
@@ -27,7 +29,7 @@ export type ParallaxOptions = {
 export class Parallax {
   readonly def: BackdropDef;
   private segments: SegmentDef[] = [];
-  private segmentPaintings: Phaser.GameObjects.TileSprite[] = [];
+  private segmentPaintings: Phaser.GameObjects.Container[] = [];
   private segmentVeil?: Phaser.GameObjects.Rectangle;
   private viewWidth = 0;
   private onSegment?: (segment: SegmentDef, index: number) => void;
@@ -94,27 +96,41 @@ export class Parallax {
     this.segments.forEach((seg, i) => {
       const key = scene.textures.exists(seg.bg) ? seg.bg : this.def.far;
       const source = scene.textures.get(key).getSourceImage();
+      const srcW = source.width || 1;
       const srcH = source.height || 1;
       const drawH = viewH * 1.08;
       const bottomWorldY = floorY + drawH * BELOW_FLOOR;
 
       // Echelle uniforme : la peinture garde son ratio natif, aucune
-      // deformation horizontale. La couverture du troncon est obtenue par
-      // repetition de la peinture, pas par etirement.
+      // deformation horizontale.
       const scale = drawH / srcH;
+      const copyW = srcW * scale;
 
       const segmentWidth = Math.max(0, seg.to - seg.from);
       const drawW = segmentWidth + TRANSITION_HALF * 2;
       const leftWorldX = seg.from - TRANSITION_HALF;
 
+      // Couverture du troncon par copies successives, une sur deux retournee
+      // horizontalement : le bord droit d'une copie est identique au bord
+      // gauche de la suivante, donc aucune arete verticale visible.
+      const step = Math.max(1, copyW - SEAM_OVERLAP);
+      const count = Math.max(1, Math.ceil((drawW + SEAM_OVERLAP) / step));
+      const copies: Phaser.GameObjects.Image[] = [];
+      for (let c = 0; c < count; c += 1) {
+        const img = scene.add
+          .image(leftWorldX + c * step, bottomWorldY, key)
+          .setOrigin(0, 1)
+          .setDisplaySize(copyW, drawH)
+          .setFlipX(c % 2 === 1);
+        copies.push(img);
+      }
+
       // Le sol fait partie de la peinture : elle partage le meme espace
       // monde (facteur 1) que l'autel, les torches et les collisions.
       const painting = scene.add
-        .tileSprite(leftWorldX, bottomWorldY, drawW, drawH, key)
-        .setOrigin(0, 1)
+        .container(0, 0, copies)
         .setScrollFactor(1)
         .setDepth(-30 + i * 0.01)
-        .setTileScale(scale, scale)
         .setAlpha(i === 0 ? 1 : 0);
       this.segmentPaintings.push(painting);
     });
