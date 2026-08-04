@@ -27,7 +27,7 @@ export type ParallaxOptions = {
 export class Parallax {
   readonly def: BackdropDef;
   private segments: SegmentDef[] = [];
-  private segmentPaintings: Phaser.GameObjects.TileSprite[] = [];
+  private segmentPaintings: Phaser.GameObjects.Container[] = [];
   private segmentVeil?: Phaser.GameObjects.Rectangle;
   private viewWidth = 0;
   private onSegment?: (segment: SegmentDef, index: number) => void;
