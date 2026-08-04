@@ -166,11 +166,20 @@ export const ROOM_CONFIG: Record<BackdropKey, RoomConfig> = {
       {
         name: "L'Ossuaire",
         from: 3600,
-        to: 6800,
+        to: 5200,
         bg: "throne-ossuary",
         tint: 0x180a0c,
         tintAlpha: 0.24,
         dust: 0xd8c4b0,
+      },
+      {
+        name: "Les Catacombes Basses",
+        from: 5200,
+        to: 6800,
+        bg: "throne-catacombs",
+        tint: 0x140809,
+        tintAlpha: 0.26,
+        dust: 0xcbb9a6,
       },
       {
         name: "Le Passage Noye",
