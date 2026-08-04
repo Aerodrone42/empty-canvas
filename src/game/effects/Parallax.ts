@@ -16,8 +16,8 @@ import type { SegmentDef } from "@/game/roomConfig";
 
 /** part de la peinture situee sous la ligne de sol jouable */
 const BELOW_FLOOR = 0.06;
-/** demi-longueur du fondu entre deux lieux : transition totale de 1040 px */
-const TRANSITION_HALF = 520;
+/** demi-longueur du fondu entre deux lieux : transition totale de 2000 px */
+const TRANSITION_HALF = 1000;
 /** recouvrement entre deux copies miroir d'une meme peinture */
 const SEAM_OVERLAP = 2;
 export type ParallaxOptions = {
