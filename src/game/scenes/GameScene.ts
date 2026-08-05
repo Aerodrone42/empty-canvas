@@ -412,8 +412,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Cartouche discret annoncant le lieu traverse, en bas de l'ecran. */
+  private segmentTitleObjects: Phaser.GameObjects.GameObject[] = [];
+
   private showSegmentTitle(name: string) {
     const cam = this.cameras.main;
+    // un seul cartouche vivant a la fois : le precedent disparait aussitot
+    for (const obj of this.segmentTitleObjects) {
+      this.tweens.killTweensOf(obj);
+      obj.destroy();
+    }
+    this.segmentTitleObjects = [];
     const label = this.add
       .text(cam.width / 2, cam.height - 120, name, {
         fontFamily: "Georgia, serif",
@@ -429,6 +437,7 @@ export class GameScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(59)
       .setAlpha(0);
+    this.segmentTitleObjects = [label, rule];
     this.tweens.add({
       targets: [label, rule],
       alpha: 1,
@@ -438,6 +447,7 @@ export class GameScene extends Phaser.Scene {
       onComplete: () => {
         label.destroy();
         rule.destroy();
+        this.segmentTitleObjects = [];
       },
     });
   }

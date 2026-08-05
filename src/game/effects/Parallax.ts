@@ -17,7 +17,7 @@ import type { SegmentDef } from "@/game/roomConfig";
 /** part de la peinture situee sous la ligne de sol jouable */
 const BELOW_FLOOR = 0.06;
 /** demi-longueur du fondu entre deux lieux : transition totale de 2000 px */
-const TRANSITION_HALF = 1000;
+const TRANSITION_HALF = 700;
 /** recouvrement entre deux copies miroir d'une meme peinture */
 const SEAM_OVERLAP = 2;
 export type ParallaxOptions = {
@@ -259,7 +259,10 @@ export class Parallax {
     }
 
     this.segmentPaintings.forEach((painting, paintingIndex) => {
-      const alpha = paintingIndex === fromIndex ? 1 - blend : paintingIndex === toIndex ? blend : 0;
+      // Le lieu sortant reste opaque : seul le lieu entrant monte par-dessus,
+      // donc jamais deux peintures semi-transparentes en meme temps.
+      const alpha =
+        paintingIndex === fromIndex ? 1 : paintingIndex === toIndex ? blend : 0;
       painting.setAlpha(alpha);
       // Position fixe dans le monde : aucun glissement par rapport au sol.
     });
